@@ -407,6 +407,7 @@ async function startGame(roomId) {
     firstPlayerId: game.players[startIndex],
     currentPlayerName: game.currentPlayerName,
     timeLeft: game.timeLeft,
+    leadoffPlayer: game.leadoffPlayer,
   });
 
   startTurnTimer(roomId);

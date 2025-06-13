@@ -137,7 +137,7 @@ const socket = io(); // connects to the same origin automatically
   let fetchTimeout = null;
   let gameStarted = false;
   let gameOver = false;
-  let leadoffPlayer = '';
+  let leadoffPlayerName = null;
 
 
   const statusDiv = document.getElementById('status');
@@ -201,6 +201,8 @@ socket.on('gameStarted', (data) => {
   gameStarted = true;
   gameOver = false;
 
+  leadoffPlayerName = data.leadoffPlayer || null;
+
   // Clear old timers
   if (window.timerInterval) {
     clearInterval(window.timerInterval);
@@ -229,7 +231,6 @@ socket.on('gameStarted', (data) => {
 
   // Reset game history
   successfulGuesses.length = 0;
-  leadoffPlayer = data.currentPlayerName;
   renderSuccessfulGuesses();
 
   // Set new player and timer
@@ -591,28 +592,35 @@ function showAutocompleteSuggestions(suggestions) {
 
 
   function renderSuccessfulGuesses() {
-    const listEl = document.getElementById('successful-guesses-list');
-    listEl.innerHTML = '';
+  const listEl = document.getElementById('successful-guesses-list');
+  listEl.innerHTML = '';
 
-    const displayList = [...successfulGuesses];
+  const displayList = leadoffPlayerName ? [leadoffPlayerName, ...successfulGuesses] : [...successfulGuesses];
 
-    displayList.forEach((guess, index) => {
-      const li = document.createElement('li');
-      li.style.margin = '0.5rem 0';
-      li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
-      li.textContent = guess;
-      listEl.appendChild(li);
+  displayList.forEach((guess, index) => {
+    const li = document.createElement('li');
+    li.style.margin = '0.5rem 0';
 
-      if (index < displayList.length - 1) {
-        const arrow = document.createElement('div');
-        arrow.style.textAlign = 'center';
-        arrow.style.fontSize = '1.2rem';
-        arrow.style.color = '#888';
-        arrow.textContent = '↓';
-        listEl.appendChild(arrow);
-      }
-    });
-  }
+    // Highlight the last item in the list (the most recent guess)
+    const isMostRecent = index === displayList.length - 1;
+    const isLeadoff = index === 0 && leadoffPlayerName;
+
+    li.style.fontWeight = isMostRecent ? 'bold' : isLeadoff ? 'bold' : 'normal';
+    li.style.color = isLeadoff ? '#00bcd4' : 'black'; // Optional color styling
+    li.textContent = guess;
+    listEl.appendChild(li);
+
+    if (index < displayList.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.style.textAlign = 'center';
+      arrow.style.fontSize = '1.2rem';
+      arrow.style.color = '#888';
+      arrow.textContent = '↓';
+      listEl.appendChild(arrow);
+    }
+  });
+}
+
 
 
 
