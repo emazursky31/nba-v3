@@ -137,6 +137,8 @@ const socket = io(); // connects to the same origin automatically
   let fetchTimeout = null;
   let gameStarted = false;
   let gameOver = false;
+  let leadoffPlayer = '';
+
 
   const statusDiv = document.getElementById('status');
   const joinBtn = document.getElementById('joinBtn');
@@ -227,6 +229,7 @@ socket.on('gameStarted', (data) => {
 
   // Reset game history
   successfulGuesses.length = 0;
+  leadoffPlayer = data.currentPlayerName;
   renderSuccessfulGuesses();
 
   // Set new player and timer
