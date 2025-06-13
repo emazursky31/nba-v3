@@ -13,13 +13,12 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 
-// ✅ Serve index.html directly from root folder
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ✅ Optional: serve other assets (like CSS or JS files) if needed
-// app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname)));
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
