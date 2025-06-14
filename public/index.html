@@ -4,35 +4,97 @@
   <meta charset="UTF-8" />
   <title>NBA Teammate Game</title>
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script>
-  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+ <style>
   body {
     font-family: Arial, sans-serif;
     max-width: 600px;
     margin: auto;
     padding: 1rem;
+    line-height: 1.5;
+    background-color: #f9f9f9;
+    color: #222;
+  }
+
+  h1, h2, h3 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    margin-top: 0.25rem;
+    box-sizing: border-box;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    cursor: pointer;
+  }
+
+  #status {
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+    color: #555;
+  }
+
+  #waitingRoom {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  #displayRoomCode {
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  #gameArea {
+    margin-top: 2rem;
+    position: relative;
+  }
+
+  #turnSection {
+    margin-bottom: 1.5rem;
   }
 
   #timer {
     font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
     margin: 1rem 0;
   }
 
-  #guessInput {
-    width: 100%;
-    padding: 0.5rem;
-    font-size: 1rem;
+  #guessControls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  #guessControls input {
+    flex: 1;
   }
 
   #autocomplete-list {
-  display: none; /* Hidden unless populated */
-  position: absolute;
-  background: white;
-  border: 1px solid #ccc;
-  width: calc(100% - 1rem);
-  max-height: 120px;
-  overflow-y: auto;
-  z-index: 1000;
-}
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    width: calc(100% - 2rem);
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    top: 100%;
+    left: 0;
+  }
 
   #autocomplete-list div {
     padding: 0.5rem;
@@ -40,7 +102,12 @@
   }
 
   #autocomplete-list div:hover {
-    background: #ddd;
+    background: #f0f0f0;
+  }
+
+  #successful-guesses-container {
+    margin-top: 1rem;
+    text-align: center;
   }
 
   #successful-guesses-list {
@@ -50,10 +117,13 @@
     text-align: center;
   }
 
-  .hidden {
-  display: none !important;
-}
+  #successful-guesses-list li {
+    margin: 0.5rem 0;
+  }
 
+  .hidden {
+    display: none !important;
+  }
 
   /* Unified message styling */
   .message {
@@ -73,8 +143,40 @@
   .message.fade-out {
     opacity: 0;
   }
-  
+
+  #gameOverContainer {
+    display: none;
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  #rematchBtn {
+    display: none;
+    margin: 1.5rem auto 0;
+    padding: 0.5rem 1.5rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+
+  #rematchBtn:hover {
+    background-color: #0056b3;
+  }
+
+  @media (max-width: 480px) {
+    #guessControls {
+      flex-direction: column;
+    }
+
+    #autocomplete-list {
+      width: 100%;
+    }
+  }
 </style>
+
 
 </head>
 <body>
@@ -341,7 +443,7 @@ socket.on('turnEnded', (data) => {
   if (data.successfulGuess) {
     const match = data.successfulGuess.match(/"([^"]+)"/);
     const playerName = match ? match[1] : data.successfulGuess;
-    successfulGuesses.push(playerName);
+    successfulGuesses.unshift(playerName);
     renderSuccessfulGuesses();
   }
 
