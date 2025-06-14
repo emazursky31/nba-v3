@@ -83,18 +83,18 @@
     flex: 1;
   }
 
-  #autocomplete-list {
-    display: none;
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    width: calc(100% - 2rem);
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 1000;
-    top: 100%;
-    left: 0;
-  }
+ #autocomplete-list {
+  position: absolute;
+  top: 100%; /* ensures it appears right below the input */
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background-color: white;
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 
   #autocomplete-list div {
     padding: 0.5rem;
@@ -199,13 +199,13 @@
     <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   </div>
 
- <div id="gameArea" style="display:none; position: relative;">
+<div id="gameArea" style="display:none; position: relative;">
   <div id="turnSection">
     <p>Name any teammate of: <strong id="currentPlayerName"></strong></p>
     <p>Time left: <span id="timer">15</span> seconds</p>
 
-    <!-- 👇 NEW wrapper for input + button -->
-    <div id="guessControls">
+    <!-- ✅ Apply position: relative here -->
+    <div id="guessControls" style="position: relative;">
       <input
         type="text"
         id="guessInput"
@@ -213,9 +213,10 @@
         autocomplete="off"
       />
       <button id="submitGuessBtn" disabled>Submit Guess</button>
-    </div>
 
-    <div id="autocomplete-list"></div>
+      <!-- ✅ Move this inside guessControls -->
+      <div id="autocomplete-list"></div>
+    </div>
   </div>
 
   <div id="messageContainer"></div>
@@ -228,6 +229,7 @@
     <ul id="successful-guesses-list"></ul>
   </div>
 </div>
+
 
 
 <script>
