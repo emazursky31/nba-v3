@@ -341,7 +341,7 @@ socket.on('turnEnded', (data) => {
   if (data.successfulGuess) {
     const match = data.successfulGuess.match(/"([^"]+)"/);
     const playerName = match ? match[1] : data.successfulGuess;
-    successfulGuesses.unshift(playerName);
+    successfulGuesses.push(playerName);
     renderSuccessfulGuesses();
   }
 
@@ -595,21 +595,16 @@ function showAutocompleteSuggestions(suggestions) {
   const listEl = document.getElementById('successful-guesses-list');
   listEl.innerHTML = '';
 
-const displayList = leadoffPlayerName
-  ? [leadoffPlayerName, ...successfulGuesses]
-  : [...successfulGuesses];
-
+  // Don't reverse this — just prepend the leadoff player
+  const displayList = leadoffPlayerName
+    ? [leadoffPlayerName, ...successfulGuesses]
+    : [...successfulGuesses];
 
   displayList.forEach((guess, index) => {
     const li = document.createElement('li');
     li.style.margin = '0.5rem 0';
-
-    // Highlight the last item in the list (the most recent guess)
-    const isMostRecent = index === displayList.length - 1;
-    const isLeadoff = index === 0 && leadoffPlayerName;
-
-    li.style.fontWeight = isMostRecent ? 'bold' : isLeadoff ? 'bold' : 'normal';
-    li.style.color = isLeadoff ? '#00bcd4' : 'black'; // Optional color styling
+    li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
+    li.style.color = (index === 0 && leadoffPlayerName) ? '#007bff' : '#000'; // blue for leadoff
     li.textContent = guess;
     listEl.appendChild(li);
 
@@ -623,6 +618,7 @@ const displayList = leadoffPlayerName
     }
   });
 }
+
 
 
 
