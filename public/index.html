@@ -595,7 +595,10 @@ function showAutocompleteSuggestions(suggestions) {
   const listEl = document.getElementById('successful-guesses-list');
   listEl.innerHTML = '';
 
-  const displayList = leadoffPlayerName ? [leadoffPlayerName, ...successfulGuesses] : [...successfulGuesses];
+const displayList = leadoffPlayerName
+  ? [leadoffPlayerName, ...successfulGuesses]
+  : [...successfulGuesses];
+
 
   displayList.forEach((guess, index) => {
     const li = document.createElement('li');
