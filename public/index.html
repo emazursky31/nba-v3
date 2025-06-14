@@ -328,6 +328,8 @@ socket.on('gameStarted', (data) => {
   // Hide join UI
   joinBtn.classList.add('hidden');
   roomIdInput.disabled = true;
+  document.getElementById("usernameInput")?.classList.add("hidden");
+  document.getElementById("roomIdInput")?.classList.add("hidden");
 
   // Clear any messages
   messagesEl.innerHTML = '';
@@ -445,7 +447,7 @@ socket.on('turnEnded', (data) => {
   if (data.successfulGuess) {
     const match = data.successfulGuess.match(/"([^"]+)"/);
     const playerName = match ? match[1] : data.successfulGuess;
-    successfulGuesses.unshift(playerName);
+    successfulGuesses.push(playerName);
     renderSuccessfulGuesses();
   }
 
