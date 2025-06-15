@@ -484,7 +484,7 @@ socket.on('timerTick', (data) => {
 
 
   // Autocomplete logic
-guessInput.addEventListener('input', function () {
+guessInput.addEventListener('input', function() {
   const val = this.value.trim();
   clearAutocomplete();
   selectedPlayer = null;
@@ -508,11 +508,8 @@ guessInput.addEventListener('input', function () {
         return;
       }
 
-      // Build DOM elements with styled years
+      // ✅ Create an array of actual HTML elements to pass to showAutocompleteSuggestions
       const suggestions = results.map(player => {
-        const firstYear = player.first_year || '?';
-        const lastYear = player.last_year || '?';
-
         const wrapper = document.createElement('div');
         wrapper.className = 'autocomplete-item';
 
@@ -521,20 +518,21 @@ guessInput.addEventListener('input', function () {
 
         const yearsSpan = document.createElement('span');
         yearsSpan.className = 'career-years';
-        yearsSpan.textContent = ` ${firstYear}–${lastYear}`;
+        yearsSpan.textContent = ` ${player.first_year || '?'}–${player.last_year || '?'}`;
+
+        yearsSpan.style.fontSize = '0.8em';
+        yearsSpan.style.color = 'gray';
+        yearsSpan.style.marginLeft = '5px';
 
         wrapper.appendChild(nameSpan);
         wrapper.appendChild(yearsSpan);
 
-        // Optional: Store full player object on the element
-        wrapper.dataset.playerId = player.player_id;
-
         wrapper.addEventListener('click', () => {
-          guessInput.value = player.player_name;
-          selectedPlayer = player;
-          clearAutocomplete();
-          submitGuessBtn.disabled = false;
-        });
+        guessInput.value = player.player_name;
+        selectedPlayer = player.player_name;
+        submitGuessBtn.disabled = false;
+        clearAutocomplete();
+      });
 
         return wrapper;
       });
@@ -547,6 +545,8 @@ guessInput.addEventListener('input', function () {
     }
   }, 300);
 });
+
+
 
 
 
