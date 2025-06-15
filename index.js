@@ -50,42 +50,49 @@ app.get('/players', async (req, res) => {
     return res.json([]);
   }
 
-
   const names = input.split(/\s+/);
 
-  // Query to get player plus current team abbreviation (latest stint end_date is max)
   let query;
   let params;
 
   if (names.length === 1) {
-    // Search players where first OR last name starts with input
-    // We assume player_name is "First Last" format; we'll use ILIKE with wildcards
     query = `
       SELECT DISTINCT p.player_id, p.player_name,
         (SELECT pts.team_abbr 
          FROM player_team_stints pts 
          WHERE pts.player_id = p.player_id 
-         ORDER BY pts.end_date DESC LIMIT 1) AS current_team
+         ORDER BY pts.end_date DESC LIMIT 1) AS current_team,
+        (SELECT MIN(CAST(pts.start_season AS INT))
+         FROM player_team_stints pts 
+         WHERE pts.player_id = p.player_id) AS first_year,
+        (SELECT MAX(CAST(pts.end_season AS INT))
+         FROM player_team_stints pts 
+         WHERE pts.player_id = p.player_id) AS last_year
       FROM players p
       WHERE 
-        p.player_name ILIKE $1 || '%'  -- matches "Kevin" or "LeBron"
-        OR p.player_name ILIKE '% ' || $1 || '%'  -- matches last names starting with input
+        p.player_name ILIKE $1 || '%'  
+        OR p.player_name ILIKE '% ' || $1 || '%'  
       ORDER BY p.player_name
       LIMIT 20;
     `;
     params = [names[0]];
   } else {
-    // If input has two parts, treat as first + last name starts with each
     query = `
       SELECT DISTINCT p.player_id, p.player_name,
         (SELECT pts.team_abbr 
          FROM player_team_stints pts 
          WHERE pts.player_id = p.player_id 
-         ORDER BY pts.end_date DESC LIMIT 1) AS current_team
+         ORDER BY pts.end_date DESC LIMIT 1) AS current_team,
+        (SELECT MIN(CAST(pts.start_season AS INT))
+         FROM player_team_stints pts 
+         WHERE pts.player_id = p.player_id) AS first_year,
+        (SELECT MAX(CAST(pts.end_season AS INT))
+         FROM player_team_stints pts 
+         WHERE pts.player_id = p.player_id) AS last_year
       FROM players p
       WHERE 
-        p.player_name ILIKE $1 || '%'  -- first name starts with first input
-        AND p.player_name ILIKE '% ' || $2 || '%'  -- last name starts with second input
+        p.player_name ILIKE $1 || '%'  
+        AND p.player_name ILIKE '% ' || $2 || '%'  
       ORDER BY p.player_name
       LIMIT 20;
     `;
@@ -100,6 +107,7 @@ app.get('/players', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 // In-memory games state: roomId -> game data
