@@ -181,6 +181,7 @@
 </head>
 <body>
   <h1>NBA Teammate Game TEST2</h1>
+  <div id="setupSection">
   <div>
     <label>Username: <input type="text" id="usernameInput" /></label>
   </div>
@@ -189,6 +190,8 @@
     <label>Room ID: <input type="text" id="roomIdInput" value="room1" /></label>
     <button id="joinBtn">Join Game</button>
   </div>
+</div>
+
 
   <div id="status"></div>
 
@@ -328,6 +331,7 @@ socket.on('gameStarted', (data) => {
   // Hide join UI
   joinBtn.classList.add('hidden');
   roomIdInput.disabled = true;
+  document.getElementById("setupSection")?.classList.add("hidden");
   document.getElementById("usernameInput")?.classList.add("hidden");
   document.getElementById("roomIdInput")?.classList.add("hidden");
 
