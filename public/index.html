@@ -724,23 +724,13 @@ function showAutocompleteSuggestions(suggestions) {
   }
 
   list.style.display = 'block'; // Show when populated
-  suggestions.forEach(suggestion => {
-    const div = document.createElement('div');
 
-    // Highlight matched part - assuming you pass raw strings, you might want to do a simple textContent first:
-    div.textContent = suggestion;
-
-    // Add click listener for selection:
-    div.addEventListener('click', () => {
-      guessInput.value = suggestion;
-      selectedPlayer = suggestion;
-      clearAutocomplete();
-      submitGuessBtn.disabled = false;
-    });
-
-    list.appendChild(div);
+  suggestions.forEach(suggestionEl => {
+    // suggestionEl is an element, append it directly
+    list.appendChild(suggestionEl);
   });
 }
+
 
 
 
