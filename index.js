@@ -132,23 +132,9 @@ socket.on('findMatch', (username) => {
 
     // Store usernames on sockets
     socket.username = username;
-    const opponentUsername = opponentSocket.username || 'Opponent';
+    opponentSocket.username = opponentSocket.username || 'Opponent'; // fallback
+    const opponentUsername = opponentSocket.username;
 
-    // Initialize game state just like joinGame
-    games[roomId] = {
-      players: [socket.id, opponentSocket.id],
-      usernames: {
-        [socket.id]: username,
-        [opponentSocket.id]: opponentUsername
-      },
-      currentTurn: 0,
-      currentPlayerName: null,
-      timer: null,
-      timeLeft: 15,
-      teammates: [],
-      successfulGuesses: [],
-      rematchVotes: new Set(),
-    };
 
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
@@ -156,9 +142,8 @@ socket.on('findMatch', (username) => {
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
 
-    // 👇 Trigger same join logic as manual "joinGame"
-    socket.emit('joinGame', { roomId, username });
-    opponentSocket.emit('joinGame', { roomId, username: opponentUsername });
+    handleJoinGame(socket, roomId, username);
+    handleJoinGame(opponentSocket, roomId, opponentUsername);
 
   } else {
     // No one waiting yet
@@ -170,59 +155,10 @@ socket.on('findMatch', (username) => {
 
 
 
-// Player joins a game room
 socket.on('joinGame', ({ roomId, username }) => {
- console.log(`[joinGame] roomId: "${roomId}"`);
-  console.log('[joinGame] games keys before join:', Object.keys(games));
-
-  socket.join(roomId);
-  console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
-
-  // Initialize game state if room doesn't exist
-  if (!games[roomId]) {
-    games[roomId] = {
-      players: [],
-      usernames: {},         // socket.id -> username map
-      currentTurn: 0,
-      currentPlayerName: null,
-      timer: null,
-      timeLeft: 15,
-      teammates: [],
-      successfulGuesses: [],
-      rematchVotes: new Set(),
-    };
-    console.log(`Game created for room: ${roomId}`);
-    console.log('Games keys now:', Object.keys(games));
-  }
-
-  const game = games[roomId];
-
-  // Add player if not already present
-  if (!game.players.includes(socket.id)) {
-    game.players.push(socket.id);
-    console.log(`Player ${username} added to game in room ${roomId}`);
-  } else {
-    console.log(`Player ${username} already in game for room ${roomId}`);
-  }
-
-  // Always update username for this socket ID (handles reconnects or username changes)
-  game.usernames[socket.id] = username;
-
-  // Emit players count to everyone in room
-  io.to(roomId).emit('playersUpdate', game.players.length);
-  console.log(`Players in room ${roomId}: ${game.players.length}`);
-
-  // Debug print current games keys and game object for this room
-  console.log('Current active game rooms:', Object.keys(games));
-  console.log(`Game object for ${roomId}:`, game);
-
-  // Start the game automatically when 2 players are present
-  if (game.players.length === 2) {
-    console.log(`Starting game for room ${roomId}`);
-    startGame(roomId);
-  }
-  console.log('[joinGame] games keys after join:', Object.keys(games));
+  handleJoinGame(socket, roomId, username);
 });
+
 
 // Diagnostic event to check current games from client on demand
 socket.on('testGames', () => {
@@ -499,6 +435,43 @@ async function getRandomPlayer() {
 }
 
 
+function handleJoinGame(socket, roomId, username) {
+  socket.join(roomId);
+  console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
+
+  // Initialize game state if room doesn't exist
+  if (!games[roomId]) {
+    games[roomId] = {
+      players: [],
+      usernames: {},
+      currentTurn: 0,
+      currentPlayerName: null,
+      timer: null,
+      timeLeft: 15,
+      teammates: [],
+      successfulGuesses: [],
+      rematchVotes: new Set(),
+    };
+    console.log(`Game created for room: ${roomId}`);
+  }
+
+  const game = games[roomId];
+
+  if (!game.players.includes(socket.id)) {
+    game.players.push(socket.id);
+    console.log(`Player ${username} added to game in room ${roomId}`);
+  }
+
+  game.usernames[socket.id] = username;
+
+  io.to(roomId).emit('playersUpdate', game.players.length);
+  console.log(`Players in room ${roomId}: ${game.players.length}`);
+
+  if (game.players.length === 2) {
+    console.log(`Starting game for room ${roomId}`);
+    startGame(roomId);
+  }
+}
 
 
 
