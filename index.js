@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 const { Client } = require('pg');
 
 const rooms = {};
+const waitingPlayers = [];
 
 const app = express();
 const server = http.createServer(app);
@@ -114,40 +115,38 @@ app.get('/players', async (req, res) => {
 const games = {};
 console.log('Games object ID:', games);
 
-const waitingPlayers = [];
-
 
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
 
-  socket.on('findMatch', (username) => {
-  if (waitingPlayers.length > 0) {
-    // Match with the first player in queue
-    const opponentSocket = waitingPlayers.shift();
-    const roomId = `room-${socket.id}-${opponentSocket.id}`;  // Unique room
+ socket.on('findMatch', (username) => {
+    console.log(`Finding match for ${username}`);
 
-    socket.join(roomId);
-    opponentSocket.join(roomId);
+    if (waitingPlayers.length > 0) {
+      const opponentSocket = waitingPlayers.shift();
 
-    // Notify both players
-    socket.emit('matched', { roomId, opponent: 'Opponent' });
-    opponentSocket.emit('matched', { roomId, opponent: username });
-  } else {
-    // No one waiting yet, add to queue
-    socket.username = username;
-    waitingPlayers.push(socket);
+      const roomId = `room-${socket.id}-${opponentSocket.id}`;
+      socket.join(roomId);
+      opponentSocket.join(roomId);
 
-    socket.emit('waitingForMatch');
-  }
+      // Store usernames on socket (optional but helpful)
+      socket.username = username;
+      opponentSocket.username = opponentSocket.username || 'Opponent';
 
-  // Cleanup on disconnect
-  socket.on('disconnect', () => {
-    const index = waitingPlayers.indexOf(socket);
-    if (index !== -1) waitingPlayers.splice(index, 1);
+      // Notify both players
+      socket.emit('matched', { roomId, opponent: opponentSocket.username });
+      opponentSocket.emit('matched', { roomId, opponent: socket.username });
+
+      console.log(`Matched ${socket.username} with ${opponentSocket.username} in room ${roomId}`);
+    } else {
+      socket.username = username;
+      waitingPlayers.push(socket);
+      socket.emit('waitingForMatch');
+      console.log(`${username} is waiting for a match`);
+    }
   });
-});
 
 
 // Player joins a game room
@@ -320,18 +319,18 @@ socket.on('requestRematch', ({ roomId }) => {
 
 
 
-
-
-
-
-
-
-
-
 // Disconnect cleanup
 socket.on('disconnect', () => {
   console.log(`User disconnected: ${socket.id}`);
 
+  // Remove from waitingPlayers queue if they were waiting for a match
+  const waitingIndex = waitingPlayers.indexOf(socket);
+  if (waitingIndex !== -1) {
+    waitingPlayers.splice(waitingIndex, 1);
+    console.log(`Removed ${socket.username || 'an unnamed player'} from waiting queue`);
+  }
+
+  // Check all games to see if this player was in one
   for (const [roomId, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
     if (idx !== -1) {
@@ -341,36 +340,37 @@ socket.on('disconnect', () => {
       game.players.splice(idx, 1);
       delete game.usernames[socket.id];
       io.to(roomId).emit('playersUpdate', game.players.length);
+      console.log(`${disconnectedUsername || socket.id} removed from game in room ${roomId}`);
 
-      // Clear any timers
+      // Clear interval if it exists
       if (game.timer) {
         clearInterval(game.timer);
+        delete game.timer;
       }
 
-      // 🧼 Clean up rematchRequests Set properly
+      // Clean up rematch votes
       if (game.rematchVotes) {
-  game.rematchVotes.delete(disconnectedUsername);
+        game.rematchVotes.delete(disconnectedUsername);
+        if (game.rematchVotes.size === 0) {
+          game.rematchVotes = new Set(); // reset to empty set
+        }
+      }
 
-  // Optional: reset if empty
-  if (game.rematchVotes.size === 0) {
-    game.rematchVotes = new Set();
-  }
-}
+      // Optional: End the game if there are no players left
+      if (game.players.length < 2) {
+        io.to(roomId).emit('gameOver', 'Not enough players. Game ended.');
+        delete games[roomId];
+        console.log(`Game in room ${roomId} ended due to disconnect`);
+      }
 
-
-      // // End game if not enough players
-      // if (game.players.length < 2) {
-      //   io.to(roomId).emit('gameOver', 'Not enough players. Game ended.');
-      //   delete games[roomId];
-      // }
-
-      break; // Player found and removed; no need to check other rooms
+      break; // Player found and handled
     }
   }
 
-    // If you have a separate players object, clean up here:
+  // Optional: delete from any players registry if you have one
   // delete players[socket.id];
 });
+
 
 
 

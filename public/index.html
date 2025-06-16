@@ -306,15 +306,15 @@ const socket = io(); // connects to the same origin automatically
 
   findGameBtn.onclick = () => {
   const username = document.getElementById('usernameInput').value.trim();
-
   if (!username) {
     alert('Enter a username');
     return;
   }
 
-  socket.emit('findGame', username);
-  statusDiv.textContent = `Looking for a game...`;
+  socket.emit('findMatch', username);
+  statusDiv.textContent = 'Looking for a game...';
 };
+
 
 
   // 1. Connection & Room Setup
@@ -335,18 +335,15 @@ socket.on('playersUpdate', (count) => {
   }
 });
 
-socket.on('matchFound', ({ roomId: matchedRoomId, username }) => {
-  console.log('[CLIENT] Match found in room:', matchedRoomId);
-
-  roomId = matchedRoomId;
-
-  socket.emit('joinGame', { roomId, username });
-
-  statusDiv.textContent = `Match found! Joined room: ${roomId}`;
-  document.getElementById('displayRoomCode').textContent = roomId;
-  waitingRoom.style.display = 'block';
-  gameArea.style.display = 'none';
+socket.on('matched', ({ roomId, opponent }) => {
+  statusDiv.textContent = `You've been matched with ${opponent}`;
+  socket.emit('joinGame', { roomId, username: socket.username });  // reuse your existing join logic
 });
+
+socket.on('waitingForMatch', () => {
+  statusDiv.textContent = 'Waiting for another player to join...';
+});
+
 
 
 // 2. Game Lifecycle
