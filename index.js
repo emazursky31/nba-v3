@@ -114,11 +114,41 @@ app.get('/players', async (req, res) => {
 const games = {};
 console.log('Games object ID:', games);
 
+const waitingPlayers = [];
 
 
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+
+  socket.on('findMatch', (username) => {
+  if (waitingPlayers.length > 0) {
+    // Match with the first player in queue
+    const opponentSocket = waitingPlayers.shift();
+    const roomId = `room-${socket.id}-${opponentSocket.id}`;  // Unique room
+
+    socket.join(roomId);
+    opponentSocket.join(roomId);
+
+    // Notify both players
+    socket.emit('matched', { roomId, opponent: 'Opponent' });
+    opponentSocket.emit('matched', { roomId, opponent: username });
+  } else {
+    // No one waiting yet, add to queue
+    socket.username = username;
+    waitingPlayers.push(socket);
+
+    socket.emit('waitingForMatch');
+  }
+
+  // Cleanup on disconnect
+  socket.on('disconnect', () => {
+    const index = waitingPlayers.indexOf(socket);
+    if (index !== -1) waitingPlayers.splice(index, 1);
+  });
+});
+
 
 // Player joins a game room
 socket.on('joinGame', ({ roomId, username }) => {
