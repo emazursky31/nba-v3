@@ -121,32 +121,53 @@ io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
 
- socket.on('findMatch', (username) => {
-    console.log(`Finding match for ${username}`);
+socket.on('findMatch', (username) => {
+  if (waitingPlayers.length > 0) {
+    // Match with the first player in queue
+    const opponentSocket = waitingPlayers.shift();
+    const roomId = `room-${socket.id}-${opponentSocket.id}`;
 
-    if (waitingPlayers.length > 0) {
-      const opponentSocket = waitingPlayers.shift();
+    socket.join(roomId);
+    opponentSocket.join(roomId);
 
-      const roomId = `room-${socket.id}-${opponentSocket.id}`;
-      socket.join(roomId);
-      opponentSocket.join(roomId);
+    // Store usernames on sockets
+    socket.username = username;
+    const opponentUsername = opponentSocket.username || 'Opponent';
 
-      // Store usernames on socket (optional but helpful)
-      socket.username = username;
-      opponentSocket.username = opponentSocket.username || 'Opponent';
+    // Initialize game state just like joinGame
+    games[roomId] = {
+      players: [socket.id, opponentSocket.id],
+      usernames: {
+        [socket.id]: username,
+        [opponentSocket.id]: opponentUsername
+      },
+      currentTurn: 0,
+      currentPlayerName: null,
+      timer: null,
+      timeLeft: 15,
+      teammates: [],
+      successfulGuesses: [],
+      rematchVotes: new Set(),
+    };
 
-      // Notify both players
-      socket.emit('matched', { roomId, opponent: opponentSocket.username });
-      opponentSocket.emit('matched', { roomId, opponent: socket.username });
+    console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-      console.log(`Matched ${socket.username} with ${opponentSocket.username} in room ${roomId}`);
-    } else {
-      socket.username = username;
-      waitingPlayers.push(socket);
-      socket.emit('waitingForMatch');
-      console.log(`${username} is waiting for a match`);
-    }
-  });
+    // Notify both players
+    socket.emit('matched', { roomId, opponent: opponentUsername });
+    opponentSocket.emit('matched', { roomId, opponent: username });
+
+    // 👇 Trigger same join logic as manual "joinGame"
+    socket.emit('joinGame', { roomId, username });
+    opponentSocket.emit('joinGame', { roomId, username: opponentUsername });
+
+  } else {
+    // No one waiting yet
+    socket.username = username;
+    waitingPlayers.push(socket);
+    socket.emit('waitingForMatch');
+  }
+});
+
 
 
 // Player joins a game room
