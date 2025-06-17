@@ -167,7 +167,6 @@ socket.on('testGames', () => {
 
   // Handle player guess
  socket.on('playerGuess', async ({ roomId, guess }) => {
-  const roomId = socketToRoom[socket.id];
   console.log(`[SERVER] playerGuess received from ${socket.data.username} in ${roomId}: "${guess}"`);
   const game = games[roomId];
   if (!game) {
