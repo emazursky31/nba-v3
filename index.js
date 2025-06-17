@@ -116,7 +116,6 @@ app.get('/players', async (req, res) => {
 // In-memory games state: roomId -> game data
 const games = {};
 console.log('Games object ID:', games);
-const socketToRoom = {};
 
 
 
@@ -135,12 +134,13 @@ socket.on('findMatch', (username) => {
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    socketToRoom[socket.id] = roomId;
-    socket.data.roomId = roomId;
-    socketToRoom[opponentSocket.id] = roomId;
-    opponentSocket.data.roomId = roomId;
+    // Update socketRoomMap instead of socketToRoom
+    socketRoomMap[socket.id] = roomId;
+    socket.data.roomId = roomId; // optional, for convenience
+    socketRoomMap[opponentSocket.id] = roomId;
+    opponentSocket.data.roomId = roomId; // optional
 
-    // ✅ Enable proper game setup
+    // Enable proper game setup
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
 
@@ -151,6 +151,7 @@ socket.on('findMatch', (username) => {
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -182,7 +183,6 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  // Only allow guesses from active player
   if (socket.id !== game.activePlayerSocketId) {
     socket.emit('message', "It's not your turn!");
     return;
@@ -200,8 +200,7 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  const alreadyGuessed = game.successfulGuesses.some(name => name.toLowerCase() === normalizedGuess);
-  if (alreadyGuessed) {
+  if (game.successfulGuesses.some(name => name.toLowerCase() === normalizedGuess)) {
     socket.emit('message', `"${guess}" has already been guessed.`);
     return;
   }
@@ -215,8 +214,6 @@ socket.on('playerGuess', async ({ guess }) => {
     game.successfulGuesses.push(guess);
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
-
-    // Update active player socket id to new current turn player
     game.activePlayerSocketId = game.players[game.currentTurn];
     
     game.teammates = await getTeammates(game.currentPlayerName);
@@ -292,51 +289,48 @@ socket.on('requestRematch', ({ roomId }) => {
 socket.on('disconnect', () => {
   console.log(`User disconnected: ${socket.id}`);
 
-  // Remove from waitingPlayers queue if they were waiting for a match
-  const waitingIndex = waitingPlayers.indexOf(socket);
+  // Remove from waitingPlayers queue if waiting
+  const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
   if (waitingIndex !== -1) {
     waitingPlayers.splice(waitingIndex, 1);
-    console.log(`Removed ${socket.username || 'an unnamed player'} from waiting queue`);
+    console.log(`Removed ${socket.data.username || 'an unnamed player'} from waiting queue`);
   }
 
-  // Remove socket from socketRoomMap
+  // Remove from socketRoomMap
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
     delete socketRoomMap[socket.id];
     console.log(`Removed socket ${socket.id} from socketRoomMap`);
   }
 
-  // Check all games to see if this player was in one
-  for (const [roomId, game] of Object.entries(games)) {
+  // Remove from games and handle game cleanup
+  for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
     if (idx !== -1) {
       const disconnectedUsername = game.usernames[socket.id];
 
-      // Remove player from game state
+      // Remove player
       game.players.splice(idx, 1);
       delete game.usernames[socket.id];
-      io.to(roomId).emit('playersUpdate', game.players.length);
-      console.log(`${disconnectedUsername || socket.id} removed from game in room ${roomId}`);
+      io.to(room).emit('playersUpdate', game.players.length);
+      console.log(`${disconnectedUsername || socket.id} removed from game in room ${room}`);
 
-      // Clear interval if it exists
       if (game.timer) {
         clearInterval(game.timer);
         delete game.timer;
       }
 
-      // Clean up rematch votes
       if (game.rematchVotes) {
         game.rematchVotes.delete(disconnectedUsername);
         if (game.rematchVotes.size === 0) {
-          game.rematchVotes = new Set(); // reset to empty set
+          game.rematchVotes = new Set();
         }
       }
 
-      // Optional: End the game if there are no players left
       if (game.players.length < 2) {
-        io.to(roomId).emit('gameOver', 'Not enough players. Game ended.');
+        io.to(room).emit('gameOver', 'Not enough players. Game ended.');
 
-        // Reset game state but keep the object intact
+        // Reset game but keep object intact
         game.players = [];
         game.usernames = {};
         game.currentTurn = 0;
@@ -349,10 +343,10 @@ socket.on('disconnect', () => {
         game.successfulGuesses = [];
         game.rematchVotes = new Set();
 
-        console.log(`Game in room ${roomId} reset due to insufficient players`);
+        console.log(`Game in room ${room} reset due to insufficient players`);
       }
 
-      break; // Player found and handled
+      break;
     }
   }
 });
