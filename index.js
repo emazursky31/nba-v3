@@ -123,12 +123,11 @@ io.on('connection', (socket) => {
 
 
 socket.on('findMatch', (username) => {
-  socket.username = username;
+  socket.data.username = username;
 
   if (waitingPlayers.length > 0) {
-    const { socket: opponentSocket, username: opponentUsername } = waitingPlayers.shift();
-
-    opponentSocket.username = opponentUsername;
+    const { socket: opponentSocket } = waitingPlayers.shift();
+    const opponentUsername = opponentSocket.data.username;
 
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
 
@@ -140,10 +139,11 @@ socket.on('findMatch', (username) => {
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
   } else {
-    waitingPlayers.push({ socket, username });
+    waitingPlayers.push({ socket });
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -478,15 +478,18 @@ function handleJoinGame(socket, roomId, username) {
   const game = games[roomId];
 
   console.log(`[handleJoinGame] Current game state:`, JSON.stringify(game, (key, value) => {
-  if (key === 'timer') return undefined; // exclude timer from serialization
-  return value;
-}, 2));
-
+    if (key === 'timer') return undefined; // exclude timer from serialization
+    return value;
+  }, 2));
 
   if (!game.players.includes(socket.id)) {
     game.players.push(socket.id);
   }
-  game.usernames[socket.id] = username;
+
+  // 👇 Fallback to socket.username if not explicitly passed
+  const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
+
+  game.usernames[socket.id] = finalUsername;
 
   console.log(`[handleJoinGame] Updated usernames map:`, game.usernames);
 
@@ -498,8 +501,6 @@ function handleJoinGame(socket, roomId, username) {
     startGame(roomId);
   }
 }
-
-
 
 
 
