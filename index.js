@@ -119,6 +119,7 @@ console.log('Games object ID:', games);
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
+  
 
 
 socket.on('findMatch', (username) => {
@@ -472,6 +473,7 @@ function handleJoinGame(socket, roomId, username) {
    // ✅ Start game once both players have joined
   if (game.players.length === 2 && !game.leadoffPlayer) {
     startGame(roomId);
+  }
 }
 
 
@@ -547,13 +549,4 @@ function startTurnTimer(roomId) {
 
   }, 1000);
 }
-
-
-
-
-
-
-
-
-
 });
