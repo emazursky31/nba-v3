@@ -123,15 +123,14 @@ io.on('connection', (socket) => {
 
 socket.on('findMatch', (username) => {
   if (waitingPlayers.length > 0) {
-    const opponentSocket = waitingPlayers.shift();
+    const { socket: opponentSocket, username: opponentUsername } = waitingPlayers.shift();
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
+
+    socket.username = username;
+    opponentSocket.username = opponentUsername;
 
     socket.join(roomId);
     opponentSocket.join(roomId);
-
-    socket.username = username;
-    opponentSocket.username = opponentSocket.username || 'Opponent';
-    const opponentUsername = opponentSocket.username;
 
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
@@ -140,17 +139,13 @@ socket.on('findMatch', (username) => {
 
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
-
-    // ✅ Only call startGame once
-    console.log(`Starting game for room ${roomId}`);
-    startGame(roomId);
-
   } else {
     socket.username = username;
-    waitingPlayers.push(socket);
+    waitingPlayers.push({ socket, username });
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -213,8 +208,10 @@ socket.on('testGames', () => {
     game.timeLeft = 15;
 
     io.to(roomId).emit('turnEnded', {
-      successfulGuess: `Player ${socket.id} guessed "${guess}" successfully!`,
+      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
+      guessedByUsername: game.usernames[socket.id],
       nextPlayerId: game.players[game.currentTurn],
+      nextPlayerUsername: game.usernames[game.players[game.currentTurn]],
       currentPlayerName: game.currentPlayerName,
       timeLeft: game.timeLeft,
     });
@@ -225,6 +222,7 @@ socket.on('testGames', () => {
     // ❗ Do NOT change turn or timer here — the same player keeps guessing until time runs out
   }
 });
+
 
 
 socket.on('requestRematch', ({ roomId }) => {
@@ -437,7 +435,8 @@ async function getRandomPlayer() {
 
 function handleJoinGame(socket, roomId, username) {
   socket.join(roomId);
-  console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
+  console.log(`User ${game.usernames[socket.id]} (${socket.id}) joined room ${roomId}`);
+
 
   // Initialize game state if room doesn't exist
   if (!games[roomId]) {
