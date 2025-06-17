@@ -13,6 +13,8 @@ const server = http.createServer(app);
 
 const io = new Server(server);
 
+const socketRoomMap = {};
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -167,15 +169,20 @@ socket.on('testGames', () => {
 
 
   // Handle player guess
- socket.on('playerGuess', async ({ roomId, guess }) => {
-  console.log(`[SERVER] playerGuess received from ${socket.data.username} in ${roomId}: "${guess}"`);
-  const game = games[roomId];
-  if (!game) {
-    console.error(`[playerGuess] No game found for socket ${socket.id} in room ${roomId}`);
+socket.on('playerGuess', async ({ guess }) => {
+  const roomId = socketRoomMap[socket.id];
+  if (!roomId) {
+    socket.emit('message', 'You are not part of any active game room.');
     return;
   }
 
-  // ⛔ Only allow guesses from active player
+  const game = games[roomId];
+  if (!game) {
+    socket.emit('message', 'Game room not found.');
+    return;
+  }
+
+  // Only allow guesses from active player
   if (socket.id !== game.activePlayerSocketId) {
     socket.emit('message', "It's not your turn!");
     return;
@@ -183,26 +190,22 @@ socket.on('testGames', () => {
 
   const normalizedGuess = guess.trim().toLowerCase();
 
-  // 🚫 Game hasn't started yet
   if (!game.leadoffPlayer) {
     socket.emit('message', "Game hasn't started properly yet.");
     return;
   }
 
-  // 🚫 Reject guessing leadoff player
   if (normalizedGuess === game.leadoffPlayer.toLowerCase()) {
     socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer}"`);
     return;
   }
 
-  // 🚫 Already guessed
   const alreadyGuessed = game.successfulGuesses.some(name => name.toLowerCase() === normalizedGuess);
   if (alreadyGuessed) {
     socket.emit('message', `"${guess}" has already been guessed.`);
     return;
   }
 
-  // ✅ Valid teammate
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
   if (validGuess) {
@@ -212,14 +215,18 @@ socket.on('testGames', () => {
     game.successfulGuesses.push(guess);
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
+
+    // Update active player socket id to new current turn player
+    game.activePlayerSocketId = game.players[game.currentTurn];
+    
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 15;
 
     io.to(roomId).emit('turnEnded', {
       successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
       guessedByUsername: game.usernames[socket.id],
-      nextPlayerId: game.players[game.currentTurn],
-      nextPlayerUsername: game.usernames[game.players[game.currentTurn]],
+      nextPlayerId: game.activePlayerSocketId,
+      nextPlayerUsername: game.usernames[game.activePlayerSocketId],
       currentPlayerName: game.currentPlayerName,
       timeLeft: game.timeLeft,
     });
@@ -227,7 +234,6 @@ socket.on('testGames', () => {
     startTurnTimer(roomId);
   } else {
     socket.emit('message', `Incorrect guess: "${guess}"`);
-    // ❗ Do NOT change turn or timer here — the same player keeps guessing until time runs out
   }
 });
 
@@ -293,6 +299,13 @@ socket.on('disconnect', () => {
     console.log(`Removed ${socket.username || 'an unnamed player'} from waiting queue`);
   }
 
+  // Remove socket from socketRoomMap
+  const roomId = socketRoomMap[socket.id];
+  if (roomId) {
+    delete socketRoomMap[socket.id];
+    console.log(`Removed socket ${socket.id} from socketRoomMap`);
+  }
+
   // Check all games to see if this player was in one
   for (const [roomId, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
@@ -323,9 +336,7 @@ socket.on('disconnect', () => {
       if (game.players.length < 2) {
         io.to(roomId).emit('gameOver', 'Not enough players. Game ended.');
 
-        // Instead of deleting the whole game object,
-        // reset the game state but keep the object intact to avoid bugs:
-
+        // Reset game state but keep the object intact
         game.players = [];
         game.usernames = {};
         game.currentTurn = 0;
@@ -339,24 +350,13 @@ socket.on('disconnect', () => {
         game.rematchVotes = new Set();
 
         console.log(`Game in room ${roomId} reset due to insufficient players`);
-
-        // Optional: If you want to delete after a delay (e.g., 1 min), set a timeout here
-
-        // setTimeout(() => {
-        //   if (games[roomId] && games[roomId].players.length === 0) {
-        //     delete games[roomId];
-        //     console.log(`Game in room ${roomId} deleted after delay`);
-        //   }
-        // }, 60000);
       }
 
       break; // Player found and handled
     }
   }
-
-  // Optional: delete from any players registry if you have one
-  // delete players[socket.id];
 });
+
 
 
 
@@ -406,19 +406,19 @@ async function startGame(roomId) {
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
 
-  // STEP 1: Pick a valid starting player
-  game.currentPlayerName = await getRandomPlayer(); // You will update this function
+  // STEP 1: Pick a valid starting player name
+  game.currentPlayerName = await getRandomPlayer(); // Your existing logic
   game.leadoffPlayer = game.currentPlayerName;
   game.teammates = await getTeammates(game.currentPlayerName);
 
-  // STEP 2: Check if teammates exist
-  // if (!game.teammates || game.teammates.length === 0) {
-  //   io.to(roomId).emit('gameOver', {
-  //     message: `No teammates found for ${game.currentPlayerName}. Game cannot proceed.`,
-  //   });
-  //   delete games[roomId];
-  //   return;
-  // }
+  // STEP 2: Assign the active player's socket ID for turn validation
+  game.activePlayerSocketId = game.players[game.currentTurn];
+
+  // STEP 3: Update socketRoomMap for each player socket to this room
+  // (Assuming socketRoomMap is a global object)
+  game.players.forEach((socketId) => {
+    socketRoomMap[socketId] = roomId;
+  });
 
   // Log for debugging
   console.log(`[STARTGAME] room ${roomId} starting with:`);
@@ -426,17 +426,20 @@ async function startGame(roomId) {
   console.log(`→ teammates: ${game.teammates}`);
   console.log(`→ players: ${game.players}`);
   console.log(`→ currentTurn: ${game.currentTurn}`);
+  console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
 
-  // STEP 3: Emit and start game
+  // STEP 4: Emit game started event with current player info
   io.to(roomId).emit('gameStarted', {
-    firstPlayerId: game.players[startIndex],
+    firstPlayerId: game.activePlayerSocketId,
     currentPlayerName: game.currentPlayerName,
     timeLeft: game.timeLeft,
     leadoffPlayer: game.leadoffPlayer,
   });
 
+  // STEP 5: Start the turn timer
   startTurnTimer(roomId);
 }
+
 
 
 async function getRandomPlayer() {
@@ -478,6 +481,8 @@ function handleJoinGame(socket, roomId, username) {
       teammates: [],
       successfulGuesses: [],
       rematchVotes: new Set(),
+      leadoffPlayer: null,
+      activePlayerSocketId: null,
     };
   } else {
     console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
@@ -485,23 +490,18 @@ function handleJoinGame(socket, roomId, username) {
 
   const game = games[roomId];
 
-  console.log(`[handleJoinGame] Current game state:`, JSON.stringify(game, (key, value) => {
-    if (key === 'timer') return undefined; // exclude timer from serialization
-    return value;
-  }, 2));
-
   if (!game.players.includes(socket.id)) {
     game.players.push(socket.id);
   }
 
-  // 👇 Fallback to socket.username if not explicitly passed
+  // Fallback to socket.username if not explicitly passed
   const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
-
   game.usernames[socket.id] = finalUsername;
 
-  console.log(`[handleJoinGame] Updated usernames map:`, game.usernames);
-
   socket.join(roomId);
+  
+  // Store socket to room mapping
+  socketRoomMap[socket.id] = roomId;
 
   io.to(roomId).emit('playersUpdate', game.players.length);
 
