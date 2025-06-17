@@ -123,35 +123,35 @@ io.on('connection', (socket) => {
 
 socket.on('findMatch', (username) => {
   if (waitingPlayers.length > 0) {
-    // Match with the first player in queue
     const opponentSocket = waitingPlayers.shift();
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
 
     socket.join(roomId);
     opponentSocket.join(roomId);
 
-    // Store usernames on sockets
     socket.username = username;
-    opponentSocket.username = opponentSocket.username || 'Opponent'; // fallback
+    opponentSocket.username = opponentSocket.username || 'Opponent';
     const opponentUsername = opponentSocket.username;
-
 
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    // Notify both players
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
 
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
 
+    // ✅ Only call startGame once
+    console.log(`Starting game for room ${roomId}`);
+    startGame(roomId);
+
   } else {
-    // No one waiting yet
     socket.username = username;
     waitingPlayers.push(socket);
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -466,12 +466,8 @@ function handleJoinGame(socket, roomId, username) {
 
   io.to(roomId).emit('playersUpdate', game.players.length);
   console.log(`Players in room ${roomId}: ${game.players.length}`);
-
-  if (game.players.length === 2) {
-    console.log(`Starting game for room ${roomId}`);
-    startGame(roomId);
-  }
 }
+
 
 
 
