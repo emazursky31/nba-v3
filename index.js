@@ -477,7 +477,11 @@ function handleJoinGame(socket, roomId, username) {
 
   const game = games[roomId];
 
-  console.log(`[handleJoinGame] Current game state:`, JSON.stringify(game, null, 2));
+  console.log(`[handleJoinGame] Current game state:`, JSON.stringify(game, (key, value) => {
+  if (key === 'timer') return undefined; // exclude timer from serialization
+  return value;
+}, 2));
+
 
   if (!game.players.includes(socket.id)) {
     game.players.push(socket.id);
