@@ -134,15 +134,37 @@ socket.on('findMatch', (username) => {
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    // Update socketRoomMap instead of socketToRoom
+    // Update socketRoomMap for both players
     socketRoomMap[socket.id] = roomId;
-    socket.data.roomId = roomId; // optional, for convenience
+    socket.data.roomId = roomId;
     socketRoomMap[opponentSocket.id] = roomId;
-    opponentSocket.data.roomId = roomId; // optional
+    opponentSocket.data.roomId = roomId;
 
-    // Enable proper game setup
+    // Initialize game state for the room — key fix
+    games[roomId] = {
+      players: [socket.id, opponentSocket.id],
+      usernames: {
+        [socket.id]: username,
+        [opponentSocket.id]: opponentUsername,
+      },
+      rematchVotes: new Set(),
+      successfulGuesses: [],
+      timer: null,
+      currentTurn: null,
+      currentPlayerName: null,
+      leadoffPlayer: null,
+      teammates: null,
+      activePlayerSocketId: null,
+      timeLeft: null,
+      // any other game properties your game uses
+    };
+
+    // Now call your existing join handlers
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
+
+    // Optionally start the game immediately or wait for both players ready
+    startGame(roomId);
 
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
@@ -151,6 +173,7 @@ socket.on('findMatch', (username) => {
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
