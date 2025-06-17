@@ -337,10 +337,12 @@ socket.on('playersUpdate', (count) => {
 });
 
 socket.on('matched', ({ roomId, opponent }) => {
+  console.log('Received matched event:', roomId, opponent); // 👈 Add this
   myRoomId = roomId;
   opponentName = opponent;
-  socket.emit('joinGame', { roomId, username: myUsername });
   statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+
+  socket.emit('joinGame', { roomId, username: myUsername });
 });
 
 socket.on('waitingForMatch', () => {
