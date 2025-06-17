@@ -468,6 +468,10 @@ function handleJoinGame(socket, roomId, username) {
   // ✅ Notify room of updated player count
   io.to(roomId).emit('playersUpdate', game.players.length);
   console.log(`Players in room ${roomId}: ${game.players.length}`);
+
+   // ✅ Start game once both players have joined
+  if (game.players.length === 2 && !game.leadoffPlayer) {
+    startGame(roomId);
 }
 
 
