@@ -114,6 +114,7 @@ app.get('/players', async (req, res) => {
 // In-memory games state: roomId -> game data
 const games = {};
 console.log('Games object ID:', games);
+const socketToRoom = {};
 
 
 
