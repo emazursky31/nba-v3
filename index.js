@@ -123,29 +123,28 @@ io.on('connection', (socket) => {
 
 
 socket.on('findMatch', (username) => {
+  socket.username = username;
+
   if (waitingPlayers.length > 0) {
     const { socket: opponentSocket, username: opponentUsername } = waitingPlayers.shift();
-    const roomId = `room-${socket.id}-${opponentSocket.id}`;
 
-    socket.username = username;
     opponentSocket.username = opponentUsername;
 
-    socket.join(roomId);
-    opponentSocket.join(roomId);
+    const roomId = `room-${socket.id}-${opponentSocket.id}`;
 
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    socket.emit('matched', { roomId, opponent: opponentUsername });
-    opponentSocket.emit('matched', { roomId, opponent: username });
-
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
+
+    socket.emit('matched', { roomId, opponent: opponentUsername });
+    opponentSocket.emit('matched', { roomId, opponent: username });
   } else {
-    socket.username = username;
     waitingPlayers.push({ socket, username });
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -461,6 +460,8 @@ function handleJoinGame(socket, roomId, username) {
 
   // ✅ Set username
   game.usernames[socket.id] = username;
+  console.log(`→ usernames map: ${JSON.stringify(game.usernames)}`);
+
 
   console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
 
