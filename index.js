@@ -434,11 +434,7 @@ async function getRandomPlayer() {
 
 
 function handleJoinGame(socket, roomId, username) {
-  socket.join(roomId);
-  console.log(`User ${game.usernames[socket.id]} (${socket.id}) joined room ${roomId}`);
-
-
-  // Initialize game state if room doesn't exist
+  // ✅ Create game if it doesn't exist yet
   if (!games[roomId]) {
     games[roomId] = {
       players: [],
@@ -456,16 +452,24 @@ function handleJoinGame(socket, roomId, username) {
 
   const game = games[roomId];
 
+  // ✅ Add player if not already in
   if (!game.players.includes(socket.id)) {
     game.players.push(socket.id);
     console.log(`Player ${username} added to game in room ${roomId}`);
   }
 
+  // ✅ Set username
   game.usernames[socket.id] = username;
 
+  console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
+
+  socket.join(roomId);
+
+  // ✅ Notify room of updated player count
   io.to(roomId).emit('playersUpdate', game.players.length);
   console.log(`Players in room ${roomId}: ${game.players.length}`);
 }
+
 
 
 
