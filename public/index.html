@@ -297,6 +297,7 @@ const socket = io(); // connects to the same origin automatically
       return;
     }
 
+  
     socket.emit('joinGame', { roomId, username });
     statusDiv.textContent = `Joined room: ${roomId}`;
     document.getElementById('displayRoomCode').textContent = roomId;
@@ -336,8 +337,10 @@ socket.on('playersUpdate', (count) => {
 });
 
 socket.on('matched', ({ roomId, opponent }) => {
-  statusDiv.textContent = `You've been matched with ${opponent}`;
-  socket.emit('joinGame', { roomId, username: socket.username });  // reuse your existing join logic
+  myRoomId = roomId;
+  opponentName = opponent;
+  socket.emit('joinGame', { roomId, username: myUsername });
+  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
 });
 
 socket.on('waitingForMatch', () => {

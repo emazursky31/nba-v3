@@ -133,8 +133,8 @@ socket.on('findMatch', (username) => {
 
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    handleJoinGame(socket, roomId, username);
-    handleJoinGame(opponentSocket, roomId, opponentUsername);
+    // handleJoinGame(socket, roomId, username);
+    // handleJoinGame(opponentSocket, roomId, opponentUsername);
 
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
