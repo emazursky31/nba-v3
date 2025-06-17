@@ -265,6 +265,7 @@ const socket = io(); // connects to the same origin automatically
   let gameStarted = false;
   let gameOver = false;
   let leadoffPlayerName = null;
+  let myUsername = '';
 
 
   const statusDiv = document.getElementById('status');
@@ -311,6 +312,8 @@ const socket = io(); // connects to the same origin automatically
     alert('Enter a username');
     return;
   }
+
+  myUsername = username;
 
   socket.emit('findMatch', username);
   statusDiv.textContent = 'Looking for a game...';
