@@ -314,8 +314,32 @@ socket.on('disconnect', () => {
       // Optional: End the game if there are no players left
       if (game.players.length < 2) {
         io.to(roomId).emit('gameOver', 'Not enough players. Game ended.');
-        delete games[roomId];
-        console.log(`Game in room ${roomId} ended due to disconnect`);
+
+        // Instead of deleting the whole game object,
+        // reset the game state but keep the object intact to avoid bugs:
+
+        game.players = [];
+        game.usernames = {};
+        game.currentTurn = 0;
+        game.currentPlayerName = null;
+        if (game.timer) {
+          clearInterval(game.timer);
+          delete game.timer;
+        }
+        game.teammates = [];
+        game.successfulGuesses = [];
+        game.rematchVotes = new Set();
+
+        console.log(`Game in room ${roomId} reset due to insufficient players`);
+
+        // Optional: If you want to delete after a delay (e.g., 1 min), set a timeout here
+
+        // setTimeout(() => {
+        //   if (games[roomId] && games[roomId].players.length === 0) {
+        //     delete games[roomId];
+        //     console.log(`Game in room ${roomId} deleted after delay`);
+        //   }
+        // }, 60000);
       }
 
       break; // Player found and handled
@@ -434,8 +458,8 @@ async function getRandomPlayer() {
 
 
 function handleJoinGame(socket, roomId, username) {
-  // ✅ Create game if it doesn't exist yet
   if (!games[roomId]) {
+    console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
     games[roomId] = {
       players: [],
       usernames: {},
@@ -447,35 +471,30 @@ function handleJoinGame(socket, roomId, username) {
       successfulGuesses: [],
       rematchVotes: new Set(),
     };
-    console.log(`Game created for room: ${roomId}`);
+  } else {
+    console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
   }
 
   const game = games[roomId];
 
-  // ✅ Add player if not already in
+  console.log(`[handleJoinGame] Current game state:`, JSON.stringify(game, null, 2));
+
   if (!game.players.includes(socket.id)) {
     game.players.push(socket.id);
-    console.log(`Player ${username} added to game in room ${roomId}`);
   }
-
-  // ✅ Set username
   game.usernames[socket.id] = username;
-  console.log(`→ usernames map: ${JSON.stringify(game.usernames)}`);
 
-
-  console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
+  console.log(`[handleJoinGame] Updated usernames map:`, game.usernames);
 
   socket.join(roomId);
 
-  // ✅ Notify room of updated player count
   io.to(roomId).emit('playersUpdate', game.players.length);
-  console.log(`Players in room ${roomId}: ${game.players.length}`);
 
-   // ✅ Start game once both players have joined
   if (game.players.length === 2 && !game.leadoffPlayer) {
     startGame(roomId);
   }
 }
+
 
 
 
