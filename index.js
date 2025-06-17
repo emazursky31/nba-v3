@@ -214,7 +214,7 @@ socket.on('playerGuess', async ({ guess }) => {
   const normalizedGuess = guess.trim().toLowerCase();
 
   if (!game.leadoffPlayer) {
-    socket.emit('message', "Game hasn't started properly yet.");
+    socket.emit('message', "Game hasn't started properly yet");
     return;
   }
 
