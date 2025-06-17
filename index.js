@@ -165,6 +165,7 @@ socket.on('testGames', () => {
 
   // Handle player guess
  socket.on('playerGuess', async ({ roomId, guess }) => {
+  console.log(`[SERVER] playerGuess received from ${socket.data.username} in ${roomId}: "${guess}"`);
   const game = games[roomId];
   if (!game) return;
 
@@ -199,6 +200,7 @@ socket.on('testGames', () => {
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
   if (validGuess) {
+    console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
     clearInterval(game.timer);
 
     game.successfulGuesses.push(guess);
