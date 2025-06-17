@@ -214,7 +214,7 @@ socket.on('playerGuess', async ({ guess }) => {
   const normalizedGuess = guess.trim().toLowerCase();
 
   if (!game.leadoffPlayer) {
-    socket.emit('message', "Game hasn't started properly yet");
+    socket.emit('message', "Game hasn't started properly yet.");
     return;
   }
 
@@ -500,6 +500,7 @@ function handleJoinGame(socket, roomId, username) {
       rematchVotes: new Set(),
       leadoffPlayer: null,
       activePlayerSocketId: null,
+      ready: new Set(), // ✅ NEW: track readiness per player
     };
   } else {
     console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
@@ -511,21 +512,24 @@ function handleJoinGame(socket, roomId, username) {
     game.players.push(socket.id);
   }
 
-  // Fallback to socket.username if not explicitly passed
   const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
   game.usernames[socket.id] = finalUsername;
 
   socket.join(roomId);
-  
-  // Store socket to room mapping
   socketRoomMap[socket.id] = roomId;
 
   io.to(roomId).emit('playersUpdate', game.players.length);
 
-  if (game.players.length === 2 && !game.leadoffPlayer) {
+  // ✅ Mark this player as ready
+  game.ready.add(socket.id);
+
+  // ✅ Only start when both players are present and ready
+  if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer) {
+    console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
     startGame(roomId);
   }
 }
+
 
 
 
