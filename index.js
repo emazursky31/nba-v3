@@ -130,11 +130,16 @@ socket.on('findMatch', (username) => {
     const opponentUsername = opponentSocket.data.username;
 
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
-
     console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    // handleJoinGame(socket, roomId, username);
-    // handleJoinGame(opponentSocket, roomId, opponentUsername);
+    socketToRoom[socket.id] = roomId;
+    socket.data.roomId = roomId;
+    socketToRoom[opponentSocket.id] = roomId;
+    opponentSocket.data.roomId = roomId;
+
+    // ✅ Enable proper game setup
+    handleJoinGame(socket, roomId, username);
+    handleJoinGame(opponentSocket, roomId, opponentUsername);
 
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
@@ -143,9 +148,6 @@ socket.on('findMatch', (username) => {
     socket.emit('waitingForMatch');
   }
 });
-
-
-
 
 
 
@@ -165,9 +167,13 @@ socket.on('testGames', () => {
 
   // Handle player guess
  socket.on('playerGuess', async ({ roomId, guess }) => {
+  const roomId = socketToRoom[socket.id];
   console.log(`[SERVER] playerGuess received from ${socket.data.username} in ${roomId}: "${guess}"`);
   const game = games[roomId];
-  if (!game) return;
+  if (!game) {
+    console.error(`[playerGuess] No game found for socket ${socket.id} in room ${roomId}`);
+    return;
+  }
 
   // ⛔ Only allow guesses from active player
   if (socket.id !== game.activePlayerSocketId) {
