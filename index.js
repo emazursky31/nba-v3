@@ -504,6 +504,11 @@ function handleJoinGame(socket, roomId, username) {
     };
   } else {
     console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
+    // ✅ Ensure ready exists in case it was from an old version or re-used game
+  if (!games[roomId].ready) {
+    games[roomId].ready = new Set();
+  }
+    
   }
 
   const game = games[roomId];
