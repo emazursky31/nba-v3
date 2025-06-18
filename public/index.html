@@ -266,6 +266,7 @@ const socket = io(); // connects to the same origin automatically
   let gameOver = false;
   let leadoffPlayerName = null;
   let myUsername = '';
+  let opponentName = null;
 
 
   const statusDiv = document.getElementById('status');
@@ -649,7 +650,17 @@ socket.on('rematchStarted', () => {
   // Reset rematch button styles
   rematchBtn.disabled = false;
   rematchBtn.style.backgroundColor = ''; // Reset highlight
+  rematchBtn.textContent = 'Rematch';
+
+  // ✅ Re-join the same room to trigger new game start
+  if (myRoomId && myUsername) {
+    console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+  } else {
+    console.error('[CLIENT] Missing roomId or username for rematch.');
+  }
 });
+
 
 
 
