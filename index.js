@@ -559,6 +559,12 @@ function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) return;
 
+  // ✅ Clear existing timer if it exists before starting a new one
+  if (game.timer) {
+    clearInterval(game.timer);
+    game.timer = null;
+  }
+
   // ✅ Check if we still have 2 players
   if (!game.players || game.players.length < 2) {
     console.log(`Not enough players to start turn timer in room ${roomId}`);
