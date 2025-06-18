@@ -241,6 +241,7 @@ socket.on('playerGuess', async ({ guess }) => {
   if (validGuess) {
     console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
     clearInterval(game.timer);
+    game.timer = null;
 
     game.successfulGuesses.push(guess);
     game.currentTurn = (game.currentTurn + 1) % 2;
@@ -564,6 +565,9 @@ function startTurnTimer(roomId) {
     clearInterval(game.timer);
     game.timer = null;
   }
+
+  // ✅ Reset timeLeft to the full 15 seconds
+  game.timeLeft = 15;
 
   // ✅ Check if we still have 2 players
   if (!game.players || game.players.length < 2) {
