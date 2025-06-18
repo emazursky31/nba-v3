@@ -361,12 +361,14 @@ socket.on('gameStarted', (data) => {
 
   gameStarted = true;
   gameOver = false;
+
   leadoffPlayerName = data.leadoffPlayer || null;
 
-  // ✅ Clear any existing timer
+  // Clear old timers
   if (window.timerInterval) {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
+    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
   }
 
   // Reset guess input and controls
@@ -396,20 +398,23 @@ socket.on('gameStarted', (data) => {
   successfulGuesses.length = 0;
   renderSuccessfulGuesses();
 
-  // Set new player name
+  // Set new player
   currentPlayerNameEl.textContent = data.currentPlayerName;
 
-  // ✅ Start fresh countdown timer from server-sent timeLeft
-  let timeLeft = data.timeLeft || 15; // fallback default
+  // Initialize and start countdown timer
+  let timeLeft = data.timeLeft || 15;
   timerEl.textContent = timeLeft;
+  console.log('[CLIENT] Starting timer at:', timeLeft);
 
   window.timerInterval = setInterval(() => {
     timeLeft--;
     timerEl.textContent = timeLeft;
+    console.log('⏱ Tick:', timeLeft);
 
     if (timeLeft <= 0) {
       clearInterval(window.timerInterval);
       window.timerInterval = null;
+      console.log('[CLIENT] Timer finished.');
     }
   }, 1000);
 
@@ -417,11 +422,12 @@ socket.on('gameStarted', (data) => {
   gameArea.style.display = 'block';
   document.getElementById('turnSection').style.display = 'block';
 
-  // Hide game over UI
+  // Hide the gameOver UI
   const gameOverContainer = document.getElementById('gameOverContainer');
   gameOverContainer.innerHTML = '';
   gameOverContainer.style.display = 'none';
 });
+
 
 
 
