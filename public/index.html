@@ -408,22 +408,9 @@ socket.on('gameStarted', (data) => {
   // Set new player
   currentPlayerNameEl.textContent = data.currentPlayerName;
 
-  // Initialize and start countdown timer
-  let timeLeft = data.timeLeft || 15;
-  timerEl.textContent = timeLeft;
-  console.log('[CLIENT] Starting timer at:', timeLeft);
-
-  window.timerInterval = setInterval(() => {
-    timeLeft--;
-    timerEl.textContent = timeLeft;
-    console.log('⏱ Tick:', timeLeft);
-
-    if (timeLeft <= 0) {
-      clearInterval(window.timerInterval);
-      window.timerInterval = null;
-      console.log('[CLIENT] Timer finished.');
-    }
-  }, 1000);
+// Display initial time
+  timerEl.textContent = data.timeLeft || 15;
+  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
   // Show gameplay area again
   gameArea.style.display = 'block';

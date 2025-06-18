@@ -560,35 +560,16 @@ function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) return;
 
-  // ✅ Clear existing timer if it exists before starting a new one
-  if (game.timer) {
+  if (game.timer !== null) {
+    console.warn(`[SERVER] Clearing existing timer before starting new one in room ${roomId}`);
     clearInterval(game.timer);
     game.timer = null;
   }
 
-  // ✅ Reset timeLeft to the full 15 seconds
+
   game.timeLeft = 15;
-
-  // ✅ Check if we still have 2 players
-  if (!game.players || game.players.length < 2) {
-    console.log(`Not enough players to start turn timer in room ${roomId}`);
-
-    const remainingPlayerId = game.players[0];
-    const remainingSocket = io.sockets.sockets.get(remainingPlayerId);
-    if (remainingSocket) {
-      remainingSocket.emit('gameOver', {
-        message: 'Your opponent left the game.',
-        reason: 'opponent_left',
-        canRematch: false,
-      });
-    }
-
-    return; // Exit early
-  }
-
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
-  game.timeLeft = 15;
 
   const activeSocket = io.sockets.sockets.get(socketId);
   if (activeSocket) {
@@ -598,7 +579,6 @@ function startTurnTimer(roomId) {
     });
   }
 
-  // Notify the other player it's not their turn
   game.players.forEach(playerId => {
     if (playerId !== socketId) {
       const opponentSocket = io.sockets.sockets.get(playerId);
@@ -610,18 +590,23 @@ function startTurnTimer(roomId) {
     }
   });
 
+  // ✅ Start clean interval
   game.timer = setInterval(() => {
-    game.timeLeft -= 1;
+    game.timeLeft--;
+
+    // Defensive logging
+    console.log(`[TIMER] Room ${roomId} - timeLeft: ${game.timeLeft}`);
+
     io.to(roomId).emit('timerTick', { timeLeft: game.timeLeft });
 
     if (game.timeLeft <= 0) {
       clearInterval(game.timer);
       game.timer = null;
+      console.log(`[TIMER] Room ${roomId} - timer expired`);
 
       const loserSocketId = game.activePlayerSocketId;
       const loserSocket = io.sockets.sockets.get(loserSocketId);
       const loserName = game.usernames[loserSocketId];
-
       const winnerSocketId = game.players.find(id => id !== loserSocketId);
       const winnerSocket = io.sockets.sockets.get(winnerSocketId);
 
@@ -638,10 +623,9 @@ function startTurnTimer(roomId) {
           role: 'winner',
         });
       }
-
-      // Optionally reset or archive the game object here
     }
   }, 1000);
 }
+
 
 });
