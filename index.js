@@ -14,6 +14,8 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const socketRoomMap = {};
+const playersInGame = new Set(); // socket.id values
+
 
 
 app.get('/', (req, res) => {
@@ -127,20 +129,24 @@ io.on('connection', (socket) => {
 socket.on('findMatch', (username) => {
   socket.data.username = username;
 
+  // 🚫 Prevent duplicate matchmaking if already in a game
+  if (playersInGame.has(socket.id)) {
+    console.log(`⚠️  ${username} (${socket.id}) tried to find match but is already in a game`);
+    return;
+  }
+
   if (waitingPlayers.length > 0) {
     const { socket: opponentSocket } = waitingPlayers.shift();
     const opponentUsername = opponentSocket.data.username;
 
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
-    console.log(`Matched players ${username} and ${opponentUsername} in room ${roomId}`);
+    console.log(`✅ Matched players ${username} and ${opponentUsername} in room ${roomId}`);
 
-    // Update socketRoomMap for both players
     socketRoomMap[socket.id] = roomId;
     socket.data.roomId = roomId;
     socketRoomMap[opponentSocket.id] = roomId;
     opponentSocket.data.roomId = roomId;
 
-    // Initialize game state for the room — key fix
     games[roomId] = {
       players: [socket.id, opponentSocket.id],
       usernames: {
@@ -156,14 +162,15 @@ socket.on('findMatch', (username) => {
       teammates: null,
       activePlayerSocketId: null,
       timeLeft: null,
-      // any other game properties your game uses
     };
 
-    // Now call your existing join handlers
+    // 🟢 Mark both players as actively in a game
+    playersInGame.add(socket.id);
+    playersInGame.add(opponentSocket.id);
+
     handleJoinGame(socket, roomId, username);
     handleJoinGame(opponentSocket, roomId, opponentUsername);
 
-    // Optionally start the game immediately or wait for both players ready
     startGame(roomId);
 
     socket.emit('matched', { roomId, opponent: opponentUsername });
@@ -173,6 +180,7 @@ socket.on('findMatch', (username) => {
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -319,10 +327,13 @@ socket.on('disconnect', () => {
     console.log(`Removed ${socket.data.username || 'an unnamed player'} from waiting queue`);
   }
 
+  // Clean up from playersInGame
+  playersInGame.delete(socket.id); // ✅ new
+
   // Remove from socketRoomMap
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
-    delete socketRoomMap[socket.id];
+    delete socketRoomMap[socket.id]; // ✅ already good
     console.log(`Removed socket ${socket.id} from socketRoomMap`);
   }
 
@@ -335,6 +346,8 @@ socket.on('disconnect', () => {
       // Remove player
       game.players.splice(idx, 1);
       delete game.usernames[socket.id];
+      playersInGame.delete(socket.id); // ✅ again, just to be safe
+      delete socketRoomMap[socket.id]; // ✅ again, just to be safe
       io.to(room).emit('playersUpdate', game.players.length);
       console.log(`${disconnectedUsername || socket.id} removed from game in room ${room}`);
 
@@ -358,13 +371,14 @@ socket.on('disconnect', () => {
         game.usernames = {};
         game.currentTurn = 0;
         game.currentPlayerName = null;
+        game.teammates = [];
+        game.successfulGuesses = [];
+        game.rematchVotes = new Set();
+
         if (game.timer) {
           clearInterval(game.timer);
           delete game.timer;
         }
-        game.teammates = [];
-        game.successfulGuesses = [];
-        game.rematchVotes = new Set();
 
         console.log(`Game in room ${room} reset due to insufficient players`);
       }
@@ -373,6 +387,7 @@ socket.on('disconnect', () => {
     }
   }
 });
+
 
 
 
@@ -544,6 +559,23 @@ function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) return;
 
+  // ✅ Check if we still have 2 players
+  if (!game.players || game.players.length < 2) {
+    console.log(`Not enough players to start turn timer in room ${roomId}`);
+
+    const remainingPlayerId = game.players[0];
+    const remainingSocket = io.sockets.sockets.get(remainingPlayerId);
+    if (remainingSocket) {
+      remainingSocket.emit('gameOver', {
+        message: 'Your opponent left the game.',
+        reason: 'opponent_left',
+        canRematch: false,
+      });
+    }
+
+    return; // Exit early
+  }
+
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
   game.timeLeft = 15;
@@ -570,42 +602,36 @@ function startTurnTimer(roomId) {
 
   game.timer = setInterval(() => {
     game.timeLeft -= 1;
-
-    // Broadcast tick to both players
     io.to(roomId).emit('timerTick', { timeLeft: game.timeLeft });
 
-   if (game.timeLeft <= 0) {
-  clearInterval(game.timer);
-  game.timer = null;
+    if (game.timeLeft <= 0) {
+      clearInterval(game.timer);
+      game.timer = null;
 
-  // Get the loser (the one whose turn it was)
-  const loserSocketId = game.activePlayerSocketId;
-  const loserSocket = io.sockets.sockets.get(loserSocketId);
-  const loserName = game.usernames[loserSocketId];
+      const loserSocketId = game.activePlayerSocketId;
+      const loserSocket = io.sockets.sockets.get(loserSocketId);
+      const loserName = game.usernames[loserSocketId];
 
-  // Get the other player
-  const winnerSocketId = game.players.find(id => id !== loserSocketId);
-  const winnerSocket = io.sockets.sockets.get(winnerSocketId);
+      const winnerSocketId = game.players.find(id => id !== loserSocketId);
+      const winnerSocket = io.sockets.sockets.get(winnerSocketId);
 
-  // Notify both players
-  if (loserSocket) {
-    loserSocket.emit('gameOver', {
-      message: `You ran out of time!`,
-      role: 'loser',
-    });
-  }
+      if (loserSocket) {
+        loserSocket.emit('gameOver', {
+          message: `You ran out of time!`,
+          role: 'loser',
+        });
+      }
 
-  if (winnerSocket) {
-    winnerSocket.emit('gameOver', {
-      message: `${loserName} ran out of time! You win!`,
-      role: 'winner',
-    });
-  }
+      if (winnerSocket) {
+        winnerSocket.emit('gameOver', {
+          message: `${loserName} ran out of time! You win!`,
+          role: 'winner',
+        });
+      }
 
-  // // Clean up game state if needed
-  // delete games[roomId]; // or mark it inactive
-}
-
+      // Optionally reset or archive the game object here
+    }
   }, 1000);
 }
+
 });

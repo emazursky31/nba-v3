@@ -446,30 +446,41 @@ socket.on('gameOver', (data) => {
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
+  // Clear turn timer
   if (window.timerInterval) {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
   }
+  document.getElementById('timer').textContent = ''; // Clear timer display
 
   // Hide gameplay UI
   document.getElementById('turnSection').style.display = 'none';
   messagesEl.style.display = 'none';
 
-  // Show Game Over Message
+  // Clear any prior game over message
   const container = document.getElementById('gameOverContainer');
   container.innerHTML = '';
   container.style.display = 'flex';
-container.style.justifyContent = 'center';
-container.style.alignItems = 'center';
+  container.style.justifyContent = 'center';
+  container.style.alignItems = 'center';
 
-
+  // Show Game Over Message
   const gameOverMsg = document.createElement('div');
-  gameOverMsg.textContent = data.message || 'Game Over!';
   gameOverMsg.style.fontSize = '1.5rem';
   gameOverMsg.style.textAlign = 'center';
   gameOverMsg.style.fontWeight = 'bold';
   gameOverMsg.style.marginTop = '1rem';
 
+  // Determine what to show
+  if (data.message) {
+    gameOverMsg.textContent = data.message;
+  } else if (data.reason === 'opponent_left') {
+    gameOverMsg.textContent = 'Your opponent left the game.';
+  } else {
+    gameOverMsg.textContent = 'Game Over!';
+  }
+
+  // Apply color based on role (if any)
   if (data.role === 'winner') {
     gameOverMsg.style.color = 'green';
   } else if (data.role === 'loser') {
@@ -480,11 +491,17 @@ container.style.alignItems = 'center';
 
   container.appendChild(gameOverMsg);
 
-  // Show Rematch Button
-  rematchBtn.style.display = 'block';
-  rematchBtn.disabled = false;
-  rematchBtn.textContent = 'Rematch';
+  // Decide whether to show or hide rematch button
+  if (data.canRematch === false || data.reason === 'opponent_left') {
+    rematchBtn.style.display = 'none';
+  } else {
+    rematchBtn.style.display = 'block';
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
+  }
 });
+
+
 
 // 3. Turn Management
 socket.on('yourTurn', (data) => {
