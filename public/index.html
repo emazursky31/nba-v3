@@ -314,11 +314,16 @@ const socket = io(); // connects to the same origin automatically
     return;
   }
 
-  myUsername = username;
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game before finding a new one.');
+    return;
+  }
 
+  myUsername = username;
   socket.emit('findMatch', username);
   statusDiv.textContent = 'Looking for a game...';
 };
+
 
 
 
@@ -341,7 +346,12 @@ socket.on('playersUpdate', (count) => {
 });
 
 socket.on('matched', ({ roomId, opponent }) => {
-  console.log('Received matched event:', roomId, opponent); // 👈 Add this
+  if (gameStarted && !gameOver) {
+    console.warn('[CLIENT] Already in game, ignoring unexpected match.');
+    return;
+  }
+
+  console.log('Received matched event:', roomId, opponent);
   myRoomId = roomId;
   opponentName = opponent;
   statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
@@ -349,9 +359,6 @@ socket.on('matched', ({ roomId, opponent }) => {
   socket.emit('joinGame', { roomId, username: myUsername });
 });
 
-socket.on('waitingForMatch', () => {
-  statusDiv.textContent = 'Waiting for another player to join...';
-});
 
 
 
