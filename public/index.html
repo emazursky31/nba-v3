@@ -617,17 +617,17 @@ guessInput.addEventListener('input', function() {
 
 
 rematchBtn.onclick = () => {
-  if (!roomId) {
+  if (!myRoomId) {
     console.error('[CLIENT] No roomId found on rematch!');
     return;
   }
 
-  console.log('[CLIENT] Sending rematch request with roomId:', roomId);
-  socket.emit('requestRematch', { roomId });
+  console.log('[CLIENT] Sending rematch request with roomId:', myRoomId);
+  socket.emit('requestRematch', { roomId: myRoomId });
 
   rematchBtn.disabled = true;
   rematchBtn.textContent = 'Waiting for opponent...';
-  rematchBtn.style.backgroundColor = '';  // Remove any highlight if present
+  rematchBtn.style.backgroundColor = '';
 };
 
 // When another player requests a rematch
