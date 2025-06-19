@@ -197,42 +197,28 @@
 
 </head>
 <body>
-  <h1>NBA Teammate Game</h1>
-  <div id="setupSection">
-  <div>
-    <label>Username: <input type="text" id="usernameInput" /></label>
-  </div>
+<h1>NBA Teammate Game</h1>
 
-<!-- <button id="findGameBtn">Find Game</button>
-
-
-  <div>
-    <label>Room ID: <input type="text" id="roomIdInput" value="room1" /></label>
-    <button id="joinBtn">Join Game</button>
-  </div>
-</div> -->
-
-
-  <div id="status"></div>
-
-  <div id="waitingRoom" style="display: none; text-align: center; margin-top: 2rem;">
-    <h2>Waiting Room</h2>
-    <p>Waiting for another player to join...</p>
-    <p>Share this Room ID with your opponent.</p>
-    <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
-  </div>
-
-  <div id="modeSelection" style="text-align: center; margin-top: 2rem;">
+<div id="modeSelection" style="text-align: center; margin-top: 2rem;">
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="publicGameBtn">🌐 Join Public Game</button>
 </div>
 
-<!-- Setup Section (now only used for private game with generated room) -->
+<!-- Setup Section (used for both private and shared invite link flows) -->
 <div id="setupSection" class="hidden" style="text-align: center; margin-top: 2rem;">
   <input type="text" id="usernameInput" placeholder="Enter your name" />
   <button id="startPrivateGameBtn">Start Game</button>
   <div id="inviteLinkContainer" style="margin-top: 1rem;"></div>
+</div>
+
+<div id="status"></div>
+
+<div id="waitingRoom" style="display: none; text-align: center; margin-top: 2rem;">
+  <h2>Waiting Room</h2>
+  <p>Waiting for another player to join...</p>
+  <p>Share this Room ID with your opponent.</p>
+  <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
 </div>
 
 <div id="gameArea" style="display:none; position: relative;">
@@ -240,7 +226,6 @@
     <p>Name any teammate of: <strong id="currentPlayerName"></strong></p>
     <p>Time left: <span id="timer">15</span> seconds</p>
 
-    <!-- ✅ Apply position: relative here -->
     <div id="guessControls" style="position: relative;">
       <input
         type="text"
@@ -249,15 +234,12 @@
         autocomplete="off"
       />
       <button id="submitGuessBtn" disabled>Submit Guess</button>
-
-      <!-- ✅ Move this inside guessControls -->
       <div id="autocomplete-list"></div>
     </div>
   </div>
 
   <div id="messageContainer"></div>
   <div id="gameOverContainer"></div>
-
   <button id="rematchBtn" style="display: none;">Request Rematch</button>
 
   <div id="successful-guesses-container" style="margin-top: 2px;">
@@ -265,6 +247,7 @@
     <ul id="successful-guesses-list"></ul>
   </div>
 </div>
+
 
 
 
