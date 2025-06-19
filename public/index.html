@@ -225,7 +225,6 @@
 <div id="waitingRoom" style="display: none; text-align: center; margin-top: 2rem;">
   <h2>Waiting Room</h2>
   <p>Waiting for another player to join...</p>
-  <p>Share this Room ID with your opponent.</p>
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
 </div>
 
@@ -500,6 +499,15 @@ socket.on('gameStarted', (data) => {
   // Reset game history
   successfulGuesses.length = 0;
   renderSuccessfulGuesses();
+
+  if (leadoffPlayerName) {
+  successfulGuesses.push({
+    guesser: 'Leadoff',
+    name: leadoffPlayerName,
+    isLeadoff: true
+  });
+  renderSuccessfulGuesses();
+}
 
   // Set new player
   currentPlayerNameEl.textContent = data.currentPlayerName;
