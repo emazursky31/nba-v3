@@ -418,7 +418,6 @@ async function startGame(roomId) {
 
   game.rematchVotes = new Set();  // Reset rematch state
   if (game.timer) clearInterval(game.timer);
-  game.successfulGuesses = [];
   game.timeLeft = 15;
 
   const startIndex = Math.floor(Math.random() * game.players.length);
@@ -429,11 +428,17 @@ async function startGame(roomId) {
   game.leadoffPlayer = game.currentPlayerName;
   game.teammates = await getTeammates(game.currentPlayerName);
 
+  // ✅ Reset successfulGuesses to just the leadoff player
+  game.successfulGuesses = [{
+    guesser: 'Leadoff',
+    name: game.currentPlayerName,
+    isLeadoff: true
+  }];
+
   // STEP 2: Assign the active player's socket ID for turn validation
   game.activePlayerSocketId = game.players[game.currentTurn];
 
   // STEP 3: Update socketRoomMap for each player socket to this room
-  // (Assuming socketRoomMap is a global object)
   game.players.forEach((socketId) => {
     socketRoomMap[socketId] = roomId;
   });
@@ -457,6 +462,7 @@ async function startGame(roomId) {
   // STEP 5: Start the turn timer
   startTurnTimer(roomId);
 }
+
 
 
 
