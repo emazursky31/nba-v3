@@ -129,7 +129,6 @@ io.on('connection', (socket) => {
 socket.on('findMatch', (username) => {
   socket.data.username = username;
 
-  // 🚫 Prevent duplicate matchmaking if already in a game
   if (playersInGame.has(socket.id)) {
     console.log(`⚠️  ${username} (${socket.id}) tried to find match but is already in a game`);
     return;
@@ -147,24 +146,9 @@ socket.on('findMatch', (username) => {
     socketRoomMap[opponentSocket.id] = roomId;
     opponentSocket.data.roomId = roomId;
 
-    games[roomId] = {
-      players: [socket.id, opponentSocket.id],
-      usernames: {
-        [socket.id]: username,
-        [opponentSocket.id]: opponentUsername,
-      },
-      rematchVotes: new Set(),
-      successfulGuesses: [],
-      timer: null,
-      currentTurn: null,
-      currentPlayerName: null,
-      leadoffPlayer: null,
-      teammates: null,
-      activePlayerSocketId: null,
-      timeLeft: null,
-    };
+    // Don't initialize game here, do it inside handleJoinGame instead
+    // games[roomId] = {...}
 
-    // 🟢 Mark both players as actively in a game
     playersInGame.add(socket.id);
     playersInGame.add(opponentSocket.id);
 
@@ -180,6 +164,7 @@ socket.on('findMatch', (username) => {
     socket.emit('waitingForMatch');
   }
 });
+
 
 
 
@@ -502,6 +487,11 @@ async function getRandomPlayer() {
 
 
 function handleJoinGame(socket, roomId, username) {
+  if (!roomId) {
+    console.error('[handleJoinGame] ERROR: roomId is null or undefined');
+    return;
+  }
+
   if (!games[roomId]) {
     console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
     games[roomId] = {
@@ -516,15 +506,13 @@ function handleJoinGame(socket, roomId, username) {
       rematchVotes: new Set(),
       leadoffPlayer: null,
       activePlayerSocketId: null,
-      ready: new Set(), // ✅ NEW: track readiness per player
+      ready: new Set(),
     };
   } else {
     console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
-    // ✅ Ensure ready exists in case it was from an old version or re-used game
-  if (!games[roomId].ready) {
-    games[roomId].ready = new Set();
-  }
-    
+    if (!games[roomId].ready) {
+      games[roomId].ready = new Set();
+    }
   }
 
   const game = games[roomId];
@@ -541,15 +529,14 @@ function handleJoinGame(socket, roomId, username) {
 
   io.to(roomId).emit('playersUpdate', game.players.length);
 
-  // ✅ Mark this player as ready
   game.ready.add(socket.id);
 
-  // ✅ Only start when both players are present and ready
   if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer) {
     console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
     startGame(roomId);
   }
 }
+
 
 
 
