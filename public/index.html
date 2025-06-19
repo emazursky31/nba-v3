@@ -817,6 +817,7 @@ function resetGameUI() {
   messagesEl.style.display = 'block';
 
   successfulGuesses.length = 0;
+  document.getElementById('successful-guesses-list').innerHTML = '';
   renderSuccessfulGuesses();
 
   currentPlayerNameEl.textContent = '';
