@@ -306,9 +306,10 @@ const socket = io(); // connects to the same origin automatically
 
 publicGameBtn.onclick = () => {
   modeSelection.style.display = 'none';
-  document.getElementById('usernameInput').classList.remove('hidden');
+  setupSection.classList.remove('hidden');
   findGameBtn.classList.remove('hidden');
 };
+
 
 startPrivateGameBtn.onclick = () => {
   const username = document.getElementById('usernameInput').value.trim();
