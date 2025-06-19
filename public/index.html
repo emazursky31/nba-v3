@@ -199,21 +199,29 @@
 <body>
 <h1>NBA Teammate Game</h1>
 
+<!-- Game Mode Selection -->
 <div id="modeSelection" style="text-align: center; margin-top: 2rem;">
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="publicGameBtn">🌐 Join Public Game</button>
 </div>
 
-<!-- Setup Section (used for both private and shared invite link flows) -->
+<!-- Game Setup Section (shown after selecting a mode) -->
 <div id="setupSection" class="hidden" style="text-align: center; margin-top: 2rem;">
   <input type="text" id="usernameInput" placeholder="Enter your name" />
-  <button id="startPrivateGameBtn">Start Game</button>
+  
+  <!-- These buttons are toggled via JavaScript depending on the selected mode -->
+  <button id="startPrivateGameBtn" style="display: none;">Start Private Game</button>
+  <button id="findGameBtn" style="display: none;">Find Public Game</button>
+  
+  <!-- Only used for private games -->
   <div id="inviteLinkContainer" style="margin-top: 1rem;"></div>
 </div>
 
-<div id="status"></div>
+<!-- Status message (e.g., "Looking for a game...") -->
+<div id="status" style="text-align: center; margin-top: 1rem;"></div>
 
+<!-- Waiting Room View -->
 <div id="waitingRoom" style="display: none; text-align: center; margin-top: 2rem;">
   <h2>Waiting Room</h2>
   <p>Waiting for another player to join...</p>
@@ -221,6 +229,7 @@
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
 </div>
 
+<!-- In-Game UI -->
 <div id="gameArea" style="display:none; position: relative;">
   <div id="turnSection">
     <p>Name any teammate of: <strong id="currentPlayerName"></strong></p>
@@ -240,6 +249,7 @@
 
   <div id="messageContainer"></div>
   <div id="gameOverContainer"></div>
+
   <button id="rematchBtn" style="display: none;">Request Rematch</button>
 
   <div id="successful-guesses-container" style="margin-top: 2px;">
@@ -247,6 +257,7 @@
     <ul id="successful-guesses-list"></ul>
   </div>
 </div>
+
 
 
 
@@ -266,10 +277,6 @@ const socket = io(); // connects to the same origin automatically
 
 
   const statusDiv = document.getElementById('status');
-  const joinBtn = document.getElementById('joinBtn');
-  const findGameBtn = document.getElementById('findGameBtn');
-  const roomIdInput = document.getElementById('roomIdInput');
-
   const waitingRoom = document.getElementById('waitingRoom');
   const gameArea = document.getElementById('gameArea');
   const currentPlayerNameEl = document.getElementById('currentPlayerName');
@@ -285,59 +292,91 @@ const socket = io(); // connects to the same origin automatically
   const privateGameBtn = document.getElementById('privateGameBtn');
   const publicGameBtn = document.getElementById('publicGameBtn');
   const startPrivateGameBtn = document.getElementById('startPrivateGameBtn');
+  const findGameBtn = document.getElementById('findGameBtn');
   const inviteLinkContainer = document.getElementById('inviteLinkContainer');
   const setupSection = document.getElementById('setupSection');
+  const usernameInput = document.getElementById('usernameInput');
 
+  // ✅ Private game setup
   privateGameBtn.onclick = () => {
-  modeSelection.style.display = 'none';
-  setupSection.classList.remove('hidden');
+    modeSelection.style.display = 'none';
+    setupSection.classList.remove('hidden');
+    startPrivateGameBtn.style.display = 'inline-block';
+    findGameBtn.style.display = 'none';
 
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-  roomId = generatedRoomId;
-  document.getElementById('displayRoomCode').textContent = generatedRoomId;
+    roomId = generatedRoomId;
+    document.getElementById('displayRoomCode').textContent = generatedRoomId;
 
   inviteLinkContainer.innerHTML = `
-    Share this link to invite a friend:<br>
-    <a href="${window.location.origin}?room=${generatedRoomId}" target="_blank">
-      ${window.location.origin}?room=${generatedRoomId}
-    </a>
-  `;
-};
+      Share this link to invite a friend:<br>
+      <a href="${window.location.origin}?room=${generatedRoomId}" target="_blank">
+        ${window.location.origin}?room=${generatedRoomId}
+      </a>
+    `;
+  };
 
-publicGameBtn.onclick = () => {
-  modeSelection.style.display = 'none';
-  setupSection.classList.remove('hidden');
-  findGameBtn.classList.remove('hidden');
-};
+// ✅ Public game setup
+  publicGameBtn.onclick = () => {
+    modeSelection.style.display = 'none';
+    setupSection.classList.remove('hidden');
+    startPrivateGameBtn.style.display = 'none';
+    findGameBtn.style.display = 'inline-block';
+    inviteLinkContainer.innerHTML = '';
+  };
 
 
-startPrivateGameBtn.onclick = () => {
-  const username = document.getElementById('usernameInput').value.trim();
-  if (!username) {
-    alert('Enter a username');
-    return;
-  }
+// ✅ Start private game
+  startPrivateGameBtn.onclick = () => {
+    const username = usernameInput.value.trim();
+    if (!username) {
+      alert('Enter a username');
+      return;
+    }
 
-  myUsername = username;
-  socket.emit('joinGame', { roomId, username });
-  statusDiv.textContent = `Started private room: ${roomId}`;
-  waitingRoom.style.display = 'block';
-  setupSection.classList.add('hidden');
-};
+    myUsername = username;
+    socket.emit('joinGame', { roomId, username });
+    statusDiv.textContent = `Started private room: ${roomId}`;
+    waitingRoom.style.display = 'block';
+    setupSection.classList.add('hidden');
+  };
+
+  // ✅ Find public game
+  findGameBtn.onclick = () => {
+    const username = usernameInput.value.trim();
+    if (!username) {
+      alert('Enter a username');
+      return;
+    }
+
+    if (gameStarted && !gameOver) {
+      alert('Finish your current game before finding a new one.');
+      return;
+    }
+
+    myUsername = username;
+    socket.emit('findMatch', username);
+    statusDiv.textContent = 'Looking for a game...';
+    setupSection.classList.add('hidden');
+    waitingRoom.style.display = 'block';
+  };
 
 const urlParams = new URLSearchParams(window.location.search);
-const sharedRoom = urlParams.get('room');
-if (sharedRoom) {
-  modeSelection.style.display = 'none';
-  setupSection.classList.remove('hidden');
-  roomId = sharedRoom;
-  document.getElementById('displayRoomCode').textContent = sharedRoom;
+  const sharedRoom = urlParams.get('room');
+  if (sharedRoom) {
+    modeSelection.style.display = 'none';
+    setupSection.classList.remove('hidden');
+    startPrivateGameBtn.style.display = 'inline-block';
+    findGameBtn.style.display = 'none';
+
+    roomId = sharedRoom;
+    document.getElementById('displayRoomCode').textContent = sharedRoom;
 
   inviteLinkContainer.innerHTML = `
-    Share this link to invite a friend:<br>
-    <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
-      ${window.location.origin}?room=${sharedRoom}
-    </a>
+      Share this link to invite a friend:<br>
+      <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
+        ${window.location.origin}?room=${sharedRoom}
+      </a>
   `;
 }
 
