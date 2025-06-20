@@ -228,10 +228,10 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
-    game.successfulGuesses.push({
-    guesser: game.usernames[socket.id],
-    name: guess
-    });
+    // game.successfulGuesses.push({
+    // guesser: game.usernames[socket.id],
+    // name: guess
+    // });
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
