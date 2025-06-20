@@ -216,7 +216,7 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  if (game.successfulGuesses.some(name => name.toLowerCase() === normalizedGuess)) {
+  if (game.successfulGuesses.some(g => g.name.toLowerCase() === normalizedGuess)) {
     socket.emit('message', `"${guess}" has already been guessed.`);
     return;
   }
@@ -228,7 +228,10 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
-    game.successfulGuesses.push(guess);
+    game.successfulGuesses.push({
+    guesser: game.usernames[socket.id],
+    name: guess
+    });
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
