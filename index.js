@@ -416,34 +416,29 @@ async function startGame(roomId) {
     return;
   }
 
-  game.rematchVotes = new Set();  // Reset rematch state
+  // ✅ Fully reset state for rematch
+  game.successfulGuesses = [];
+  game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
   game.timeLeft = 15;
 
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
 
-  // STEP 1: Pick a valid starting player name
-  game.currentPlayerName = await getRandomPlayer(); // Your existing logic
+  // ✅ Select leadoff player & their teammates
+  game.currentPlayerName = await getRandomPlayer();
   game.leadoffPlayer = game.currentPlayerName;
   game.teammates = await getTeammates(game.currentPlayerName);
 
-  // ✅ Reset successfulGuesses to just the leadoff player
-  game.successfulGuesses = [{
-    guesser: 'Leadoff',
-    name: game.currentPlayerName,
-    isLeadoff: true
-  }];
-
-  // STEP 2: Assign the active player's socket ID for turn validation
+  // ✅ Set initial turn ownership
   game.activePlayerSocketId = game.players[game.currentTurn];
 
-  // STEP 3: Update socketRoomMap for each player socket to this room
+  // ✅ Map sockets to room again
   game.players.forEach((socketId) => {
     socketRoomMap[socketId] = roomId;
   });
 
-  // Log for debugging
+  // ✅ Logging
   console.log(`[STARTGAME] room ${roomId} starting with:`);
   console.log(`→ currentPlayerName: ${game.currentPlayerName}`);
   console.log(`→ teammates: ${game.teammates}`);
@@ -451,7 +446,7 @@ async function startGame(roomId) {
   console.log(`→ currentTurn: ${game.currentTurn}`);
   console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
 
-  // STEP 4: Emit game started event with current player info
+  // ✅ Notify clients
   io.to(roomId).emit('gameStarted', {
     firstPlayerId: game.activePlayerSocketId,
     currentPlayerName: game.currentPlayerName,
@@ -459,9 +454,10 @@ async function startGame(roomId) {
     leadoffPlayer: game.leadoffPlayer,
   });
 
-  // STEP 5: Start the turn timer
+  // ✅ Start timer
   startTurnTimer(roomId);
 }
+
 
 
 
