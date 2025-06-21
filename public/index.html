@@ -473,41 +473,41 @@ socket.on('gameStarted', (data) => {
     console.warn('[CLIENT] Cleared leftover timer before starting new one.');
   }
 
-  // Reset guess input and controls
+  // Clear input + errors
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
   guessInput.value = '';
   clearGuessError();
   clearAutocomplete();
 
-  // Reset rematch button
-  rematchBtn.style.display = 'none';
-  rematchBtn.disabled = false;
-  rematchBtn.textContent = 'Rematch';
-
-  // Hide join UI
-  // joinBtn.classList.add('hidden');
-  roomIdInput.disabled = true;
+  // Hide setup UI
   document.getElementById("setupSection")?.classList.add("hidden");
   document.getElementById("usernameInput")?.classList.add("hidden");
   document.getElementById("roomIdInput")?.classList.add("hidden");
+
+  // Reset rematch state
+  rematchBtn.style.display = 'none';
+  rematchBtn.disabled = false;
+  rematchBtn.textContent = 'Rematch';
 
   // Clear any messages
   messagesEl.innerHTML = '';
   messagesEl.style.display = 'block';
 
-  // Reset game history
-  successfulGuesses.length = 0;
-  renderSuccessfulGuesses();
+  // Reset turn history cleanly
+  successfulGuesses = [];
 
-  if (leadoffPlayerName) {
+  if (data.leadoffPlayer) {
+  leadoffPlayerName = data.leadoffPlayer;
   successfulGuesses.push({
     guesser: 'Leadoff',
     name: leadoffPlayerName,
     isLeadoff: true
   });
-  renderSuccessfulGuesses();
 }
+
+console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+renderSuccessfulGuesses();
 
   // Set new player
   currentPlayerNameEl.textContent = data.currentPlayerName;
