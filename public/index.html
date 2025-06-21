@@ -285,7 +285,7 @@ const socket = io(); // connects to the same origin automatically
   const messagesEl = document.getElementById('messageContainer');
   const autocompleteList = document.getElementById('autocomplete-list');
   const rematchBtn = document.getElementById('rematchBtn');
-  const successfulGuesses = [];
+  let successfulGuesses = [];
 
   const modeSelection = document.getElementById('modeSelection');
   const privateGameBtn = document.getElementById('privateGameBtn');
