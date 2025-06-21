@@ -507,24 +507,35 @@ socket.on('gameStarted', (data) => {
 }
 
 console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-renderSuccessfulGuesses();
+function renderSuccessfulGuesses() {
+  const listEl = document.getElementById('successful-guesses-list');
+  listEl.innerHTML = '';
 
-  // Set new player
-  currentPlayerNameEl.textContent = data.currentPlayerName;
+  const displayList = [...successfulGuesses];
 
-// Display initial time
-  timerEl.textContent = data.timeLeft || 15;
-  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+  displayList.forEach((guessObj, index) => {
+    const li = document.createElement('li');
+    li.style.margin = '0.5rem 0';
+    li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
 
-  // Show gameplay area again
-  gameArea.style.display = 'block';
-  document.getElementById('turnSection').style.display = 'block';
+    const name = typeof guessObj === 'string' ? guessObj : guessObj.name;
+    const isLeadoff = typeof guessObj === 'object' && guessObj.isLeadoff;
 
-  // Hide the gameOver UI
-  const gameOverContainer = document.getElementById('gameOverContainer');
-  gameOverContainer.innerHTML = '';
-  gameOverContainer.style.display = 'none';
-});
+    li.style.color = isLeadoff ? '#007bff' : '#000';
+    li.textContent = name;
+    listEl.appendChild(li);
+
+    if (index < displayList.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.style.textAlign = 'center';
+      arrow.style.fontSize = '1.2rem';
+      arrow.style.color = '#888';
+      arrow.textContent = '↓';
+      listEl.appendChild(arrow);
+    }
+  });
+}
+
 
 
 
