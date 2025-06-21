@@ -507,35 +507,24 @@ socket.on('gameStarted', (data) => {
 }
 
 console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-function renderSuccessfulGuesses() {
-  const listEl = document.getElementById('successful-guesses-list');
-  listEl.innerHTML = '';
+renderSuccessfulGuesses();
 
-  const displayList = [...successfulGuesses];
+  // Set new player
+  currentPlayerNameEl.textContent = data.currentPlayerName;
 
-  displayList.forEach((guessObj, index) => {
-    const li = document.createElement('li');
-    li.style.margin = '0.5rem 0';
-    li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
+// Display initial time
+  timerEl.textContent = data.timeLeft || 15;
+  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
-    const name = typeof guessObj === 'string' ? guessObj : guessObj.name;
-    const isLeadoff = typeof guessObj === 'object' && guessObj.isLeadoff;
+  // Show gameplay area again
+  gameArea.style.display = 'block';
+  document.getElementById('turnSection').style.display = 'block';
 
-    li.style.color = isLeadoff ? '#007bff' : '#000';
-    li.textContent = name;
-    listEl.appendChild(li);
-
-    if (index < displayList.length - 1) {
-      const arrow = document.createElement('div');
-      arrow.style.textAlign = 'center';
-      arrow.style.fontSize = '1.2rem';
-      arrow.style.color = '#888';
-      arrow.textContent = '↓';
-      listEl.appendChild(arrow);
-    }
-  });
-}
-
+  // Hide the gameOver UI
+  const gameOverContainer = document.getElementById('gameOverContainer');
+  gameOverContainer.innerHTML = '';
+  gameOverContainer.style.display = 'none';
+});
 
 
 
@@ -929,21 +918,22 @@ function showAutocompleteSuggestions(suggestions) {
 
 
 
-  function renderSuccessfulGuesses() {
+ function renderSuccessfulGuesses() {
   const listEl = document.getElementById('successful-guesses-list');
   listEl.innerHTML = '';
 
-  // Don't reverse this — just prepend the leadoff player
-  const displayList = leadoffPlayerName
-    ? [leadoffPlayerName, ...successfulGuesses]
-    : [...successfulGuesses];
+  const displayList = [...successfulGuesses];
 
-  displayList.forEach((guess, index) => {
+  displayList.forEach((guessObj, index) => {
     const li = document.createElement('li');
     li.style.margin = '0.5rem 0';
     li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
-    li.style.color = (index === 0 && leadoffPlayerName) ? '#007bff' : '#000'; // blue for leadoff
-    li.textContent = guess;
+
+    const name = typeof guessObj === 'string' ? guessObj : guessObj.name;
+    const isLeadoff = typeof guessObj === 'object' && guessObj.isLeadoff;
+
+    li.style.color = isLeadoff ? '#007bff' : '#000';
+    li.textContent = name;
     listEl.appendChild(li);
 
     if (index < displayList.length - 1) {
