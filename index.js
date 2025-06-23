@@ -211,15 +211,17 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
+  // Prevent guessing the leadoff player
   if (normalizedGuess === game.leadoffPlayer.toLowerCase()) {
     socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer}"`);
     return;
   }
 
+  // Prevent duplicate guesses (case-insensitive)
   if (game.successfulGuesses.some(g => g.name.toLowerCase() === normalizedGuess)) {
-  socket.emit('message', `"${guess}" has already been guessed.`);
-  return;
-}
+    socket.emit('message', `"${guess}" has already been guessed.`);
+    return;
+  }
 
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
@@ -228,10 +230,12 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
-    // game.successfulGuesses.push({
-    // guesser: game.usernames[socket.id],
-    // name: guess
-    // });
+    // ✅ Add guess to history to prevent future duplicates
+    game.successfulGuesses.push({
+      guesser: game.usernames[socket.id],
+      name: guess
+    });
+
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
@@ -253,6 +257,7 @@ socket.on('playerGuess', async ({ guess }) => {
     socket.emit('message', `Incorrect guess: "${guess}"`);
   }
 });
+
 
 
 
