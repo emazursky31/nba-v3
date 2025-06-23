@@ -751,18 +751,17 @@ guessInput.addEventListener('input', function() {
 
 
 rematchBtn.onclick = () => {
-  if (!myRoomId) {
-    console.error('[CLIENT] No roomId found on rematch!');
+  if (!roomId) {
+    console.error('No roomId defined. Cannot request rematch.');
     return;
   }
 
-  console.log('[CLIENT] Sending rematch request with roomId:', myRoomId);
-  socket.emit('requestRematch', { roomId: myRoomId });
-
+  console.log('[CLIENT] Sending rematch request with roomId:', roomId);
+  socket.emit('rematchRequest', roomId);
   rematchBtn.disabled = true;
   rematchBtn.textContent = 'Waiting for opponent...';
-  rematchBtn.style.backgroundColor = '';
 };
+
 
 // When another player requests a rematch
 socket.on('rematchRequested', ({ username }) => {
