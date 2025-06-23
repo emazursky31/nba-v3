@@ -266,6 +266,7 @@
 const socket = io(); // connects to the same origin automatically
 
   let roomId = null;
+  let myRoomId = null;
   let selectedPlayer = null;
   let fetchTimeout = null;
   let gameStarted = false;
@@ -305,6 +306,7 @@ const socket = io(); // connects to the same origin automatically
 
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
     roomId = generatedRoomId;
+    myRoomId = generatedRoomId;
     document.getElementById('displayRoomCode').textContent = generatedRoomId;
 
   inviteLinkContainer.innerHTML = `
@@ -334,7 +336,7 @@ const socket = io(); // connects to the same origin automatically
     }
 
     myUsername = username;
-    socket.emit('joinGame', { roomId, username });
+    socket.emit('joinGame', { roomId: myRoomId, username });
     statusDiv.textContent = `Started private room: ${roomId}`;
     waitingRoom.style.display = 'block';
     setupSection.classList.add('hidden');
@@ -369,6 +371,7 @@ const urlParams = new URLSearchParams(window.location.search);
     findGameBtn.style.display = 'none';
 
     roomId = sharedRoom;
+    myRoomId = sharedRoom;
     document.getElementById('displayRoomCode').textContent = sharedRoom;
 
   inviteLinkContainer.innerHTML = `
@@ -451,7 +454,7 @@ socket.on('matched', ({ roomId, opponent }) => {
   opponentName = opponent;
   statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
 
-  socket.emit('joinGame', { roomId, username: myUsername });
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
 });
 
 
