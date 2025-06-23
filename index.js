@@ -217,9 +217,9 @@ socket.on('playerGuess', async ({ guess }) => {
   }
 
   if (game.successfulGuesses.some(g => g.name.toLowerCase() === normalizedGuess)) {
-    socket.emit('message', `"${guess}" has already been guessed.`);
-    return;
-  }
+  socket.emit('message', `"${guess}" has already been guessed.`);
+  return;
+}
 
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
