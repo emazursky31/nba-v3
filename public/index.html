@@ -329,18 +329,23 @@ const socket = io(); // connects to the same origin automatically
 
 // ✅ Start private game
   startPrivateGameBtn.onclick = () => {
-    const username = usernameInput.value.trim();
-    if (!username) {
-      alert('Enter a username');
-      return;
-    }
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert('Enter a username');
+    return;
+  }
 
-    myUsername = username;
-    socket.emit('joinGame', { roomId: myRoomId, username });
-    statusDiv.textContent = `Started private room: ${roomId}`;
-    waitingRoom.style.display = 'block';
-    setupSection.classList.add('hidden');
-  };
+  myUsername = username;
+
+  // ✅ Ensure myRoomId is assigned from roomId
+  myRoomId = roomId;
+
+  socket.emit('joinGame', { roomId: myRoomId, username });
+  statusDiv.textContent = `Started private room: ${roomId}`;
+  waitingRoom.style.display = 'block';
+  setupSection.classList.add('hidden');
+};
+
 
   // ✅ Find public game
   findGameBtn.onclick = () => {
@@ -754,15 +759,15 @@ guessInput.addEventListener('input', function() {
 
 
 rematchBtn.onclick = () => {
-  if (!roomId) {
+  if (!myRoomId) {
     console.error('No roomId defined. Cannot request rematch.');
     return;
   }
 
-  console.log('[CLIENT] Sending rematch request with roomId:', roomId);
-  socket.emit('rematchRequest', roomId);
   rematchBtn.disabled = true;
   rematchBtn.textContent = 'Waiting for opponent...';
+
+  socket.emit('requestRematch', { roomId: myRoomId });
 };
 
 
