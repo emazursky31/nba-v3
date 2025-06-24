@@ -206,24 +206,17 @@
   <button id="submitUsernameBtn">Continue</button>
 </div>
 
-<!-- Step 2: Game Mode Selection -->
+<!-- Step 2: Game Mode Selection (after username is stored) -->
 <div id="modeSelection" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
-  <button id="publicGameBtn">🌐 Join Public Game</button>
+  <button id="findGameBtn">🌐 Join Public Game</button>
+  <br>
   <button id="changeUsernameBtn" style="margin-top: 1rem;">Change Username</button>
 </div>
 
-<!-- Step 3: Game Setup -->
-<div id="setupSection" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <!-- These buttons are toggled via JavaScript depending on the selected mode -->
-  <button id="startPrivateGameBtn" style="display: none;">Start Private Game</button>
-  <button id="findGameBtn" style="display: none;">Find Public Game</button>
-
-  <!-- Only used for private games -->
-  <div id="inviteLinkContainer" style="margin-top: 1rem;"></div>
-</div>
-
+<!-- Invite link container (used only in private games) -->
+<div id="inviteLinkContainer" class="hidden" style="text-align: center; margin-top: 1rem;"></div>
 
 <!-- Status message (e.g., "Looking for a game...") -->
 <div id="status" style="text-align: center; margin-top: 1rem;"></div>
@@ -268,10 +261,12 @@
 
 
 
+
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-const socket = io(); // connects to the same origin automatically
+  const socket = io();
 
+  // Core state
   let roomId = null;
   let myRoomId = null;
   let selectedPlayer = null;
@@ -281,192 +276,124 @@ const socket = io(); // connects to the same origin automatically
   let leadoffPlayerName = null;
   let myUsername = null;
   let opponentName = null;
-
-
-  const statusDiv = document.getElementById('status');
-  const waitingRoom = document.getElementById('waitingRoom');
-  const gameArea = document.getElementById('gameArea');
-  const currentPlayerNameEl = document.getElementById('currentPlayerName');
-  const timerEl = document.getElementById('timer');
-  const guessInput = document.getElementById('guessInput');
-  const submitGuessBtn = document.getElementById('submitGuessBtn');
-  const messagesEl = document.getElementById('messageContainer');
-  const autocompleteList = document.getElementById('autocomplete-list');
-  const rematchBtn = document.getElementById('rematchBtn');
   let successfulGuesses = [];
+
+  // Elements
+  const usernameSection = document.getElementById('usernameSection');
+  const usernameInput = document.getElementById('usernameInput');
+  const submitUsernameBtn = document.getElementById('submitUsernameBtn');
+  const changeUsernameBtn = document.getElementById('changeUsernameBtn');
 
   const modeSelection = document.getElementById('modeSelection');
   const privateGameBtn = document.getElementById('privateGameBtn');
-  const publicGameBtn = document.getElementById('publicGameBtn');
-  const startPrivateGameBtn = document.getElementById('startPrivateGameBtn');
   const findGameBtn = document.getElementById('findGameBtn');
   const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-  const setupSection = document.getElementById('setupSection');
-  const usernameInput = document.getElementById('usernameInput');
-  const submitUsernameBtn = document.getElementById('submitUsernameBtn');
-  const usernameSection = document.getElementById('usernameSection');
+  const statusDiv = document.getElementById('status');
+  const waitingRoom = document.getElementById('waitingRoom');
 
+  // ✅ Join private game from shared invite link
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedRoom = urlParams.get('room');
+  if (sharedRoom) {
+    myRoomId = sharedRoom;
+    roomId = sharedRoom;
+
+    // Wait for username before joining
+    const joinAfterUsername = () => {
+      const stored = localStorage.getItem('username');
+      if (!stored) {
+        usernameSection.style.display = 'block';
+        return setTimeout(joinAfterUsername, 100);
+      }
+
+      myUsername = stored;
+      usernameSection.style.display = 'none';
+      modeSelection.classList.add('hidden');
+      socket.emit('joinGame', { roomId: sharedRoom, username: myUsername });
+
+      statusDiv.textContent = `Joined private room: ${sharedRoom}`;
+      waitingRoom.style.display = 'block';
+
+      inviteLinkContainer.classList.remove('hidden');
+      document.getElementById('displayRoomCode').textContent = sharedRoom;
+      inviteLinkContainer.innerHTML = `
+        Share this link to invite a friend:<br>
+        <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
+          ${window.location.origin}?room=${sharedRoom}
+        </a>
+      `;
+    };
+
+    joinAfterUsername();
+  }
+
+  // ✅ Handle existing/stored username
   function handleUsernameEntry() {
-  const storedName = localStorage.getItem('username');
-  if (storedName) {
-    myUsername = storedName;
+    const stored = localStorage.getItem('username');
+    if (stored) {
+      myUsername = stored;
+      usernameSection.style.display = 'none';
+      modeSelection.classList.remove('hidden');
+    } else {
+      usernameSection.style.display = 'block';
+      modeSelection.classList.add('hidden');
+    }
+  }
+
+  // ✅ Username submit
+  submitUsernameBtn.onclick = () => {
+    const entered = usernameInput.value.trim();
+    if (!entered) return alert('Please enter a username.');
+    myUsername = entered;
+    localStorage.setItem('username', myUsername);
     usernameSection.style.display = 'none';
     modeSelection.classList.remove('hidden');
-  } else {
-    usernameSection.style.display = 'block';
-    modeSelection.classList.add('hidden');
-  }
-}
+  };
 
-submitUsernameBtn.onclick = () => {
-  const entered = usernameInput.value.trim();
-  if (!entered) {
-    alert('Please enter a username.');
-    return;
-  }
+  changeUsernameBtn.onclick = () => {
+    localStorage.removeItem('username');
+    location.reload();
+  };
 
-  myUsername = entered;
-  localStorage.setItem('username', myUsername);
-  usernameSection.style.display = 'none';
-  modeSelection.classList.remove('hidden');
-};
+  handleUsernameEntry(); // ✅ run on page load
 
-changeUsernameBtn.onclick = () => {
-  localStorage.removeItem('username');
-  location.reload(); // resets flow to username entry
-};
-
-handleUsernameEntry(); // Call on page load
-
-  // ✅ Private game setup
+  // ✅ Private Game (create + join immediately)
   privateGameBtn.onclick = () => {
-    modeSelection.style.display = 'none';
-    setupSection.classList.remove('hidden');
-    startPrivateGameBtn.style.display = 'inline-block';
-    findGameBtn.style.display = 'none';
-
-  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+    const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
     roomId = generatedRoomId;
     myRoomId = generatedRoomId;
-    document.getElementById('displayRoomCode').textContent = generatedRoomId;
 
-  inviteLinkContainer.innerHTML = `
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+
+    statusDiv.textContent = `Started private room: ${myRoomId}`;
+    modeSelection.classList.add('hidden');
+    waitingRoom.style.display = 'block';
+
+    inviteLinkContainer.classList.remove('hidden');
+    inviteLinkContainer.innerHTML = `
       Share this link to invite a friend:<br>
-      <a href="${window.location.origin}?room=${generatedRoomId}" target="_blank">
-        ${window.location.origin}?room=${generatedRoomId}
+      <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+        ${window.location.origin}?room=${myRoomId}
       </a>
     `;
   };
 
-// ✅ Public game setup
-  publicGameBtn.onclick = () => {
-    modeSelection.style.display = 'none';
-    setupSection.classList.remove('hidden');
-    startPrivateGameBtn.style.display = 'none';
-    findGameBtn.style.display = 'inline-block';
-    inviteLinkContainer.innerHTML = '';
-  };
-
-
-// ✅ Start private game
-  startPrivateGameBtn.onclick = () => {
-  const username = usernameInput.value.trim();
-  if (!username) {
-    alert('Enter a username');
-    return;
-  }
-
-  myUsername = username;
-
-  // ✅ Ensure myRoomId is assigned from roomId
-  myRoomId = roomId;
-
-  socket.emit('joinGame', { roomId: myRoomId, username });
-  statusDiv.textContent = `Started private room: ${roomId}`;
-  waitingRoom.style.display = 'block';
-  setupSection.classList.add('hidden');
-};
-
-
-  // ✅ Find public game
+  // ✅ Public Game (instant match)
   findGameBtn.onclick = () => {
-    const username = usernameInput.value.trim();
-    if (!username) {
-      alert('Enter a username');
-      return;
-    }
+    if (!myUsername) return alert('Missing username');
 
     if (gameStarted && !gameOver) {
-      alert('Finish your current game before finding a new one.');
-      return;
+      return alert('Finish your current game first.');
     }
 
-    myUsername = username;
-    socket.emit('findMatch', username);
+    socket.emit('findMatch', myUsername);
     statusDiv.textContent = 'Looking for a game...';
-    setupSection.classList.add('hidden');
+    modeSelection.classList.add('hidden');
     waitingRoom.style.display = 'block';
   };
-
-const urlParams = new URLSearchParams(window.location.search);
-  const sharedRoom = urlParams.get('room');
-  if (sharedRoom) {
-    modeSelection.style.display = 'none';
-    setupSection.classList.remove('hidden');
-    startPrivateGameBtn.style.display = 'inline-block';
-    findGameBtn.style.display = 'none';
-
-    roomId = sharedRoom;
-    myRoomId = sharedRoom;
-    document.getElementById('displayRoomCode').textContent = sharedRoom;
-
-  inviteLinkContainer.innerHTML = `
-      Share this link to invite a friend:<br>
-      <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
-        ${window.location.origin}?room=${sharedRoom}
-      </a>
-  `;
-}
+});
 
 
-  // joinBtn.onclick = () => {
-  //   const username = document.getElementById('usernameInput').value.trim();
-  //   roomId = roomIdInput.value.trim();
-
-  //   if (!username) {
-  //     alert('Enter a username');
-  //     return;
-  //   }
-
-  //   if (!roomId) {
-  //     alert('Enter a room ID');
-  //     return;
-  //   }
-
-  
-  //   socket.emit('joinGame', { roomId, username });
-  //   statusDiv.textContent = `Joined room: ${roomId}`;
-  //   document.getElementById('displayRoomCode').textContent = roomId;
-  //   waitingRoom.style.display = 'block';
-  //   gameArea.style.display = 'none';
-  // };
-
-//   findGameBtn.onclick = () => {
-//   const username = document.getElementById('usernameInput').value.trim();
-//   if (!username) {
-//     alert('Enter a username');
-//     return;
-//   }
-
-//   if (gameStarted && !gameOver) {
-//     alert('Finish your current game before finding a new one.');
-//     return;
-//   }
-
-//   myUsername = username;
-//   socket.emit('findMatch', username);
-//   statusDiv.textContent = 'Looking for a game...';
-// };
 
 
 
@@ -995,11 +922,6 @@ function showAutocompleteSuggestions(suggestions) {
   });
 }
 
-
-
-
-
-  });
 </script>
 </body>
 </html>
