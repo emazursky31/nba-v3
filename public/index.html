@@ -199,24 +199,31 @@
 <body>
 <h1>NBA Teammate Game</h1>
 
-<!-- Game Mode Selection -->
-<div id="modeSelection" style="text-align: center; margin-top: 2rem;">
+<!-- Step 1: Username Entry -->
+<div id="usernameSection" style="text-align: center; margin-top: 2rem;">
+  <h2>Enter Your Username</h2>
+  <input type="text" id="usernameInput" placeholder="Choose a username" />
+  <button id="submitUsernameBtn">Continue</button>
+</div>
+
+<!-- Step 2: Game Mode Selection -->
+<div id="modeSelection" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="publicGameBtn">🌐 Join Public Game</button>
+  <button id="changeUsernameBtn" style="margin-top: 1rem;">Change Username</button>
 </div>
 
-<!-- Game Setup Section (shown after selecting a mode) -->
+<!-- Step 3: Game Setup -->
 <div id="setupSection" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <input type="text" id="usernameInput" placeholder="Enter your name" />
-  
   <!-- These buttons are toggled via JavaScript depending on the selected mode -->
   <button id="startPrivateGameBtn" style="display: none;">Start Private Game</button>
   <button id="findGameBtn" style="display: none;">Find Public Game</button>
-  
+
   <!-- Only used for private games -->
   <div id="inviteLinkContainer" style="margin-top: 1rem;"></div>
 </div>
+
 
 <!-- Status message (e.g., "Looking for a game...") -->
 <div id="status" style="text-align: center; margin-top: 1rem;"></div>
@@ -272,7 +279,7 @@ const socket = io(); // connects to the same origin automatically
   let gameStarted = false;
   let gameOver = false;
   let leadoffPlayerName = null;
-  let myUsername = '';
+  let myUsername = null;
   let opponentName = null;
 
 
@@ -296,6 +303,40 @@ const socket = io(); // connects to the same origin automatically
   const inviteLinkContainer = document.getElementById('inviteLinkContainer');
   const setupSection = document.getElementById('setupSection');
   const usernameInput = document.getElementById('usernameInput');
+  const submitUsernameBtn = document.getElementById('submitUsernameBtn');
+  const usernameSection = document.getElementById('usernameSection');
+
+  function handleUsernameEntry() {
+  const storedName = localStorage.getItem('username');
+  if (storedName) {
+    myUsername = storedName;
+    usernameSection.style.display = 'none';
+    modeSelection.classList.remove('hidden');
+  } else {
+    usernameSection.style.display = 'block';
+    modeSelection.classList.add('hidden');
+  }
+}
+
+submitUsernameBtn.onclick = () => {
+  const entered = usernameInput.value.trim();
+  if (!entered) {
+    alert('Please enter a username.');
+    return;
+  }
+
+  myUsername = entered;
+  localStorage.setItem('username', myUsername);
+  usernameSection.style.display = 'none';
+  modeSelection.classList.remove('hidden');
+};
+
+changeUsernameBtn.onclick = () => {
+  localStorage.removeItem('username');
+  location.reload(); // resets flow to username entry
+};
+
+handleUsernameEntry(); // Call on page load
 
   // ✅ Private game setup
   privateGameBtn.onclick = () => {
