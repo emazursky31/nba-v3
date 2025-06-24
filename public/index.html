@@ -263,172 +263,156 @@
 
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-  const socket = io();
+ document.addEventListener('DOMContentLoaded', () => {
+    const socket = io();
 
-  // Core state
-  let roomId = null;
-  let myRoomId = null;
-  let selectedPlayer = null;
-  let fetchTimeout = null;
-  let gameStarted = false;
-  let gameOver = false;
-  let leadoffPlayerName = null;
-  let myUsername = null;
-  let opponentName = null;
-  let successfulGuesses = [];
+    // Core state
+    let roomId = null;
+    let myRoomId = null;
+    let selectedPlayer = null;
+    let fetchTimeout = null;
+    let gameStarted = false;
+    let gameOver = false;
+    let leadoffPlayerName = null;
+    let myUsername = null;
+    let opponentName = null;
+    let successfulGuesses = [];
 
-  // Elements
-  const usernameSection = document.getElementById('usernameSection');
-  const usernameInput = document.getElementById('usernameInput');
-  const submitUsernameBtn = document.getElementById('submitUsernameBtn');
-  const changeUsernameBtn = document.getElementById('changeUsernameBtn');
+    // Elements
+    const usernameSection = document.getElementById('usernameSection');
+    const usernameInput = document.getElementById('usernameInput');
+    const submitUsernameBtn = document.getElementById('submitUsernameBtn');
+    const changeUsernameBtn = document.getElementById('changeUsernameBtn');
 
-  const modeSelection = document.getElementById('modeSelection');
-  const privateGameBtn = document.getElementById('privateGameBtn');
-  const findGameBtn = document.getElementById('findGameBtn');
-  const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-  const statusDiv = document.getElementById('status');
-  const waitingRoom = document.getElementById('waitingRoom');
+    const modeSelection = document.getElementById('modeSelection');
+    const privateGameBtn = document.getElementById('privateGameBtn');
+    const findGameBtn = document.getElementById('findGameBtn');
+    const inviteLinkContainer = document.getElementById('inviteLinkContainer');
+    const statusDiv = document.getElementById('status');
+    const waitingRoom = document.getElementById('waitingRoom');
+    const gameArea = document.getElementById('gameArea');
+    const currentPlayerNameEl = document.getElementById('currentPlayerName');
+    const timerEl = document.getElementById('timer');
+    const guessInput = document.getElementById('guessInput');
+    const submitGuessBtn = document.getElementById('submitGuessBtn');
+    const messagesEl = document.getElementById('messageContainer');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    const rematchBtn = document.getElementById('rematchBtn');
 
-  // ✅ Join private game from shared invite link
-  const urlParams = new URLSearchParams(window.location.search);
-  const sharedRoom = urlParams.get('room');
-  if (sharedRoom) {
-    myRoomId = sharedRoom;
-    roomId = sharedRoom;
+    // Join private game from shared invite link
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedRoom = urlParams.get('room');
+    if (sharedRoom) {
+      myRoomId = sharedRoom;
+      roomId = sharedRoom;
 
-    // Wait for username before joining
-    const joinAfterUsername = () => {
+      const joinAfterUsername = () => {
+        const stored = localStorage.getItem('username');
+        if (!stored) {
+          usernameSection.style.display = 'block';
+          return setTimeout(joinAfterUsername, 100);
+        }
+
+        myUsername = stored;
+        usernameSection.style.display = 'none';
+        modeSelection.classList.add('hidden');
+        socket.emit('joinGame', { roomId: sharedRoom, username: myUsername });
+
+        statusDiv.textContent = `Joined private room: ${sharedRoom}`;
+        waitingRoom.style.display = 'block';
+
+        inviteLinkContainer.classList.remove('hidden');
+        document.getElementById('displayRoomCode').textContent = sharedRoom;
+        inviteLinkContainer.innerHTML = `
+          Share this link to invite a friend:<br>
+          <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
+            ${window.location.origin}?room=${sharedRoom}
+          </a>
+        `;
+      };
+
+      joinAfterUsername();
+    }
+
+    function handleUsernameEntry() {
       const stored = localStorage.getItem('username');
-      if (!stored) {
+      if (stored) {
+        myUsername = stored;
+        usernameSection.style.display = 'none';
+        modeSelection.classList.remove('hidden');
+      } else {
         usernameSection.style.display = 'block';
-        return setTimeout(joinAfterUsername, 100);
+        modeSelection.classList.add('hidden');
       }
+    }
 
-      myUsername = stored;
+    submitUsernameBtn.onclick = () => {
+      const entered = usernameInput.value.trim();
+      if (!entered) return alert('Please enter a username.');
+      myUsername = entered;
+      localStorage.setItem('username', myUsername);
       usernameSection.style.display = 'none';
-      modeSelection.classList.add('hidden');
-      socket.emit('joinGame', { roomId: sharedRoom, username: myUsername });
+      modeSelection.classList.remove('hidden');
+    };
 
-      statusDiv.textContent = `Joined private room: ${sharedRoom}`;
+    changeUsernameBtn.onclick = () => {
+      localStorage.removeItem('username');
+      location.reload();
+    };
+
+    handleUsernameEntry();
+
+    privateGameBtn.onclick = () => {
+      const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+      roomId = generatedRoomId;
+      myRoomId = generatedRoomId;
+
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+
+      statusDiv.textContent = `Started private room: ${myRoomId}`;
+      modeSelection.classList.add('hidden');
       waitingRoom.style.display = 'block';
 
       inviteLinkContainer.classList.remove('hidden');
-      document.getElementById('displayRoomCode').textContent = sharedRoom;
       inviteLinkContainer.innerHTML = `
         Share this link to invite a friend:<br>
-        <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
-          ${window.location.origin}?room=${sharedRoom}
+        <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+          ${window.location.origin}?room=${myRoomId}
         </a>
       `;
     };
 
-    joinAfterUsername();
-  }
+    findGameBtn.onclick = () => {
+      if (!myUsername) return alert('Missing username');
+      if (gameStarted && !gameOver) return alert('Finish your current game first.');
 
-  // ✅ Handle existing/stored username
-  function handleUsernameEntry() {
-    const stored = localStorage.getItem('username');
-    if (stored) {
-      myUsername = stored;
-      usernameSection.style.display = 'none';
-      modeSelection.classList.remove('hidden');
-    } else {
-      usernameSection.style.display = 'block';
+      socket.emit('findMatch', myUsername);
+      statusDiv.textContent = 'Looking for a game...';
       modeSelection.classList.add('hidden');
-    }
-  }
+      waitingRoom.style.display = 'block';
+    };
 
-  // ✅ Username submit
-  submitUsernameBtn.onclick = () => {
-    const entered = usernameInput.value.trim();
-    if (!entered) return alert('Please enter a username.');
-    myUsername = entered;
-    localStorage.setItem('username', myUsername);
-    usernameSection.style.display = 'none';
-    modeSelection.classList.remove('hidden');
-  };
+    socket.on('connect', () => {});
 
-  changeUsernameBtn.onclick = () => {
-    localStorage.removeItem('username');
-    location.reload();
-  };
+    socket.on('playersUpdate', (count) => {
+      statusDiv.textContent = `Players in room: ${count}`;
+      if (count < 2) {
+        waitingRoom.style.display = 'block';
+        gameArea.style.display = 'none';
+        rematchBtn.style.display = 'none';
+      } else {
+        waitingRoom.style.display = 'none';
+        gameArea.style.display = 'block';
+      }
+    });
 
-  handleUsernameEntry(); // ✅ run on page load
-
-  // ✅ Private Game (create + join immediately)
-  privateGameBtn.onclick = () => {
-    const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-    roomId = generatedRoomId;
-    myRoomId = generatedRoomId;
-
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-
-    statusDiv.textContent = `Started private room: ${myRoomId}`;
-    modeSelection.classList.add('hidden');
-    waitingRoom.style.display = 'block';
-
-    inviteLinkContainer.classList.remove('hidden');
-    inviteLinkContainer.innerHTML = `
-      Share this link to invite a friend:<br>
-      <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-        ${window.location.origin}?room=${myRoomId}
-      </a>
-    `;
-  };
-
-  // ✅ Public Game (instant match)
-  findGameBtn.onclick = () => {
-    if (!myUsername) return alert('Missing username');
-
-    if (gameStarted && !gameOver) {
-      return alert('Finish your current game first.');
-    }
-
-    socket.emit('findMatch', myUsername);
-    statusDiv.textContent = 'Looking for a game...';
-    modeSelection.classList.add('hidden');
-    waitingRoom.style.display = 'block';
-  };
-});
-
-
-
-
-
-
-  // 1. Connection & Room Setup
-socket.on('connect', () => {
-  // Connected
-});
-
-socket.on('playersUpdate', (count) => {
-  statusDiv.textContent = `Players in room: ${count}`;
-
-  if (count < 2) {
-    waitingRoom.style.display = 'block';
-    gameArea.style.display = 'none';
-    rematchBtn.style.display = 'none';  // Hide rematch if waiting
-  } else {
-    waitingRoom.style.display = 'none';
-    gameArea.style.display = 'block';
-  }
-});
-
-socket.on('matched', ({ roomId, opponent }) => {
-  if (gameStarted && !gameOver) {
-    console.warn('[CLIENT] Already in game, ignoring unexpected match.');
-    return;
-  }
-
-  console.log('Received matched event:', roomId, opponent);
-  myRoomId = roomId;
-  opponentName = opponent;
-  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
-
-  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-});
+    socket.on('matched', ({ roomId, opponent }) => {
+      if (gameStarted && !gameOver) return;
+      myRoomId = roomId;
+      opponentName = opponent;
+      statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    });
 
 
 
@@ -920,8 +904,8 @@ function showAutocompleteSuggestions(suggestions) {
       listEl.appendChild(arrow);
     }
   });
-}
-
+ }
+  }); // End of DOMContentLoaded
 </script>
 </body>
 </html>
