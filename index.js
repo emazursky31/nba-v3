@@ -236,6 +236,8 @@ if (previousPlayer) {
   try {
     const prevCareer = await getCareer(previousPlayer);
     const guessCareer = await getCareer(guess);
+    console.log('[DEBUG] previousPlayer career:', previousPlayer, prevCareer);
+    console.log('[DEBUG] guess career:', guess, guessCareer);
     sharedTeams = getSharedTeams(prevCareer, guessCareer);
     console.log(`[SERVER] Shared teams for ${previousPlayer} and ${guess}:`, sharedTeams);
   } catch (err) {
@@ -458,14 +460,15 @@ function getSharedTeams(career1, career2) {
 
 async function getCareer(playerName) {
   const query = `
-    SELECT team_abbr AS team, 
-           EXTRACT(YEAR FROM start_date) AS start_year, 
-           EXTRACT(YEAR FROM end_date) AS end_year
-    FROM player_team_stints pts
-    JOIN players p ON pts.player_id = p.player_id
-    WHERE p.player_name = $1
-    ORDER BY start_date;
-  `;
+  SELECT team_abbr AS team, 
+         EXTRACT(YEAR FROM start_date) AS start_year, 
+         EXTRACT(YEAR FROM end_date) AS end_year
+  FROM player_team_stints pts
+  JOIN players p ON pts.player_id = p.player_id
+  WHERE LOWER(TRIM(p.player_name)) = LOWER(TRIM($1))
+  ORDER BY start_date;
+`;
+
 
   try {
     const res = await client.query(query, [playerName]);
