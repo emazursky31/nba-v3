@@ -231,12 +231,17 @@ socket.on('playerGuess', async ({ guess }) => {
     const previousPlayer = game.currentPlayerName;
 
     // Fetch career stints for previous player and current guess
-    let sharedTeams = [];
-    if (previousPlayer) {
-      const previousCareer = await getCareer(previousPlayer);
-      const guessCareer = await getCareer(guess);
-      sharedTeams = getSharedTeams(previousCareer, guessCareer);
-    }
+   let sharedTeams = [];
+if (previousPlayer) {
+  try {
+    const prevCareer = await getCareer(previousPlayer);
+    const guessCareer = await getCareer(guess);
+    sharedTeams = getSharedTeams(prevCareer, guessCareer);
+    console.log(`[SERVER] Shared teams for ${previousPlayer} and ${guess}:`, sharedTeams);
+  } catch (err) {
+    console.error('Error determining shared teams:', err);
+  }
+}
 
     game.successfulGuesses.push({
       guesser: game.usernames[socket.id],
