@@ -61,9 +61,36 @@
     position: relative;
   }
 
+  @keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+  }
+}
+
   #turnSection {
     margin-bottom: 1.5rem;
   }
+
+  #turnSection.your-turn {
+  border: 3px solid #28a745;
+  background-color: #e8f5e9;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(40, 167, 69, 0.3);
+  transition: all 0.3s ease;
+  animation: pulse-border 1.5s infinite;
+}
+
+#turnSection.opponent-turn {
+  opacity: 0.6;
+}
+
 
   #timer {
     font-size: 2rem;
@@ -191,6 +218,14 @@
     opacity: 0;
   }
 
+  .turn-prompt {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 1rem;
+}
+
+
   #gameOverContainer {
     display: none;
     text-align: center;
@@ -271,7 +306,7 @@
 <!-- In-Game UI -->
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
   <div id="turnSection">
-    <p>Name any teammate of: <strong id="currentPlayerName"></strong></p>
+    <p class="turn-prompt">🎯 Name any teammate of: <strong id="currentPlayerName"></strong></p>
     <p>Time left: <span id="timer">15</span> seconds</p>
 
     <div id="guessControls" style="position: relative;">
@@ -601,28 +636,41 @@ socket.on('yourTurn', (data) => {
   // Route to the game screen
   navigateTo('/play');
 
+  const turnSection = document.getElementById('turnSection');
+
+  // Add visual highlight for your turn
+  turnSection.classList.add('your-turn');
+  turnSection.classList.remove('opponent-turn');
+
   // Show input & button
   document.getElementById('guessControls').style.display = 'block';
 
   // Enable input & button
   guessInput.disabled = false;
-  submitGuessBtn.disabled = false;
+  submitGuessBtn.disabled = !guessInput.value.trim();
 
   // Update player name and timer
   currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
   timerEl.textContent = data.timeLeft || 15;
 
   // Make sure turn section and messages are visible
-  document.getElementById('turnSection').style.display = 'block';
+  turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
 
   // Optional message display
   showMessage(data.message || "It's your turn to guess!", 'info');
 });
 
+
 socket.on('opponentTurn', (data) => {
   // Route to the game screen
   navigateTo('/play');
+
+  const turnSection = document.getElementById('turnSection');
+
+  // Apply muted style
+  turnSection.classList.remove('your-turn');
+  turnSection.classList.add('opponent-turn');
 
   // Hide input & button since it's opponent's turn
   document.getElementById('guessControls').style.display = 'none';
@@ -636,12 +684,13 @@ socket.on('opponentTurn', (data) => {
   timerEl.textContent = '';
 
   // Make sure turn section and messages are visible
-  document.getElementById('turnSection').style.display = 'block';
+  turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
 
   // Show an informational message
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 });
+
 
 
 socket.on('message', (msg) => {
