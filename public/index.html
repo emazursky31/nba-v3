@@ -368,10 +368,7 @@
 
   <div id="messageContainer"></div>
 
-  <div id="successful-guesses-container" style="margin-top: 2px;">
-    <h3>Turn History</h3>
-    <ul id="successful-guesses-list"></ul>
-  </div>
+  
 </section>
 
 
@@ -381,14 +378,14 @@
     <!-- Game over message will be dynamically added here -->
   </div>
 
-  <div id="previousGuesses" style="margin-top: 2rem;">
-    <h3 style="font-size: 1.2rem; margin-bottom: 0.5rem;">Turn History</h3>
-    <ul id="successful-guesses-list" style="list-style: none; padding-left: 0;"></ul>
-  </div>
-
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
 </section>
 
+<!-- Shared Turn History List -->
+<div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
+  <h3 style="margin-bottom: 0.5rem;">Turn History</h3>
+  <ul id="successful-guesses-list" style="list-style: none; padding: 0;"></ul>
+</div>
 
 
 <script>
