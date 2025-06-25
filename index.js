@@ -252,7 +252,7 @@ socket.on('playerGuess', async ({ guess }) => {
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
-    console.log('Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
+console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
 
     io.to(roomId).emit('turnEnded', {
   successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,

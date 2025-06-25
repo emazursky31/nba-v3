@@ -782,6 +782,7 @@ socket.on('message', (msg) => {
 
 
 socket.on('turnEnded', (data) => {
+  console.log('[CLIENT] Received turnEnded data.successfulGuesses:', data.successfulGuesses);
   navigateTo('/play'); // Ensure user is on gameplay page
 
   if (Array.isArray(data.successfulGuesses)) {
