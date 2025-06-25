@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const path = require('path'); // ✅ Add this
+const path = require('path');
 const { Server } = require('socket.io');
 const { Client } = require('pg');
 
@@ -16,20 +16,20 @@ const io = new Server(server);
 const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
 
+// Serve static files first - make sure this points to your frontend build folder
+app.use(express.static(path.join(__dirname, 'public')));
 
+// Your API and other routes can go here (if any)...
 
-app.get('/', (req, res) => {
+// Serve index.html for all other routes (SPA fallback)
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
-// ✅ Optional: serve other assets (like CSS or JS files) if needed
-app.use(express.static(path.join(__dirname)));
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
-
 
 const client = new Client({
   connectionString: process.env.SUPABASE_DB_URL,
@@ -43,9 +43,6 @@ client.connect()
   });
 
 app.use(express.json());
-
-// Add this to serve your frontend files in /public
-app.use(express.static('public'));
 
 
 app.get('/players', async (req, res) => {
