@@ -935,22 +935,22 @@ function renderRoute(path) {
   allSections.forEach(section => {
     const route = section.getAttribute('data-route');
     if (route === path) {
-      section.style.display = 'block';
+      section.classList.remove('hidden');
       matched = true;
     } else {
-      section.style.display = 'none';
+      section.classList.add('hidden');
     }
   });
 
-  // Fallback if no matching route found (optional)
   if (!matched) {
-    // Show a default route or 404 - here we show /username section as default
     const defaultSection = document.querySelector('section[data-route="/username"]');
     if (defaultSection) {
-      defaultSection.style.display = 'block';
+      defaultSection.classList.remove('hidden');
     }
   }
 }
+
+
 
 // Handle browser back/forward navigation
 window.addEventListener('popstate', () => {
