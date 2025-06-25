@@ -1039,6 +1039,14 @@ function renderRoute(path) {
   }
 }
 
+if (window.innerWidth < 600) {
+  document.getElementById('guessInput').addEventListener('focus', () => {
+    document.getElementById('guessControls').scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  });
+}
 
 
 // Handle browser back/forward navigation
