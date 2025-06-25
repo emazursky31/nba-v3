@@ -200,36 +200,36 @@
 <h1>NBA Teammate Game</h1>
 
 <!-- Step 1: Username Entry -->
-<div id="usernameSection" style="text-align: center; margin-top: 2rem;">
+<section id="usernameSection" data-route="/username" style="text-align: center; margin-top: 2rem;">
   <h2>Enter Your Username</h2>
   <input type="text" id="usernameInput" placeholder="Choose a username" />
   <button id="submitUsernameBtn">Continue</button>
-</div>
+</section>
 
-<!-- Step 2: Game Mode Selection (after username is stored) -->
-<div id="modeSelection" class="hidden" style="text-align: center; margin-top: 2rem;">
+<!-- Step 2: Game Mode Selection -->
+<section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="findGameBtn">🌐 Join Public Game</button>
   <br>
   <button id="changeUsernameBtn" style="margin-top: 1rem;">Change Username</button>
-</div>
+</section>
 
 <!-- Invite link container (used only in private games) -->
-<div id="inviteLinkContainer" class="hidden" style="text-align: center; margin-top: 1rem;"></div>
+<section id="inviteLinkContainer" data-route="/invite" class="hidden" style="text-align: center; margin-top: 1rem;"></section>
 
-<!-- Status message (e.g., "Looking for a game...") -->
-<div id="status" style="text-align: center; margin-top: 1rem;"></div>
+<!-- Status message -->
+<section id="status" data-route="/status" style="text-align: center; margin-top: 1rem;"></section>
 
 <!-- Waiting Room View -->
-<div id="waitingRoom" style="display: none; text-align: center; margin-top: 2rem;">
+<section id="waitingRoom" data-route="/waiting" style="display: none; text-align: center; margin-top: 2rem;">
   <h2>Waiting Room</h2>
   <p>Waiting for another player to join...</p>
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
-</div>
+</section>
 
 <!-- In-Game UI -->
-<div id="gameArea" style="display:none; position: relative;">
+<section id="gameArea" data-route="/play" style="display: none; position: relative;">
   <div id="turnSection">
     <p>Name any teammate of: <strong id="currentPlayerName"></strong></p>
     <p>Time left: <span id="timer">15</span> seconds</p>
@@ -247,18 +247,21 @@
   </div>
 
   <div id="messageContainer"></div>
-  <div id="gameOverContainer"></div>
-
-  <button id="rematchBtn" style="display: none;">Request Rematch</button>
 
   <div id="successful-guesses-container" style="margin-top: 2px;">
     <h3>Turn History</h3>
     <ul id="successful-guesses-list"></ul>
   </div>
-</div>
+</section>
 
 
-
+<!-- Game Over UI -->
+<section data-route="/gameover" style="display: none; text-align: center; margin-top: 2rem;">
+  <div id="gameOverContainer" style="display: flex; justify-content: center; align-items: center;">
+    <!-- Game over message will be dynamically added here -->
+  </div>
+  <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
+</section>
 
 
 
@@ -314,8 +317,7 @@
         }
 
         myUsername = stored;
-        usernameSection.style.display = 'none';
-        modeSelection.classList.add('hidden');
+        navigateTo('/waiting');
         socket.emit('joinGame', { roomId: sharedRoom, username: myUsername });
 
         statusDiv.textContent = `Joined private room: ${sharedRoom}`;
@@ -334,25 +336,24 @@
       joinAfterUsername();
     }
 
-    function handleUsernameEntry() {
-      const stored = localStorage.getItem('username');
-      if (stored) {
-        myUsername = stored;
-        usernameSection.style.display = 'none';
-        modeSelection.classList.remove('hidden');
-      } else {
-        usernameSection.style.display = 'block';
-        modeSelection.classList.add('hidden');
-      }
-    }
+function handleUsernameEntry() {
+  const stored = localStorage.getItem('username');
+  if (stored) {
+    myUsername = stored;
+    navigateTo('/mode');
+  } else {
+    navigateTo('/username');
+  }
+}
+
+
 
     submitUsernameBtn.onclick = () => {
       const entered = usernameInput.value.trim();
       if (!entered) return alert('Please enter a username.');
       myUsername = entered;
       localStorage.setItem('username', myUsername);
-      usernameSection.style.display = 'none';
-      modeSelection.classList.remove('hidden');
+      navigateTo('/mode');
     };
 
     changeUsernameBtn.onclick = () => {
@@ -362,57 +363,70 @@
 
     handleUsernameEntry();
 
-    privateGameBtn.onclick = () => {
-      const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-      roomId = generatedRoomId;
-      myRoomId = generatedRoomId;
+   privateGameBtn.onclick = () => {
+  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+  roomId = generatedRoomId;
+  myRoomId = generatedRoomId;
 
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
 
-      statusDiv.textContent = `Started private room: ${myRoomId}`;
-      modeSelection.classList.add('hidden');
-      waitingRoom.style.display = 'block';
+  // Update any dynamic text
+  statusDiv.textContent = `Started private room: ${myRoomId}`;
+  document.getElementById('displayRoomCode').textContent = myRoomId;
 
-      inviteLinkContainer.classList.remove('hidden');
-      inviteLinkContainer.innerHTML = `
-        Share this link to invite a friend:<br>
-        <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-          ${window.location.origin}?room=${myRoomId}
-        </a>
-      `;
-    };
+  // Update invite link
+  inviteLinkContainer.innerHTML = `
+    Share this link to invite a friend:<br>
+    <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+      ${window.location.origin}?room=${myRoomId}
+    </a>
+  `;
 
-    findGameBtn.onclick = () => {
-      if (!myUsername) return alert('Missing username');
-      if (gameStarted && !gameOver) return alert('Finish your current game first.');
+  // Route to waiting room
+  navigateTo('/waiting');
+};
 
-      socket.emit('findMatch', myUsername);
-      statusDiv.textContent = 'Looking for a game...';
-      modeSelection.classList.add('hidden');
-      waitingRoom.style.display = 'block';
-    };
+
+  findGameBtn.onclick = () => {
+  if (!myUsername) return alert('Missing username');
+  if (gameStarted && !gameOver) return alert('Finish your current game first.');
+
+  socket.emit('findMatch', myUsername);
+
+  statusDiv.textContent = 'Looking for a game...';
+
+  // Navigate to the waiting room instead of manually hiding/showing sections
+  navigateTo('/waiting');
+};
+
 
     socket.on('connect', () => {});
 
-    socket.on('playersUpdate', (count) => {
-      statusDiv.textContent = `Players in room: ${count}`;
-      if (count < 2) {
-        waitingRoom.style.display = 'block';
-        gameArea.style.display = 'none';
-        rematchBtn.style.display = 'none';
-      } else {
-        waitingRoom.style.display = 'none';
-        gameArea.style.display = 'block';
-      }
-    });
+  socket.on('playersUpdate', (count) => {
+  statusDiv.textContent = `Players in room: ${count}`;
 
-    socket.on('matched', ({ roomId, opponent }) => {
-      if (gameStarted && !gameOver) return;
-      myRoomId = roomId;
-      opponentName = opponent;
-      statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    });
+  if (count < 2) {
+    rematchBtn.style.display = 'none';
+    navigateTo('/waiting');
+  } else {
+    navigateTo('/play'); // or '/game' or whatever route you've assigned to the main gameplay area
+  }
+});
+
+
+   socket.on('matched', ({ roomId, opponent }) => {
+  if (gameStarted && !gameOver) return;
+
+  myRoomId = roomId;
+  opponentName = opponent;
+
+  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+
+  // Navigate to waiting room while joining the game
+  navigateTo('/waiting');
+
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+});
 
 
 
@@ -440,11 +454,6 @@ socket.on('gameStarted', (data) => {
   clearGuessError();
   clearAutocomplete();
 
-  // Hide setup UI
-  document.getElementById("setupSection")?.classList.add("hidden");
-  document.getElementById("usernameInput")?.classList.add("hidden");
-  document.getElementById("roomIdInput")?.classList.add("hidden");
-
   // Reset rematch state
   rematchBtn.style.display = 'none';
   rematchBtn.disabled = false;
@@ -458,33 +467,28 @@ socket.on('gameStarted', (data) => {
   successfulGuesses = [];
 
   if (data.leadoffPlayer) {
-  leadoffPlayerName = data.leadoffPlayer;
-  successfulGuesses.push({
-    guesser: 'Leadoff',
-    name: leadoffPlayerName,
-    isLeadoff: true
-  });
-}
+    leadoffPlayerName = data.leadoffPlayer;
+    successfulGuesses.push({
+      guesser: 'Leadoff',
+      name: leadoffPlayerName,
+      isLeadoff: true
+    });
+  }
 
-console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-renderSuccessfulGuesses();
+  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+  renderSuccessfulGuesses();
 
-  // Set new player
+  // Set current player
   currentPlayerNameEl.textContent = data.currentPlayerName;
 
-// Display initial time
+  // Display initial time
   timerEl.textContent = data.timeLeft || 15;
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
-  // Show gameplay area again
-  gameArea.style.display = 'block';
-  document.getElementById('turnSection').style.display = 'block';
-
-  // Hide the gameOver UI
-  const gameOverContainer = document.getElementById('gameOverContainer');
-  gameOverContainer.innerHTML = '';
-  gameOverContainer.style.display = 'none';
+  // Navigate to game view
+  navigateTo('/game');
 });
+
 
 
 
@@ -502,18 +506,11 @@ socket.on('gameOver', (data) => {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
   }
-  document.getElementById('timer').textContent = ''; // Clear timer display
+  timerEl.textContent = ''; // Clear timer display
 
-  // Hide gameplay UI
-  document.getElementById('turnSection').style.display = 'none';
-  messagesEl.style.display = 'none';
-
-  // Clear any prior game over message
+  // Reset game over container
   const container = document.getElementById('gameOverContainer');
-  container.innerHTML = '';
-  container.style.display = 'flex';
-  container.style.justifyContent = 'center';
-  container.style.alignItems = 'center';
+  container.innerHTML = ''; // Clear prior content
 
   // Show Game Over Message
   const gameOverMsg = document.createElement('div');
@@ -522,7 +519,7 @@ socket.on('gameOver', (data) => {
   gameOverMsg.style.fontWeight = 'bold';
   gameOverMsg.style.marginTop = '1rem';
 
-  // Determine what to show
+  // Determine message content
   if (data.message) {
     gameOverMsg.textContent = data.message;
   } else if (data.reason === 'opponent_left') {
@@ -531,7 +528,7 @@ socket.on('gameOver', (data) => {
     gameOverMsg.textContent = 'Game Over!';
   }
 
-  // Apply color based on role (if any)
+  // Color by role
   if (data.role === 'winner') {
     gameOverMsg.style.color = 'green';
   } else if (data.role === 'loser') {
@@ -542,7 +539,7 @@ socket.on('gameOver', (data) => {
 
   container.appendChild(gameOverMsg);
 
-  // Decide whether to show or hide rematch button
+  // Show or hide rematch button
   if (data.canRematch === false || data.reason === 'opponent_left') {
     rematchBtn.style.display = 'none';
   } else {
@@ -550,12 +547,20 @@ socket.on('gameOver', (data) => {
     rematchBtn.disabled = false;
     rematchBtn.textContent = 'Rematch';
   }
+
+  // 🧭 Navigate to the game over screen
+  navigateTo('/gameover');
 });
+
+
 
 
 
 // 3. Turn Management
 socket.on('yourTurn', (data) => {
+  // Route to the game screen
+  navigateTo('/play');
+
   // Show input & button
   document.getElementById('guessControls').style.display = 'block';
 
@@ -563,39 +568,51 @@ socket.on('yourTurn', (data) => {
   guessInput.disabled = false;
   submitGuessBtn.disabled = false;
 
-  // Update UI
+  // Update player name and timer
   currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
   timerEl.textContent = data.timeLeft || 15;
+
+  // Make sure turn section and messages are visible
   document.getElementById('turnSection').style.display = 'block';
   messagesEl.style.display = 'block';
 
+  // Optional message display
   showMessage(data.message || "It's your turn to guess!", 'info');
 });
 
 socket.on('opponentTurn', (data) => {
-  // Hide input & button
+  // Route to the game screen
+  navigateTo('/play');
+
+  // Hide input & button since it's opponent's turn
   document.getElementById('guessControls').style.display = 'none';
 
-  // Disable input & button just in case
+  // Disable inputs just in case
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
-  // Update UI
+  // Update UI with current player name and clear timer
   currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
   timerEl.textContent = '';
+
+  // Make sure turn section and messages are visible
   document.getElementById('turnSection').style.display = 'block';
   messagesEl.style.display = 'block';
 
+  // Show an informational message
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 });
 
+
 socket.on('message', (msg) => {
-  // Pass type 'error' or 'info' depending on your app logic; default to 'error' for now
+  navigateTo('/play'); // Ensure user is on the gameplay page
   showMessage(msg, 'error');
 });
 
 
+
 socket.on('turnEnded', (data) => {
+  navigateTo('/play');  // Ensure user is on gameplay page
   if (data.successfulGuess) {
     const match = data.successfulGuess.match(/"([^"]+)"/);
     const playerName = match ? match[1] : data.successfulGuess;
@@ -905,6 +922,48 @@ function showAutocompleteSuggestions(suggestions) {
     }
   });
  }
+
+function navigateTo(path) {
+  history.pushState({}, '', path);
+  renderRoute(path);
+}
+
+function renderRoute(path) {
+  const allSections = document.querySelectorAll('section[data-route]');
+  let matched = false;
+
+  allSections.forEach(section => {
+    const route = section.getAttribute('data-route');
+    if (route === path) {
+      section.style.display = 'block';
+      matched = true;
+    } else {
+      section.style.display = 'none';
+    }
+  });
+
+  // Fallback if no matching route found (optional)
+  if (!matched) {
+    // Show a default route or 404 - here we show /username section as default
+    const defaultSection = document.querySelector('section[data-route="/username"]');
+    if (defaultSection) {
+      defaultSection.style.display = 'block';
+    }
+  }
+}
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', () => {
+  renderRoute(location.pathname);
+});
+
+// Initial route on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/username' : location.pathname;
+  renderRoute(initialPath);
+});
+
+
   }); // End of DOMContentLoaded
 </script>
 </body>
