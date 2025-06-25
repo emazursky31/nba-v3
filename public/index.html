@@ -95,6 +95,7 @@
   padding: 0.85rem 1.75rem;
   font-size: 1.1rem;
   min-width: 130px;
+  min-height: 56px; /* ← Ensures at least 56px tall */
   border-radius: 6px;
   cursor: pointer;
   background-color: #007bff;
@@ -213,7 +214,7 @@
     background-color: #0056b3;
   }
 
-  @media (max-width: 480px) {
+@media (max-width: 480px) {
   #guessControls {
     flex-direction: column;
     gap: 0.6rem;
@@ -223,6 +224,12 @@
   #submitGuessBtn {
     width: 100%;
     min-width: auto;
+  }
+
+  #submitGuessBtn {
+    font-size: 1.2rem;
+    padding: 1rem;          /* visually balances a bigger tap target */
+    min-height: 56px;       /* reaffirm minimum height */
   }
 }
 </style>
