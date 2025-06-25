@@ -249,14 +249,16 @@ socket.on('playerGuess', async ({ guess }) => {
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
-    io.to(roomId).emit('turnEnded', {
-      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
-      guessedByUsername: game.usernames[socket.id],
-      nextPlayerId: game.activePlayerSocketId,
-      nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-      currentPlayerName: game.currentPlayerName,
-      timeLeft: game.timeLeft,
-    });
+   io.to(roomId).emit('turnEnded', {
+  successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
+  guessedByUsername: game.usernames[socket.id],
+  nextPlayerId: game.activePlayerSocketId,
+  nextPlayerUsername: game.usernames[game.activePlayerSocketId],
+  currentPlayerName: game.currentPlayerName,
+  timeLeft: game.timeLeft,
+  successfulGuesses: game.successfulGuesses  // ✅ include full enriched history
+});
+
 
     startTurnTimer(roomId);
   } else {

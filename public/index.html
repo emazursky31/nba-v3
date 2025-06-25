@@ -782,11 +782,10 @@ socket.on('message', (msg) => {
 
 
 socket.on('turnEnded', (data) => {
-  navigateTo('/play');  // Ensure user is on gameplay page
-  if (data.successfulGuess) {
-    const match = data.successfulGuess.match(/"([^"]+)"/);
-    const playerName = match ? match[1] : data.successfulGuess;
-    successfulGuesses.push(playerName);
+  navigateTo('/play'); // Ensure user is on gameplay page
+
+  if (Array.isArray(data.successfulGuesses)) {
+    successfulGuesses = data.successfulGuesses;
     renderSuccessfulGuesses();
   }
 
@@ -796,6 +795,7 @@ socket.on('turnEnded', (data) => {
 
   updateTurn(data);
 });
+
 
 socket.on('timerTick', (data) => {
   timerEl.textContent = data.timeLeft;
@@ -1066,13 +1066,15 @@ function showAutocompleteSuggestions(suggestions) {
 
 function renderSuccessfulGuesses() {
   const listEl = document.getElementById('successful-guesses-list');
+  if (!listEl || !Array.isArray(successfulGuesses)) return;
+
   listEl.innerHTML = '';
 
   const displayList = [...successfulGuesses];
 
   displayList.forEach((guessObj, index) => {
-    const name = guessObj.name || guessObj;
-    const isLeadoff = guessObj.isLeadoff;
+    const name = guessObj.name || '';
+    const isLeadoff = guessObj.isLeadoff || false;
     const guesser = guessObj.guesser || '';
     const sharedTeams = guessObj.sharedTeams || [];
 
@@ -1087,6 +1089,7 @@ function renderSuccessfulGuesses() {
     box.style.backgroundColor = isLeadoff
       ? '#e6f0ff' // blue for leadoff
       : (guesser === myUsername ? '#d4edda' : '#f1f1f1'); // green or neutral
+    box.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
 
     // 🏀 Player name
     const nameEl = document.createElement('div');
@@ -1106,7 +1109,7 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
-    // ⬇️ Arrow + shared teams
+    // ⬇️ Arrow between guesses
     if (index < displayList.length - 1) {
       const arrow = document.createElement('div');
       arrow.textContent = '↓';
@@ -1116,15 +1119,17 @@ function renderSuccessfulGuesses() {
       arrow.style.margin = '0.25rem 0';
       listEl.appendChild(arrow);
 
+      // 📎 Shared team(s)/year(s) display
       const nextGuess = displayList[index + 1];
-      if (nextGuess && nextGuess.sharedTeams && nextGuess.sharedTeams.length > 0) {
+      const nextShared = nextGuess?.sharedTeams || [];
+      if (nextShared.length > 0) {
         const sharedInfo = document.createElement('div');
         sharedInfo.style.textAlign = 'center';
         sharedInfo.style.fontSize = '0.85rem';
         sharedInfo.style.color = '#444';
         sharedInfo.style.marginBottom = '0.5rem';
 
-        const teamStrings = nextGuess.sharedTeams.map(t => `${t.team}, ${t.years}`);
+        const teamStrings = nextShared.map(t => `${t.team} (${t.years})`);
         sharedInfo.textContent = teamStrings.join(' • ');
 
         listEl.appendChild(sharedInfo);
@@ -1132,6 +1137,7 @@ function renderSuccessfulGuesses() {
     }
   });
 }
+
 
 
 
