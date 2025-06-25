@@ -238,7 +238,7 @@ socket.on('playerGuess', async ({ guess }) => {
     game.activePlayerSocketId = game.players[game.currentTurn];
     
     game.teammates = await getTeammates(game.currentPlayerName);
-    game.timeLeft = 15;
+    game.timeLeft = 30;
 
     io.to(roomId).emit('turnEnded', {
       successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
@@ -425,7 +425,7 @@ async function startGame(roomId) {
   game.successfulGuesses = [];
   game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
-  game.timeLeft = 15;
+  game.timeLeft = 30;
 
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
@@ -507,7 +507,7 @@ function handleJoinGame(socket, roomId, username) {
       currentTurn: 0,
       currentPlayerName: null,
       timer: null,
-      timeLeft: 15,
+      timeLeft: 30,
       teammates: [],
       successfulGuesses: [],
       rematchVotes: new Set(),
@@ -549,7 +549,7 @@ function handleJoinGame(socket, roomId, username) {
 
 
 
-// Starts the 15-second countdown timer for a turn
+// Starts the 30-second countdown timer for a turn
 function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) return;
@@ -561,7 +561,7 @@ function startTurnTimer(roomId) {
   }
 
 
-  game.timeLeft = 15;
+  game.timeLeft = 30;
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
 
