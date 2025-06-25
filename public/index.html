@@ -1039,14 +1039,20 @@ function renderRoute(path) {
   }
 }
 
-if (window.innerWidth < 600) {
-  document.getElementById('guessInput').addEventListener('focus', () => {
-    document.getElementById('guessControls').scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
+document.getElementById('guessInput').addEventListener('focus', () => {
+  // Only apply if screen width is <= 480px (adjust as needed for "mobile")
+  if (window.innerWidth <= 480) {
+    const guessControls = document.getElementById('guessControls');
+    const topOffset = guessControls.getBoundingClientRect().top + window.scrollY;
+    const padding = parseFloat(getComputedStyle(document.body).paddingTop) || 16;
+
+    window.scrollTo({
+      top: topOffset - padding,
+      behavior: 'smooth'
     });
-  });
-}
+  }
+});
+
 
 
 // Handle browser back/forward navigation
