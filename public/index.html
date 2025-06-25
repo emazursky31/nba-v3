@@ -169,6 +169,19 @@
   color: gray;
 }
 
+#opponentDisplay {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+#opponentDisplay span {
+  font-weight: bold;
+  color: #007bff;
+}
+
+
 
   #autocomplete-list div {
     padding: 0.5rem;
@@ -305,6 +318,11 @@
 
 <!-- In-Game UI -->
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
+  <div id="opponentDisplay">
+  Opponent: <span id="opponentNameText">Waiting...</span>
+</div>
+
+
   <div id="turnSection">
     <p class="turn-prompt">🎯 Name any teammate of: <strong id="currentPlayerName"></strong></p>
    
@@ -555,6 +573,12 @@ socket.on('gameStarted', (data) => {
 
   // Set current player
   currentPlayerNameEl.textContent = data.currentPlayerName;
+
+   // ✅ Set opponent name if known
+  const opponentNameText = document.getElementById('opponentNameText');
+  if (opponentNameText && opponentName) {
+    opponentNameText.textContent = opponentName;
+  }
 
   // Display initial time
   timerEl.textContent = data.timeLeft || 15;
