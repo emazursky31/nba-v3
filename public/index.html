@@ -219,11 +219,19 @@
     opacity: 0;
   }
 
-  .turn-prompt {
+ .turn-prompt {
   font-size: 1.3rem;
-  font-weight: bold;
   color: #222;
   margin-bottom: 1rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.turn-prompt .turn-player-name {
+  display: block;
+  font-size: 1.6rem;
+  margin-top: 0.5rem;
+  color: #007bff;
 }
 
 #playersDisplay {
@@ -339,9 +347,11 @@
 </div>
 
   <div id="turnSection">
-   <p class="turn-prompt" id="turnPromptText">
-  🎯 Name any teammate of: <strong id="currentPlayerName"></strong>
+  <p class="turn-prompt" id="turnPromptText">
+  🎯 Name any teammate of:<br>
+  <strong class="turn-player-name" id="currentPlayerName">LeBron James</strong>
 </p>
+
 
    <p>Time left: <span id="timer">15</span> seconds</p>
     <div id="guessControls" style="position: relative;">
@@ -702,10 +712,11 @@ socket.on('yourTurn', (data) => {
 
   showMessage(data.message || "It's your turn to guess!", 'info');
 
-  const turnPromptEl = document.getElementById('turnPromptText');
+ const turnPromptEl = document.getElementById('turnPromptText');
 if (turnPromptEl) {
-  turnPromptEl.innerHTML = `🎯 Name any teammate of: <strong>${data.currentPlayerName}</strong>`;
+  turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
 }
+
 
 
   // ✅ Highlight the current player in playersDisplay
@@ -742,8 +753,9 @@ socket.on('opponentTurn', (data) => {
 
   const turnPromptEl = document.getElementById('turnPromptText');
 if (turnPromptEl) {
-  turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of: <strong>${data.currentPlayerName}</strong>`;
+  turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
 }
+
 
 
   // ✅ Highlight the opponent in playersDisplay
