@@ -169,18 +169,6 @@
   color: gray;
 }
 
-#opponentDisplay {
-  text-align: center;
-  margin-top: 1rem;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-#opponentDisplay span {
-  font-weight: bold;
-  color: #007bff;
-}
-
 
 
   #autocomplete-list div {
@@ -237,6 +225,32 @@
   color: #222;
   margin-bottom: 1rem;
 }
+
+#playersDisplay {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
+}
+
+.player-name {
+  padding: 0 0.5rem;
+}
+
+.player-name.you {
+  color: #28a745; /* green */
+}
+
+.player-name.opponent {
+  color: #007bff; /* blue */
+}
+
+.vs-separator {
+  color: #555;
+  padding: 0 0.5rem;
+}
+
 
 
   #gameOverContainer {
@@ -318,9 +332,12 @@
 
 <!-- In-Game UI -->
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
-  <div id="opponentDisplay">
-  Opponent: <span id="opponentNameText">Waiting...</span>
+ <div id="playersDisplay">
+  <span class="player-name you" id="playerYou">You</span>
+  <span class="vs-separator">vs</span>
+  <span class="player-name opponent" id="playerOpponent">Opponent</span>
 </div>
+
 
 
   <div id="turnSection">
@@ -571,22 +588,31 @@ socket.on('gameStarted', (data) => {
   console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
   renderSuccessfulGuesses();
 
-  // Set current player
+  // Set current player name
   currentPlayerNameEl.textContent = data.currentPlayerName;
 
-   // ✅ Set opponent name if known
-  const opponentNameText = document.getElementById('opponentNameText');
-  if (opponentNameText && opponentName) {
-    opponentNameText.textContent = opponentName;
+  // ✅ Update "You" and "Opponent" names
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
+  if (playerOpponentEl && opponentName) playerOpponentEl.textContent = opponentName;
+
+  // ✅ Highlight active player
+  const isYourTurn = data.currentPlayerName === myUsername;
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.toggle('active-turn', isYourTurn);
+    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
   }
 
-  // Display initial time
+  // Set initial timer
   timerEl.textContent = data.timeLeft || 15;
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
   // Navigate to game view
   navigateTo('/game');
 });
+
 
 
 
@@ -657,63 +683,67 @@ socket.on('gameOver', (data) => {
 
 // 3. Turn Management
 socket.on('yourTurn', (data) => {
-  // Route to the game screen
   navigateTo('/play');
 
   const turnSection = document.getElementById('turnSection');
 
-  // Add visual highlight for your turn
   turnSection.classList.add('your-turn');
   turnSection.classList.remove('opponent-turn');
 
-  // Show input & button
   document.getElementById('guessControls').style.display = 'block';
-
-  // Enable input & button
   guessInput.disabled = false;
   submitGuessBtn.disabled = !guessInput.value.trim();
 
-  // Update player name and timer
   currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
   timerEl.textContent = data.timeLeft || 15;
 
-  // Make sure turn section and messages are visible
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
 
-  // Optional message display
   showMessage(data.message || "It's your turn to guess!", 'info');
+
+  // ✅ Highlight the current player in playersDisplay
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.add('active-turn');
+    playerOpponentEl.classList.remove('active-turn');
+  }
 });
 
 
+
 socket.on('opponentTurn', (data) => {
-  // Route to the game screen
   navigateTo('/play');
 
   const turnSection = document.getElementById('turnSection');
 
-  // Apply muted style
   turnSection.classList.remove('your-turn');
   turnSection.classList.add('opponent-turn');
 
-  // Hide input & button since it's opponent's turn
   document.getElementById('guessControls').style.display = 'none';
-
-  // Disable inputs just in case
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
-  // Update UI with current player name and clear timer
   currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
   timerEl.textContent = '';
 
-  // Make sure turn section and messages are visible
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
 
-  // Show an informational message
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
+
+  // ✅ Highlight the opponent in playersDisplay
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.remove('active-turn');
+    playerOpponentEl.classList.add('active-turn');
+  }
 });
+
 
 
 
