@@ -228,48 +228,47 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
-    // Save previous player before updating currentPlayerName
     const previousPlayer = game.currentPlayerName;
 
-    // Fetch shared teams between previous player and current guess
-    const sharedTeams = previousPlayer
-      ? await getSharedTeams(previousPlayer, guess)
-      : [];
+    // Fetch career stints for previous player and current guess
+    let sharedTeams = [];
+    if (previousPlayer) {
+      const previousCareer = await getCareer(previousPlayer);
+      const guessCareer = await getCareer(guess);
+      sharedTeams = getSharedTeams(previousCareer, guessCareer);
+    }
 
-    // Add guess to history with sharedTeams info
     game.successfulGuesses.push({
       guesser: game.usernames[socket.id],
       name: guess,
-      sharedTeams // array of { team, years }
+      sharedTeams  // now an array of {team, years}
     });
 
-    // Update current turn and player info
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
 
-    // Update teammates list for the new current player
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
-console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
+    console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
 
     io.to(roomId).emit('turnEnded', {
-  successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
-  guessedByUsername: game.usernames[socket.id],
-  nextPlayerId: game.activePlayerSocketId,
-  nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-  currentPlayerName: game.currentPlayerName,
-  timeLeft: game.timeLeft,
-  successfulGuesses: game.successfulGuesses,  // <-- Add this line!
-});
-
+      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
+      guessedByUsername: game.usernames[socket.id],
+      nextPlayerId: game.activePlayerSocketId,
+      nextPlayerUsername: game.usernames[game.activePlayerSocketId],
+      currentPlayerName: game.currentPlayerName,
+      timeLeft: game.timeLeft,
+      successfulGuesses: game.successfulGuesses,
+    });
 
     startTurnTimer(roomId);
   } else {
     socket.emit('message', `Incorrect guess: "${guess}"`);
   }
 });
+
 
 
 
