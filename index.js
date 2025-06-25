@@ -208,13 +208,11 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  // Prevent guessing the leadoff player
   if (normalizedGuess === game.leadoffPlayer.toLowerCase()) {
     socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer}"`);
     return;
   }
 
-  // Prevent duplicate guesses (case-insensitive)
   if (game.successfulGuesses.some(g => g.name.toLowerCase() === normalizedGuess)) {
     socket.emit('message', `"${guess}" has already been guessed.`);
     return;
@@ -222,61 +220,62 @@ socket.on('playerGuess', async ({ guess }) => {
 
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
-  if (validGuess) {
-    console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
-
-    clearInterval(game.timer);
-    game.timer = null;
-
-    const previousPlayer = game.currentPlayerName;
-
-    // Fetch career stints for previous player and current guess
-   let sharedTeams = [];
-if (previousPlayer) {
-  try {
-    const prevCareer = await getCareer(previousPlayer);
-    const guessCareer = await getCareer(guess);
-    console.log('[DEBUG] previousPlayer career:', previousPlayer, prevCareer);
-    console.log('[DEBUG] guess career:', guess, guessCareer);
-    sharedTeams = getSharedTeams(prevCareer, guessCareer);
-    console.log(`[SERVER] Shared teams for ${previousPlayer} and ${guess}:`, sharedTeams);
-  } catch (err) {
-    console.error('Error determining shared teams:', err);
-  }
-}
-
-    game.successfulGuesses.push({
-      guesser: game.usernames[socket.id],
-      name: guess,
-      sharedTeams  // now an array of {team, years}
-    });
-
-    game.currentTurn = (game.currentTurn + 1) % 2;
-    game.currentPlayerName = guess;
-    game.activePlayerSocketId = game.players[game.currentTurn];
-
-    game.teammates = await getTeammates(game.currentPlayerName);
-    game.timeLeft = 30;
-
-    console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
-
-    io.to(roomId).emit('turnEnded', {
-      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
-      guessedByUsername: game.usernames[socket.id],
-      nextPlayerId: game.activePlayerSocketId,
-      nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-      currentPlayerName: game.currentPlayerName,
-      timeLeft: game.timeLeft,
-      successfulGuesses: game.successfulGuesses,
-    });
-
-    startTurnTimer(roomId);
-  } else {
+  if (!validGuess) {
     socket.emit('message', `Incorrect guess: "${guess}"`);
+    return;
   }
+
+  console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
+
+  clearInterval(game.timer);
+  game.timer = null;
+
+  const previousPlayer = game.currentPlayerName;
+  let sharedTeams = [];
+
+  try {
+    const [career1, career2] = await Promise.all([
+      getCareer(previousPlayer),
+      getCareer(guess)
+    ]);
+
+    console.log('[DEBUG] Career data:', {
+      [previousPlayer]: career1,
+      [guess]: career2
+    });
+
+    sharedTeams = getSharedTeams(career1, career2);
+    console.log(`[SERVER] Shared teams between ${previousPlayer} and ${guess}:`, sharedTeams);
+  } catch (err) {
+    console.error('Error fetching careers or computing shared teams:', err);
+  }
+
+  game.successfulGuesses.push({
+    guesser: game.usernames[socket.id],
+    name: guess,
+    sharedTeams
+  });
+
+  game.currentTurn = (game.currentTurn + 1) % 2;
+  game.currentPlayerName = guess;
+  game.activePlayerSocketId = game.players[game.currentTurn];
+  game.teammates = await getTeammates(game.currentPlayerName);
+  game.timeLeft = 30;
+
+  console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
+
+  io.to(roomId).emit('turnEnded', {
+    successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
+    guessedByUsername: game.usernames[socket.id],
+    nextPlayerId: game.activePlayerSocketId,
+    nextPlayerUsername: game.usernames[game.activePlayerSocketId],
+    currentPlayerName: game.currentPlayerName,
+    timeLeft: game.timeLeft,
+    successfulGuesses: game.successfulGuesses
+  });
+
+  startTurnTimer(roomId);
 });
-
-
 
 
 
