@@ -626,8 +626,6 @@ socket.on('gameStarted', (data) => {
 
 
 
-
-
 socket.on('gameOver', (data) => {
   console.log('gameOver received:', data);
   gameOver = true;
@@ -641,11 +639,12 @@ socket.on('gameOver', (data) => {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
   }
-  timerEl.textContent = ''; // Clear timer display
+  timerEl.textContent = '';
 
-  // Reset game over container
+  // Reset and show game over container
   const container = document.getElementById('gameOverContainer');
-  container.innerHTML = ''; // Clear prior content
+  container.style.display = 'block'; // ✅ Ensure visibility
+  container.innerHTML = '';
 
   // Show Game Over Message
   const gameOverMsg = document.createElement('div');
@@ -686,6 +685,7 @@ socket.on('gameOver', (data) => {
   // 🧭 Navigate to the game over screen
   navigateTo('/gameover');
 });
+
 
 
 
