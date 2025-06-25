@@ -208,13 +208,11 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  // Prevent guessing the leadoff player
   if (normalizedGuess === game.leadoffPlayer.toLowerCase()) {
     socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer}"`);
     return;
   }
 
-  // Prevent duplicate guesses (case-insensitive)
   if (game.successfulGuesses.some(g => g.name.toLowerCase() === normalizedGuess)) {
     socket.emit('message', `"${guess}" has already been guessed.`);
     return;
@@ -227,16 +225,27 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
-    // ✅ Add guess to history to prevent future duplicates
+    // 🧠 Fetch careers
+    const currentGuessCareer = await getCareer(guess);
+    let sharedTeams = [];
+
+    const previousGuess = game.successfulGuesses[game.successfulGuesses.length - 1];
+    if (previousGuess) {
+      const previousCareer = await getCareer(previousGuess.name);
+      sharedTeams = getSharedTeams(previousCareer, currentGuessCareer);
+    }
+
+    // ✅ Store successful guess
     game.successfulGuesses.push({
       guesser: game.usernames[socket.id],
-      name: guess
+      name: guess,
+      sharedTeams // ← includes [{ team, years }]
     });
 
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
-    
+
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
@@ -254,6 +263,7 @@ socket.on('playerGuess', async ({ guess }) => {
     socket.emit('message', `Incorrect guess: "${guess}"`);
   }
 });
+
 
 
 
@@ -411,6 +421,53 @@ async function getTeammates(playerName) {
     return [];
   }
 }
+
+function getSharedTeams(career1, career2) {
+  const shared = [];
+
+  for (const stint1 of career1) {
+    for (const stint2 of career2) {
+      if (stint1.team === stint2.team) {
+        const start = Math.max(stint1.startYear, stint2.startYear);
+        const end = Math.min(stint1.endYear, stint2.endYear);
+        if (start <= end) {
+          shared.push({
+            team: stint1.team,
+            years: start === end ? `${start}` : `${start}–${end}`
+          });
+        }
+      }
+    }
+  }
+
+  return shared;
+}
+
+
+async function getCareer(playerName) {
+  const query = `
+    SELECT team_abbr AS team, 
+           EXTRACT(YEAR FROM start_date) AS start_year, 
+           EXTRACT(YEAR FROM end_date) AS end_year
+    FROM player_team_stints pts
+    JOIN players p ON pts.player_id = p.player_id
+    WHERE p.player_name = $1
+    ORDER BY start_date;
+  `;
+
+  try {
+    const res = await client.query(query, [playerName]);
+    return res.rows.map(row => ({
+      team: row.team,
+      startYear: parseInt(row.start_year),
+      endYear: parseInt(row.end_year)
+    }));
+  } catch (err) {
+    console.error('Error fetching career for', playerName, err);
+    return [];
+  }
+}
+
 
 
 // Starts the game in a room: picks random first player & teammates

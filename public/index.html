@@ -1064,34 +1064,77 @@ function showAutocompleteSuggestions(suggestions) {
 
 
 
- function renderSuccessfulGuesses() {
+function renderSuccessfulGuesses() {
   const listEl = document.getElementById('successful-guesses-list');
   listEl.innerHTML = '';
 
   const displayList = [...successfulGuesses];
 
   displayList.forEach((guessObj, index) => {
-    const li = document.createElement('li');
-    li.style.margin = '0.5rem 0';
-    li.style.fontWeight = (index === displayList.length - 1) ? 'bold' : 'normal';
+    const name = guessObj.name || guessObj;
+    const isLeadoff = guessObj.isLeadoff;
+    const guesser = guessObj.guesser || '';
+    const sharedTeams = guessObj.sharedTeams || [];
 
-    const name = typeof guessObj === 'string' ? guessObj : guessObj.name;
-    const isLeadoff = typeof guessObj === 'object' && guessObj.isLeadoff;
+    // 🔳 Create guess box
+    const box = document.createElement('div');
+    box.style.border = '1px solid #ccc';
+    box.style.borderRadius = '8px';
+    box.style.padding = '0.75rem';
+    box.style.margin = '0.5rem auto';
+    box.style.maxWidth = '300px';
+    box.style.textAlign = 'center';
+    box.style.backgroundColor = isLeadoff
+      ? '#e6f0ff' // blue for leadoff
+      : (guesser === myUsername ? '#d4edda' : '#f1f1f1'); // green or neutral
 
-    li.style.color = isLeadoff ? '#007bff' : '#000';
-    li.textContent = name;
-    listEl.appendChild(li);
+    // 🏀 Player name
+    const nameEl = document.createElement('div');
+    nameEl.textContent = name;
+    nameEl.style.fontSize = '1.1rem';
+    nameEl.style.fontWeight = 'bold';
+    box.appendChild(nameEl);
 
+    // 👤 Guesser name
+    if (!isLeadoff && guesser) {
+      const guesserEl = document.createElement('div');
+      guesserEl.textContent = `by ${guesser}`;
+      guesserEl.style.fontSize = '0.85rem';
+      guesserEl.style.color = '#555';
+      box.appendChild(guesserEl);
+    }
+
+    listEl.appendChild(box);
+
+    // ⬇️ Arrow + shared teams
     if (index < displayList.length - 1) {
       const arrow = document.createElement('div');
-      arrow.style.textAlign = 'center';
+      arrow.textContent = '↓';
       arrow.style.fontSize = '1.2rem';
       arrow.style.color = '#888';
-      arrow.textContent = '↓';
+      arrow.style.textAlign = 'center';
+      arrow.style.margin = '0.25rem 0';
       listEl.appendChild(arrow);
+
+      const nextGuess = displayList[index + 1];
+      if (nextGuess && nextGuess.sharedTeams && nextGuess.sharedTeams.length > 0) {
+        const sharedInfo = document.createElement('div');
+        sharedInfo.style.textAlign = 'center';
+        sharedInfo.style.fontSize = '0.85rem';
+        sharedInfo.style.color = '#444';
+        sharedInfo.style.marginBottom = '0.5rem';
+
+        const teamStrings = nextGuess.sharedTeams.map(t => `${t.team}, ${t.years}`);
+        sharedInfo.textContent = teamStrings.join(' • ');
+
+        listEl.appendChild(sharedInfo);
+      }
     }
   });
- }
+}
+
+
+
 
 function navigateTo(path) {
   history.pushState({}, '', path);
