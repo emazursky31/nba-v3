@@ -1112,6 +1112,16 @@ function renderRoute(path) {
     }
   });
 
+  // ✅ Toggle turn history list visibility
+  const guessContainer = document.getElementById('successful-guesses-container');
+  if (guessContainer) {
+    if (path === '/play' || path === '/gameover') {
+      guessContainer.style.display = 'block';
+    } else {
+      guessContainer.style.display = 'none';
+    }
+  }
+
   if (!matched) {
     const defaultSection = document.querySelector('section[data-route="/username"]');
     if (defaultSection) {
@@ -1119,6 +1129,7 @@ function renderRoute(path) {
     }
   }
 }
+
 
 document.getElementById('guessInput').addEventListener('focus', () => {
   // Only apply if screen width is <= 480px (adjust as needed for "mobile")
