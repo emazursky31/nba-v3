@@ -21,10 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Your API and other routes can go here (if any)...
 
-// Serve index.html for all other routes (SPA fallback)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -110,7 +107,10 @@ app.get('/players', async (req, res) => {
   }
 });
 
-
+// Serve index.html for all other routes (SPA fallback)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // In-memory games state: roomId -> game data
 const games = {};
