@@ -597,14 +597,14 @@ socket.on('gameStarted', (data) => {
   // Reset turn history cleanly
   successfulGuesses = [];
 
-  if (data.leadoffPlayer) {
-    leadoffPlayerName = data.leadoffPlayer;
-    successfulGuesses.push({
-      guesser: 'Leadoff',
-      name: leadoffPlayerName,
-      isLeadoff: true
-    });
-  }
+  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
+  leadoffPlayerName = data.leadoffPlayer;
+  successfulGuesses.push({
+    guesser: 'Leadoff',
+    name: leadoffPlayerName,
+    isLeadoff: true
+  });
+}
 
   console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
   renderSuccessfulGuesses();
@@ -1085,14 +1085,16 @@ function showAutocompleteSuggestions(suggestions) {
 
 
 
-
 function renderSuccessfulGuesses() {
   const listEl = document.getElementById('successful-guesses-list');
   if (!listEl || !Array.isArray(successfulGuesses)) return;
 
   listEl.innerHTML = '';
 
-  const displayList = [...successfulGuesses];
+  // ✅ Filter out any invalid or empty guesses
+  const displayList = successfulGuesses.filter(
+    g => g && typeof g.name === 'string' && g.name.trim() !== ''
+  );
 
   displayList.forEach((guessObj, index) => {
     const name = guessObj.name || '';
@@ -1120,40 +1122,33 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
-    // Append arrow and shared stints for all but the last guess
     if (index < displayList.length - 1) {
-  const arrow = document.createElement('div');
-  arrow.textContent = '↓';
-  arrow.style.fontSize = '1.2rem';
-  arrow.style.color = '#888';
-  arrow.style.textAlign = 'center';
-  arrow.style.margin = '0.25rem 0';
-  listEl.appendChild(arrow);
+      const arrow = document.createElement('div');
+      arrow.textContent = '↓';
+      arrow.style.fontSize = '1.2rem';
+      arrow.style.color = '#888';
+      arrow.style.textAlign = 'center';
+      arrow.style.margin = '0.25rem 0';
+      listEl.appendChild(arrow);
 
-  const nextGuess = displayList[index + 1];
+      const nextGuess = displayList[index + 1];
+      const nextShared = nextGuess?.sharedTeams || [];
 
-  // 🛠️ ADD THIS CHECK:
-  if (nextGuess?.name) {
-    const shared = nextGuess.sharedTeams || [];
+      if (nextShared.length > 0) {
+        const sharedInfo = document.createElement('div');
+        sharedInfo.style.textAlign = 'center';
+        sharedInfo.style.fontSize = '0.85rem';
+        sharedInfo.style.color = '#444';
+        sharedInfo.style.marginBottom = '0.5rem';
 
-    if (shared.length > 0) {
-      const sharedInfo = document.createElement('div');
-      sharedInfo.style.textAlign = 'center';
-      sharedInfo.style.fontSize = '0.85rem';
-      sharedInfo.style.color = '#444';
-      sharedInfo.style.marginBottom = '0.5rem';
+        const teamStrings = nextShared.map(t => `${t.team} (${t.years})`);
+        sharedInfo.textContent = teamStrings.join(' • ');
 
-      const teamStrings = shared.map(t => `${t.team} (${t.years})`);
-      sharedInfo.textContent = teamStrings.join(' • ');
-
-      listEl.appendChild(sharedInfo);
+        listEl.appendChild(sharedInfo);
+      }
     }
-  }
-}
   });
 }
-
-
 
 
 
