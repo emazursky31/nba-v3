@@ -1122,30 +1122,34 @@ function renderSuccessfulGuesses() {
 
     // Append arrow and shared stints for all but the last guess
     if (index < displayList.length - 1) {
-      const arrow = document.createElement('div');
-      arrow.textContent = '↓';
-      arrow.style.fontSize = '1.2rem';
-      arrow.style.color = '#888';
-      arrow.style.textAlign = 'center';
-      arrow.style.margin = '0.25rem 0';
-      listEl.appendChild(arrow);
+  const arrow = document.createElement('div');
+  arrow.textContent = '↓';
+  arrow.style.fontSize = '1.2rem';
+  arrow.style.color = '#888';
+  arrow.style.textAlign = 'center';
+  arrow.style.margin = '0.25rem 0';
+  listEl.appendChild(arrow);
 
-      const nextGuess = displayList[index + 1];
-      const nextShared = nextGuess?.sharedTeams || [];
+  const nextGuess = displayList[index + 1];
 
-      if (nextShared.length > 0) {
-        const sharedInfo = document.createElement('div');
-        sharedInfo.style.textAlign = 'center';
-        sharedInfo.style.fontSize = '0.85rem';
-        sharedInfo.style.color = '#444';
-        sharedInfo.style.marginBottom = '0.5rem';
+  // 🛠️ ADD THIS CHECK:
+  if (nextGuess?.name) {
+    const shared = nextGuess.sharedTeams || [];
 
-        const teamStrings = nextShared.map(t => `${t.team} (${t.years})`);
-        sharedInfo.textContent = teamStrings.join(' • ');
+    if (shared.length > 0) {
+      const sharedInfo = document.createElement('div');
+      sharedInfo.style.textAlign = 'center';
+      sharedInfo.style.fontSize = '0.85rem';
+      sharedInfo.style.color = '#444';
+      sharedInfo.style.marginBottom = '0.5rem';
 
-        listEl.appendChild(sharedInfo);
-      }
+      const teamStrings = shared.map(t => `${t.team} (${t.years})`);
+      sharedInfo.textContent = teamStrings.join(' • ');
+
+      listEl.appendChild(sharedInfo);
     }
+  }
+}
   });
 }
 
