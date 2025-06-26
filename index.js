@@ -516,7 +516,7 @@ async function startGame(roomId) {
 
   // ✅ Fully reset state for rematch
   game.successfulGuesses = [{
-  name: game.currentPlayerName, // or game.leadoffPlayer, same value
+  name: game.leadoffPlayer,
   guesser: 'Leadoff',
   isLeadoff: true,
   sharedTeams: []
