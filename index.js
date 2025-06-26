@@ -471,11 +471,11 @@ function getSharedTeams(career1, career2) {
 
 
 async function getCareer(playerName) {
-  console.log('Incoming player name:', playerName)
+  console.log('Incoming player name:', playerName);
   const query = `
     SELECT team_abbr AS team, 
-           EXTRACT(YEAR FROM start_date) AS start_year, 
-           EXTRACT(YEAR FROM end_date) AS end_year
+           EXTRACT(YEAR FROM start_date::date) AS start_year, 
+           EXTRACT(YEAR FROM end_date::date) AS end_year
     FROM player_team_stints pts
     JOIN players p ON pts.player_id = p.player_id
     WHERE LOWER(TRIM(p.player_name)) = LOWER(TRIM($1))
@@ -486,20 +486,23 @@ async function getCareer(playerName) {
 
   try {
     const res = await client.query(query, [playerName]);
-    console.log('[DEBUG] getCareer results for', playerName, res.rows); // ← ADD THIS
+    console.log('[DEBUG] getCareer results for', playerName, res.rows);
+
     if (res.rows.length === 0) {
       console.warn(`[WARN] No career data found for "${playerName}"`);
     }
+
     return res.rows.map(row => ({
       team: row.team,
-      startYear: parseInt(row.start_year),
-      endYear: parseInt(row.end_year)
+      startYear: parseInt(row.start_year, 10),
+      endYear: parseInt(row.end_year, 10),
     }));
   } catch (err) {
     console.error('Error fetching career for', playerName, err);
     return [];
   }
 }
+
 
 
 
