@@ -515,7 +515,12 @@ async function startGame(roomId) {
   }
 
   // ✅ Fully reset state for rematch
-  game.successfulGuesses = [];
+  game.successfulGuesses = [{
+  name: game.currentPlayerName, // or game.leadoffPlayer, same value
+  guesser: 'Leadoff',
+  isLeadoff: true,
+  sharedTeams: []
+}];
   game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
   game.timeLeft = 30;
