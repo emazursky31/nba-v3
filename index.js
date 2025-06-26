@@ -180,7 +180,19 @@ socket.on('testGames', () => {
   socket.emit('testGamesResult', Object.keys(games));
 });
 
-
+function ensureLeadoffAtFront(game) {
+  if (!game.successfulGuesses.length || game.successfulGuesses[0].name !== game.leadoffPlayer) {
+    // Remove any previous leadoff entries
+    game.successfulGuesses = game.successfulGuesses.filter(g => !g.isLeadoff);
+    // Add the leadoff player at the front
+    game.successfulGuesses.unshift({
+      name: game.leadoffPlayer,
+      guesser: 'Leadoff',
+      isLeadoff: true,
+      sharedTeams: []
+    });
+  }
+}
 
   // Handle player guess
 socket.on('playerGuess', async ({ guess }) => {
@@ -226,17 +238,14 @@ socket.on('playerGuess', async ({ guess }) => {
 
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
-  if (validGuess) {
+ if (validGuess) {
     console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
 
     clearInterval(game.timer);
     game.timer = null;
 
-    // <<--- PLACE IT HERE
-
     const previousPlayer = game.currentPlayerName;
 
-    // Get careers for previous player and current guess in parallel
     const [career1, career2] = await Promise.all([
       getCareer(previousPlayer),
       getCareer(guess)
@@ -244,14 +253,14 @@ socket.on('playerGuess', async ({ guess }) => {
 
     const sharedTeams = getSharedTeams(career1, career2);
 
-    // Add guess to successfulGuesses with shared teams info
     game.successfulGuesses.push({
       guesser: game.usernames[socket.id],
       name: guess,
       sharedTeams
     });
 
-    // <<--- THEN CONTINUE WITH UPDATING GAME STATE
+    // Ensure leadoff player is always at the front of successfulGuesses
+    ensureLeadoffAtFront(game);
 
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
