@@ -1073,36 +1073,60 @@ function renderSuccessfulGuesses() {
   const displayList = [...successfulGuesses];
 
   displayList.forEach((guessObj, index) => {
-  const name = guessObj.name || '';
-  const isLeadoff = guessObj.isLeadoff || false;
-  const guesser = guessObj.guesser || '';  // ✅ Needed for color logic
-  const sharedTeams = guessObj.sharedTeams || [];
+    const name = guessObj.name || '';
+    const isLeadoff = guessObj.isLeadoff || false;
+    const guesser = guessObj.guesser || '';
+    const sharedTeams = guessObj.sharedTeams || [];
 
-  const box = document.createElement('div');
-  box.style.border = '1px solid #ccc';
-  box.style.borderRadius = '8px';
-  box.style.padding = '0.75rem';
-  box.style.margin = '0.5rem auto';
-  box.style.maxWidth = '300px';
-  box.style.textAlign = 'center';
+    const box = document.createElement('div');
+    box.style.border = '1px solid #ccc';
+    box.style.borderRadius = '8px';
+    box.style.padding = '0.75rem';
+    box.style.margin = '0.5rem auto';
+    box.style.maxWidth = '300px';
+    box.style.textAlign = 'center';
+    box.style.backgroundColor = isLeadoff
+      ? '#e6f0ff'
+      : (guesser === myUsername ? '#d4edda' : '#f1f1f1');
+    box.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
 
-  box.style.backgroundColor = isLeadoff
-    ? '#e6f0ff'
-    : (guesser === myUsername ? '#d4edda' : '#f1f1f1');  // ✅ Color logic
+    const nameEl = document.createElement('div');
+    nameEl.textContent = name;
+    nameEl.style.fontSize = '1.1rem';
+    nameEl.style.fontWeight = 'bold';
+    box.appendChild(nameEl);
 
-  box.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
+    listEl.appendChild(box);
 
-  const nameEl = document.createElement('div');
-  nameEl.textContent = name;
-  nameEl.style.fontSize = '1.1rem';
-  nameEl.style.fontWeight = 'bold';
-  box.appendChild(nameEl);
+    // Append arrow and shared stints for all but the last guess
+    if (index < displayList.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.textContent = '↓';
+      arrow.style.fontSize = '1.2rem';
+      arrow.style.color = '#888';
+      arrow.style.textAlign = 'center';
+      arrow.style.margin = '0.25rem 0';
+      listEl.appendChild(arrow);
 
-  listEl.appendChild(box);
+      const nextGuess = displayList[index + 1];
+      const nextShared = nextGuess?.sharedTeams || [];
 
-  // (sharedTeams logic stays as-is)
-});
+      if (nextShared.length > 0) {
+        const sharedInfo = document.createElement('div');
+        sharedInfo.style.textAlign = 'center';
+        sharedInfo.style.fontSize = '0.85rem';
+        sharedInfo.style.color = '#444';
+        sharedInfo.style.marginBottom = '0.5rem';
+
+        const teamStrings = nextShared.map(t => `${t.team} (${t.years})`);
+        sharedInfo.textContent = teamStrings.join(' • ');
+
+        listEl.appendChild(sharedInfo);
+      }
+    }
+  });
 }
+
 
 
 
