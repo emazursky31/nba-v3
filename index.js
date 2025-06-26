@@ -435,19 +435,37 @@ function getSharedTeams(career1, career2) {
 
   for (const stint1 of career1) {
     for (const stint2 of career2) {
-      if (stint1.team === stint2.team) {
+      const team1 = stint1.team?.trim().toUpperCase();
+      const team2 = stint2.team?.trim().toUpperCase();
+
+      if (!team1 || !team2) {
+        console.warn('⚠️ Missing team info:', { team1, team2, stint1, stint2 });
+        continue;
+      }
+
+      if (team1 === team2) {
         const start = Math.max(stint1.startYear, stint2.startYear);
         const end = Math.min(stint1.endYear, stint2.endYear);
+
+        console.log(`🟡 Match on team ${team1}, overlap years: ${start}–${end}`);
+
         if (start <= end) {
           shared.push({
-            team: stint1.team,
+            team: team1,
+            startYear: start,
+            endYear: end,
             years: start === end ? `${start}` : `${start}–${end}`
           });
+        } else {
+          console.log(`🔸 No overlap: ${team1}, ${stint1.startYear}–${stint1.endYear} vs ${stint2.startYear}–${stint2.endYear}`);
         }
+      } else {
+        console.log(`🔹 No match: ${team1} vs ${team2}`);
       }
     }
   }
 
+  console.log('✅ Final shared teams:', shared);
   return shared;
 }
 
