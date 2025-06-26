@@ -1091,10 +1091,7 @@ function renderSuccessfulGuesses() {
 
   listEl.innerHTML = '';
 
-  // ✅ Filter out any invalid or empty guesses
-  const displayList = successfulGuesses.filter(
-    g => g && typeof g.name === 'string' && g.name.trim() !== ''
-  );
+  const displayList = [...successfulGuesses].reverse();
 
   displayList.forEach((guessObj, index) => {
     const name = guessObj.name || '';
@@ -1122,26 +1119,27 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
+    // Append arrow and shared stints for all but the first item (now the latest guess)
     if (index < displayList.length - 1) {
       const arrow = document.createElement('div');
-      arrow.textContent = '↓';
+      arrow.textContent = '↑';
       arrow.style.fontSize = '1.2rem';
       arrow.style.color = '#888';
       arrow.style.textAlign = 'center';
       arrow.style.margin = '0.25rem 0';
       listEl.appendChild(arrow);
 
-      const nextGuess = displayList[index + 1];
-      const nextShared = nextGuess?.sharedTeams || [];
+      const prevGuess = displayList[index + 1];
+      const prevShared = prevGuess?.sharedTeams || [];
 
-      if (nextShared.length > 0) {
+      if (prevShared.length > 0) {
         const sharedInfo = document.createElement('div');
         sharedInfo.style.textAlign = 'center';
         sharedInfo.style.fontSize = '0.85rem';
         sharedInfo.style.color = '#444';
         sharedInfo.style.marginBottom = '0.5rem';
 
-        const teamStrings = nextShared.map(t => `${t.team} (${t.years})`);
+        const teamStrings = prevShared.map(t => `${t.team} (${t.years})`);
         sharedInfo.textContent = teamStrings.join(' • ');
 
         listEl.appendChild(sharedInfo);
