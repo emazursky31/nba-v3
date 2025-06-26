@@ -1119,8 +1119,11 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
-    // Append arrow and shared stints for all but the first item (now the latest guess)
-    if (index < displayList.length - 1) {
+    // Show arrow + shared teams only if the *previous guess* had any shared teams
+    const prevGuess = displayList[index + 1];
+    const prevShared = prevGuess?.sharedTeams || [];
+
+    if (prevShared.length > 0) {
       const arrow = document.createElement('div');
       arrow.textContent = '↑';
       arrow.style.fontSize = '1.2rem';
@@ -1129,24 +1132,20 @@ function renderSuccessfulGuesses() {
       arrow.style.margin = '0.25rem 0';
       listEl.appendChild(arrow);
 
-      const prevGuess = displayList[index + 1];
-      const prevShared = prevGuess?.sharedTeams || [];
+      const sharedInfo = document.createElement('div');
+      sharedInfo.style.textAlign = 'center';
+      sharedInfo.style.fontSize = '0.85rem';
+      sharedInfo.style.color = '#444';
+      sharedInfo.style.marginBottom = '0.5rem';
 
-      if (prevShared.length > 0) {
-        const sharedInfo = document.createElement('div');
-        sharedInfo.style.textAlign = 'center';
-        sharedInfo.style.fontSize = '0.85rem';
-        sharedInfo.style.color = '#444';
-        sharedInfo.style.marginBottom = '0.5rem';
+      const teamStrings = prevShared.map(t => `${t.team} (${t.years})`);
+      sharedInfo.textContent = teamStrings.join(' • ');
 
-        const teamStrings = prevShared.map(t => `${t.team} (${t.years})`);
-        sharedInfo.textContent = teamStrings.join(' • ');
-
-        listEl.appendChild(sharedInfo);
-      }
+      listEl.appendChild(sharedInfo);
     }
   });
 }
+
 
 
 
