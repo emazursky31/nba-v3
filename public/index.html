@@ -469,6 +469,14 @@ function handleUsernameEntry() {
   }
 }
 
+function markLeadoffInGuesses(guesses, leadoffName) {
+  return guesses.map(g => ({
+    ...g,
+    isLeadoff: g.name === leadoffName
+  }));
+}
+
+
 
 
     submitUsernameBtn.onclick = () => {
@@ -786,7 +794,8 @@ socket.on('turnEnded', (data) => {
   navigateTo('/play'); // Ensure user is on gameplay page
 
   if (Array.isArray(data.successfulGuesses)) {
-    successfulGuesses = data.successfulGuesses;
+    // 🔧 Inject isLeadoff into the successfulGuesses
+    successfulGuesses = markLeadoffInGuesses(data.successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
   }
 
