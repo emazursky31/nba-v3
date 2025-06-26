@@ -1098,24 +1098,9 @@ function renderSuccessfulGuesses() {
     const guesser = guessObj.guesser || '';
     const sharedTeams = guessObj.sharedTeams || [];
 
-    // Skip rendering if no name — prevents phantom box
     if (!name.trim()) return;
 
-    // ⬆️ Shared Teams (skip for leadoff)
-    if (!isLeadoff && sharedTeams.length > 0) {
-      const sharedInfo = document.createElement('div');
-      sharedInfo.style.textAlign = 'center';
-      sharedInfo.style.fontSize = '0.85rem';
-      sharedInfo.style.color = '#444';
-      sharedInfo.style.margin = '0.25rem 0';
-
-      const teamStrings = sharedTeams.map(t => `${t.team} (${t.years})`);
-      sharedInfo.textContent = teamStrings.join(' • ');
-
-      listEl.appendChild(sharedInfo);
-    }
-
-    // 🧱 Guess Box
+    // Guess box
     const box = document.createElement('div');
     box.style.border = '1px solid #ccc';
     box.style.borderRadius = '8px';
@@ -1136,21 +1121,32 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
-    // ⬆️ Up arrow (unless this is the bottom guess)
+    // Shared stints above arrow, only if NOT leadoff
+    if (!isLeadoff && sharedTeams.length > 0 && index < displayList.length - 1) {
+      const sharedInfo = document.createElement('div');
+      sharedInfo.style.textAlign = 'center';
+      sharedInfo.style.fontSize = '0.85rem';
+      sharedInfo.style.color = '#444';
+      sharedInfo.style.marginBottom = '0.25rem';
+
+      const teamStrings = sharedTeams.map(t => `${t.team} (${t.years})`);
+      sharedInfo.textContent = teamStrings.join(' • ');
+
+      listEl.appendChild(sharedInfo);
+    }
+
+    // Up arrow (except for last guess)
     if (index < displayList.length - 1) {
       const arrow = document.createElement('div');
       arrow.textContent = '↑';
       arrow.style.fontSize = '1.2rem';
       arrow.style.color = '#888';
       arrow.style.textAlign = 'center';
-      arrow.style.margin = '0.25rem 0';
+      arrow.style.margin = '0.25rem 0 0 0';
       listEl.appendChild(arrow);
     }
   });
 }
-
-
-
 
 
 
