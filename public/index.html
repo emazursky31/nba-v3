@@ -790,11 +790,23 @@ socket.on('message', (msg) => {
 
 
 socket.on('turnEnded', (data) => {
-  console.log('[CLIENT] Received turnEnded data.successfulGuesses:', JSON.stringify(data.successfulGuesses, null, 2));
-  navigateTo('/play'); // Ensure user is on gameplay page
+  navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    // 🔧 Inject isLeadoff into the successfulGuesses
+    // 🛠️ Defensive: If leadoff is missing, re-insert manually
+    const hasLeadoff = data.successfulGuesses.some(
+      g => g.name?.toLowerCase() === leadoffPlayerName?.toLowerCase()
+    );
+
+    if (!hasLeadoff && leadoffPlayerName) {
+      data.successfulGuesses.unshift({
+        guesser: 'Leadoff',
+        name: leadoffPlayerName,
+        isLeadoff: true,
+        sharedTeams: []
+      });
+    }
+
     successfulGuesses = markLeadoffInGuesses(data.successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
   }
@@ -805,6 +817,7 @@ socket.on('turnEnded', (data) => {
 
   updateTurn(data);
 });
+
 
 
 socket.on('timerTick', (data) => {
