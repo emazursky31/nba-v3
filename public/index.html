@@ -1084,7 +1084,6 @@ function showAutocompleteSuggestions(suggestions) {
 }
 
 
-
 function renderSuccessfulGuesses() {
   const listEl = document.getElementById('successful-guesses-list');
   if (!listEl || !Array.isArray(successfulGuesses)) return;
@@ -1099,6 +1098,24 @@ function renderSuccessfulGuesses() {
     const guesser = guessObj.guesser || '';
     const sharedTeams = guessObj.sharedTeams || [];
 
+    // Skip rendering if no name — prevents phantom box
+    if (!name.trim()) return;
+
+    // ⬆️ Shared Teams (skip for leadoff)
+    if (!isLeadoff && sharedTeams.length > 0) {
+      const sharedInfo = document.createElement('div');
+      sharedInfo.style.textAlign = 'center';
+      sharedInfo.style.fontSize = '0.85rem';
+      sharedInfo.style.color = '#444';
+      sharedInfo.style.margin = '0.25rem 0';
+
+      const teamStrings = sharedTeams.map(t => `${t.team} (${t.years})`);
+      sharedInfo.textContent = teamStrings.join(' • ');
+
+      listEl.appendChild(sharedInfo);
+    }
+
+    // 🧱 Guess Box
     const box = document.createElement('div');
     box.style.border = '1px solid #ccc';
     box.style.borderRadius = '8px';
@@ -1119,11 +1136,8 @@ function renderSuccessfulGuesses() {
 
     listEl.appendChild(box);
 
-    // Show arrow + shared teams only if the *previous guess* had any shared teams
-    const prevGuess = displayList[index + 1];
-    const prevShared = prevGuess?.sharedTeams || [];
-
-    if (prevShared.length > 0) {
+    // ⬆️ Up arrow (unless this is the bottom guess)
+    if (index < displayList.length - 1) {
       const arrow = document.createElement('div');
       arrow.textContent = '↑';
       arrow.style.fontSize = '1.2rem';
@@ -1131,20 +1145,10 @@ function renderSuccessfulGuesses() {
       arrow.style.textAlign = 'center';
       arrow.style.margin = '0.25rem 0';
       listEl.appendChild(arrow);
-
-      const sharedInfo = document.createElement('div');
-      sharedInfo.style.textAlign = 'center';
-      sharedInfo.style.fontSize = '0.85rem';
-      sharedInfo.style.color = '#444';
-      sharedInfo.style.marginBottom = '0.5rem';
-
-      const teamStrings = prevShared.map(t => `${t.team} (${t.years})`);
-      sharedInfo.textContent = teamStrings.join(' • ');
-
-      listEl.appendChild(sharedInfo);
     }
   });
 }
+
 
 
 
