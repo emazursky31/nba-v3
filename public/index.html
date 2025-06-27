@@ -346,6 +346,8 @@
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
     <p>Invite a friend to join using this link:</p>
     <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
+    <button id="copyInviteBtn">Copy Link</button>
+  <div id="copyToast" style="display:none; color: green; margin-top: 0.5rem;">Link copied!</div>
   </div>
 </section>
 
@@ -473,9 +475,9 @@ console.log('[DEBUG] Loaded savedRoom:', savedRoom);
   }
 
   console.log('[DEBUG] Final state before routing:');
-console.log('  myUsername:', myUsername);
-console.log('  myRoomId:', myRoomId);
-console.log('  isPrivateGame:', isPrivateGame);
+  console.log('  myUsername:', myUsername);
+  console.log('  myRoomId:', myRoomId);
+  console.log('  isPrivateGame:', isPrivateGame);
   // Now decide routing based on loaded state
   if (myRoomId) {
     if (myUsername) {
@@ -492,8 +494,7 @@ console.log('  isPrivateGame:', isPrivateGame);
     }
   }
 
-   
-
+  
 
 submitUsernameBtn.onclick = () => {
   const entered = usernameInput.value.trim();
@@ -513,6 +514,27 @@ submitUsernameBtn.onclick = () => {
     navigateTo('/mode');
   }
 };
+
+const copyInviteBtn = document.getElementById('copyInviteBtn');
+const copyToast = document.getElementById('copyToast');
+const inviteInput = document.getElementById('inviteLink');
+
+copyInviteBtn.onclick = () => {
+  navigator.clipboard.writeText(inviteInput.value)
+    .then(() => {
+      copyToast.style.display = 'block';
+
+      // Hide toast after 2 seconds
+      setTimeout(() => {
+        copyToast.style.display = 'none';
+      }, 2000);
+    })
+    .catch(err => {
+      alert('Failed to copy link. Please copy it manually.');
+      console.error('Clipboard copy failed:', err);
+    });
+};
+
 
 
 function handleUsernameEntry() {
@@ -1244,9 +1266,11 @@ function renderRoute(path) {
 
   if (inviteWrapper && inviteInput) {
     if (isPrivateGame && myRoomId) {
-      const inviteUrl = `${window.location.origin}/join/${myRoomId}`;
+      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
       inviteInput.value = inviteUrl;
       inviteWrapper.style.display = 'block';
+      inviteInput.focus();
+      inviteInput.select();
     } else {
       inviteInput.value = '';
       inviteWrapper.style.display = 'none';
