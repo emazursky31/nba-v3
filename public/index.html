@@ -259,6 +259,12 @@
   padding: 0 0.5rem;
 }
 
+#welcome-message {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #333;
+}
 
 
   #gameOverContainer {
@@ -318,6 +324,7 @@
 
 <!-- Step 2: Game Mode Selection -->
 <section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
+  <h2 id="welcome-message"></h2>
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="findGameBtn">🌐 Join Public Game</button>
@@ -468,6 +475,8 @@ function handleUsernameEntry() {
     navigateTo('/username');
   }
 }
+
+
 
 function markLeadoffInGuesses(guesses, leadoffName) {
   return guesses.map(g => ({
@@ -1170,6 +1179,13 @@ function renderRoute(path) {
     const defaultSection = document.querySelector('section[data-route="/username"]');
     if (defaultSection) {
       defaultSection.classList.remove('hidden');
+    }
+  }
+
+  if (path === '/mode') {
+    const welcomeEl = document.getElementById('welcome-message');
+    if (welcomeEl && myUsername) {
+      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
     }
   }
 }
