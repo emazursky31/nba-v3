@@ -415,6 +415,8 @@
     let opponentName = null;
     let successfulGuesses = [];
 
+    
+
     // Elements
     const usernameSection = document.getElementById('usernameSection');
     const usernameInput = document.getElementById('usernameInput');
@@ -435,6 +437,21 @@
     const messagesEl = document.getElementById('messageContainer');
     const autocompleteList = document.getElementById('autocomplete-list');
     const rematchBtn = document.getElementById('rematchBtn');
+    
+
+    // Load saved username from localStorage
+  const savedUsername = localStorage.getItem('username');
+  if (savedUsername) {
+    myUsername = savedUsername;
+  }
+
+  const savedRoom = localStorage.getItem('privateRoomId');
+    if (savedRoom) {
+    myRoomId = savedRoom;
+    roomId = savedRoom;
+    isPrivateGame = true;
+  }
+
 
    // ✅ 1) Handle join from invite link immediately
     const params = new URLSearchParams(window.location.search);
@@ -446,6 +463,12 @@
     roomId = roomFromUrl;
     isPrivateGame = true;
 
+    // Persist invite link room for later
+    localStorage.setItem('privateRoomId', roomFromUrl);
+  }
+
+  // Now decide routing based on loaded state
+  if (myRoomId) {
     if (myUsername) {
       socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
       navigateTo('/waiting');
@@ -453,7 +476,6 @@
       navigateTo('/username');
     }
   } else {
-    // No invite link → fallback
     if (myUsername) {
       navigateTo('/mode');
     } else {
@@ -480,20 +502,19 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   }));
 }
 
-   submitUsernameBtn.onclick = () => {
+ submitUsernameBtn.onclick = () => {
   const entered = usernameInput.value.trim();
   if (!entered) return alert('Please enter a username.');
 
   myUsername = entered;
   localStorage.setItem('username', myUsername);
 
-  // ✅ If landing via invite link, join that room immediately
-  if (myRoomId) {
-    console.log('Joining private room from invite link:', myRoomId);
+  // Check local myRoomId or fallback to localStorage privateRoomId
+  if (myRoomId || localStorage.getItem('privateRoomId')) {
+    myRoomId = myRoomId || localStorage.getItem('privateRoomId');
     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
     navigateTo('/waiting');
   } else {
-    // ✅ Otherwise, go to mode selection
     navigateTo('/mode');
   }
 };
