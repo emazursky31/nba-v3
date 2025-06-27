@@ -436,39 +436,32 @@
     const autocompleteList = document.getElementById('autocomplete-list');
     const rematchBtn = document.getElementById('rematchBtn');
 
-    // Join private game from shared invite link
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedRoom = urlParams.get('room');
-    if (sharedRoom) {
-      myRoomId = sharedRoom;
-      roomId = sharedRoom;
+   // ✅ 1) Handle join from invite link immediately
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
 
-      const joinAfterUsername = () => {
-        const stored = localStorage.getItem('username');
-        if (!stored) {
-          usernameSection.style.display = 'block';
-          return setTimeout(joinAfterUsername, 100);
-        }
+    if (roomFromUrl) {
+    console.log('[CLIENT] Found invite link for room:', roomFromUrl);
+    myRoomId = roomFromUrl;
+    roomId = roomFromUrl;
+    isPrivateGame = true;
 
-        myUsername = stored;
-        navigateTo('/waiting');
-        socket.emit('joinGame', { roomId: sharedRoom, username: myUsername });
-
-        statusDiv.textContent = `Joined private room: ${sharedRoom}`;
-        waitingRoom.style.display = 'block';
-
-        inviteLinkContainer.classList.remove('hidden');
-        document.getElementById('displayRoomCode').textContent = sharedRoom;
-        inviteLinkContainer.innerHTML = `
-          Share this link to invite a friend:<br>
-          <a href="${window.location.origin}?room=${sharedRoom}" target="_blank">
-            ${window.location.origin}?room=${sharedRoom}
-          </a>
-        `;
-      };
-
-      joinAfterUsername();
+    if (myUsername) {
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/username');
     }
+  } else {
+    // No invite link → fallback
+    if (myUsername) {
+      navigateTo('/mode');
+    } else {
+      navigateTo('/username');
+    }
+  }
+
+   
 
 function handleUsernameEntry() {
   const stored = localStorage.getItem('username');
@@ -480,40 +473,12 @@ function handleUsernameEntry() {
   }
 }
 
-// ✅ Check URL for invite room ID on page load
-window.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
-  const roomFromUrl = params.get('room');
-
-  if (roomFromUrl) {
-    console.log('Found invite link for room:', roomFromUrl);
-
-    // Save it to your state
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-
-    // If username already set, join immediately
-    if (myUsername) {
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-      navigateTo('/waiting');
-    } else {
-      // Otherwise go to username screen first
-      navigateTo('/username');
-    }
-  }
-});
-
-
 function markLeadoffInGuesses(guesses, leadoffName) {
   return guesses.map(g => ({
     ...g,
     isLeadoff: g.name === leadoffName
   }));
 }
-
-
-
 
    submitUsernameBtn.onclick = () => {
   const entered = usernameInput.value.trim();
@@ -539,7 +504,9 @@ function markLeadoffInGuesses(guesses, leadoffName) {
       location.reload();
     };
 
-    handleUsernameEntry();
+    if (!roomFromUrl) {
+  handleUsernameEntry();
+}
 
    privateGameBtn.onclick = () => {
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
