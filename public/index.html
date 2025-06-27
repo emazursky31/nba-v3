@@ -414,6 +414,7 @@
     let myUsername = null;
     let opponentName = null;
     let successfulGuesses = [];
+    let isPrivateGame = false;
 
     
 
@@ -445,20 +446,24 @@
     myUsername = savedUsername;
   }
 
+  console.log('[DEBUG] Loaded savedUsername:', savedUsername);
+
   const savedRoom = localStorage.getItem('privateRoomId');
     if (savedRoom) {
     myRoomId = savedRoom;
     roomId = savedRoom;
     isPrivateGame = true;
   }
-
+console.log('[DEBUG] Loaded savedRoom:', savedRoom);
 
    // ✅ 1) Handle join from invite link immediately
     const params = new URLSearchParams(window.location.search);
     const roomFromUrl = params.get('room');
 
+    console.log('[DEBUG] roomFromUrl from URL:', roomFromUrl);
+
     if (roomFromUrl) {
-    console.log('[CLIENT] Found invite link for room:', roomFromUrl);
+    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
     myRoomId = roomFromUrl;
     roomId = roomFromUrl;
     isPrivateGame = true;
@@ -467,6 +472,10 @@
     localStorage.setItem('privateRoomId', roomFromUrl);
   }
 
+  console.log('[DEBUG] Final state before routing:');
+console.log('  myUsername:', myUsername);
+console.log('  myRoomId:', myRoomId);
+console.log('  isPrivateGame:', isPrivateGame);
   // Now decide routing based on loaded state
   if (myRoomId) {
     if (myUsername) {
@@ -485,6 +494,27 @@
 
    
 
+
+submitUsernameBtn.onclick = () => {
+  const entered = usernameInput.value.trim();
+  if (!entered) return alert('Please enter a username.');
+
+  myUsername = entered;
+  localStorage.setItem('username', myUsername);
+
+  console.log('[DEBUG] Username submitted:', myUsername);
+  console.log('[DEBUG] myRoomId on submit:', myRoomId);
+
+  if (myRoomId) {
+    console.log('[DEBUG] Emitting joinGame for private room:', myRoomId);
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    navigateTo('/waiting');
+  } else {
+    navigateTo('/mode');
+  }
+};
+
+
 function handleUsernameEntry() {
   const stored = localStorage.getItem('username');
   if (stored) {
@@ -501,23 +531,6 @@ function markLeadoffInGuesses(guesses, leadoffName) {
     isLeadoff: g.name === leadoffName
   }));
 }
-
- submitUsernameBtn.onclick = () => {
-  const entered = usernameInput.value.trim();
-  if (!entered) return alert('Please enter a username.');
-
-  myUsername = entered;
-  localStorage.setItem('username', myUsername);
-
-  // Check local myRoomId or fallback to localStorage privateRoomId
-  if (myRoomId || localStorage.getItem('privateRoomId')) {
-    myRoomId = myRoomId || localStorage.getItem('privateRoomId');
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    navigateTo('/waiting');
-  } else {
-    navigateTo('/mode');
-  }
-};
 
 
     changeUsernameBtn.onclick = () => {
