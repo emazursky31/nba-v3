@@ -531,11 +531,11 @@ async function startGame(roomId) {
 
   // ✅ Fully reset state for rematch
   game.successfulGuesses = [{
-  name: game.leadoffPlayer,
-  guesser: 'Leadoff',
-  isLeadoff: true,
-  sharedTeams: []
-}];
+    name: game.leadoffPlayer,
+    guesser: 'Leadoff',
+    isLeadoff: true,
+    sharedTeams: []
+  }];
   game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
   game.timeLeft = 30;
@@ -564,17 +564,24 @@ async function startGame(roomId) {
   console.log(`→ currentTurn: ${game.currentTurn}`);
   console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
 
-  // ✅ Notify clients
-  io.to(roomId).emit('gameStarted', {
-    firstPlayerId: game.activePlayerSocketId,
-    currentPlayerName: game.currentPlayerName,
-    timeLeft: game.timeLeft,
-    leadoffPlayer: game.leadoffPlayer,
+  // ✅ Notify each player INDIVIDUALLY with their opponent’s name from game.usernames
+  game.players.forEach((socketId) => {
+    const opponentSocketId = game.players.find(id => id !== socketId);
+    const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
+
+    io.to(socketId).emit('gameStarted', {
+      firstPlayerId: game.activePlayerSocketId,
+      currentPlayerName: game.currentPlayerName,
+      timeLeft: game.timeLeft,
+      leadoffPlayer: game.leadoffPlayer,
+      opponentName: opponentUsername
+    });
   });
 
   // ✅ Start timer
   startTurnTimer(roomId);
 }
+
 
 
 
@@ -643,6 +650,8 @@ function handleJoinGame(socket, roomId, username) {
 
   const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
   game.usernames[socket.id] = finalUsername;
+
+  socket.username = finalUsername;
 
   socket.join(roomId);
   socketRoomMap[socket.id] = roomId;
