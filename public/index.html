@@ -690,9 +690,11 @@ socket.on('gameStarted', (data) => {
   // ✅ Update "You" and "Opponent" names
   const playerYouEl = document.getElementById('playerYou');
   const playerOpponentEl = document.getElementById('playerOpponent');
-
+  if (playerOpponentEl && data.opponentName) {
+  playerOpponentEl.textContent = data.opponentName;
+  opponentName = data.opponentName;  // keep local variable updated
+  }
   if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
-  if (playerOpponentEl && opponentName) playerOpponentEl.textContent = opponentName;
 
   // ✅ Highlight active player
   const isYourTurn = data.currentPlayerName === myUsername;
