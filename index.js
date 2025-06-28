@@ -154,6 +154,8 @@ socket.on('findMatch', (username) => {
 
     startGame(roomId);
 
+    console.log(`[findMatch] Matched players: ${username} (socket.id=${socket.id}) vs ${opponentUsername} (socket.id=${opponentSocket.id})`);
+
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
   } else {
