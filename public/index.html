@@ -856,16 +856,14 @@ socket.on('gameOver', (data) => {
   }
   timerEl.textContent = '';
 
-  // Ensure myUsername and opponentName are set from gameOver data if missing
+  // ✅ Ensure myUsername & opponentName are set correctly
   if (!myUsername && data.winnerName && data.loserName) {
-    // If your username matches neither, pick the winner as you by default
-    // or adjust logic based on your app's auth/user flow
-    if (data.winnerName === myUsername || data.loserName === myUsername) {
-      // do nothing, myUsername is correct
-    } else {
-      // Guess which is you - here we default to winner for demo
+    if (data.role === 'winner') {
       myUsername = data.winnerName;
       opponentName = data.loserName;
+    } else {
+      myUsername = data.loserName;
+      opponentName = data.winnerName;
     }
   } else if (!opponentName && data.winnerName && data.loserName) {
     opponentName = (myUsername === data.winnerName) ? data.loserName : data.winnerName;
@@ -919,15 +917,11 @@ socket.on('gameOver', (data) => {
     rematchBtn.textContent = 'Rematch';
   }
 
-  // Immediately update scoreboard here using the latest known stats if available
-  if (games[myRoomId] && games[myRoomId].matchStats) {
-    updateSplitScoreboard(games[myRoomId].matchStats, myUsername, opponentName);
-  }
+  // ✅ DO NOT manually call updateSplitScoreboard here
+  // The 'matchStats' event from server will handle it
 
   navigateTo('/gameover');
 });
-
-
 
 
 
