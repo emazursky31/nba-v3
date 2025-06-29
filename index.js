@@ -415,6 +415,15 @@ socket.on('disconnect', () => {
 });
 
 
+socket.on('getMatchStats', () => {
+  const roomId = socketRoomMap[socket.id];
+  if (!roomId || !games[roomId]) {
+    socket.emit('matchStats', { player1Wins: 0, player2Wins: 0 });
+    return;
+  }
+  socket.emit('matchStats', games[roomId].matchStats || { player1Wins: 0, player2Wins: 0 });
+});
+
 
 
 
@@ -684,7 +693,6 @@ function startTurnTimer(roomId) {
     game.timer = null;
   }
 
-
   game.timeLeft = 30;
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
@@ -712,9 +720,7 @@ function startTurnTimer(roomId) {
   game.timer = setInterval(() => {
     game.timeLeft--;
 
-    // Defensive logging
     console.log(`[TIMER] Room ${roomId} - timeLeft: ${game.timeLeft}`);
-
     io.to(roomId).emit('timerTick', { timeLeft: game.timeLeft });
 
     if (game.timeLeft <= 0) {
@@ -723,27 +729,53 @@ function startTurnTimer(roomId) {
       console.log(`[TIMER] Room ${roomId} - timer expired`);
 
       const loserSocketId = game.activePlayerSocketId;
-      const loserSocket = io.sockets.sockets.get(loserSocketId);
       const loserName = game.usernames[loserSocketId];
       const winnerSocketId = game.players.find(id => id !== loserSocketId);
-      const winnerSocket = io.sockets.sockets.get(winnerSocketId);
+      const winnerName = game.usernames[winnerSocketId];
 
-      if (loserSocket) {
-        loserSocket.emit('gameOver', {
-          message: `You ran out of time!`,
-          role: 'loser',
-        });
+      // ✅ Initialize matchStats if missing
+      if (!game.matchStats) {
+        game.matchStats = {};
       }
 
-      if (winnerSocket) {
-        winnerSocket.emit('gameOver', {
-          message: `${loserName} ran out of time! You win!`,
-          role: 'winner',
-        });
-      }
+      // ✅ Increment winner’s count
+      if (!game.matchStats[winnerName]) game.matchStats[winnerName] = { wins: 0 };
+      game.matchStats[winnerName].wins += 1;
+
+      console.log(`[SCOREBOARD] Room ${roomId} - Updated stats:`, game.matchStats);
+
+      // ✅ Emit updated stats to both players
+      io.to(roomId).emit('matchStats', {
+        [winnerName]: { wins: game.matchStats[winnerName] },
+        [loserName]: { wins: game.matchStats[loserName] || 0 },
+      });
+
+
+      // ✅ Emit game over event to both players
+      game.players.forEach((playerId) => {
+        const socket = io.sockets.sockets.get(playerId);
+        if (!socket) return;
+
+        if (playerId === winnerSocketId) {
+          socket.emit('gameOver', {
+            message: `${loserName} ran out of time! You win!`,
+            role: 'winner',
+            winnerName,
+            loserName,
+          });
+        } else {
+          socket.emit('gameOver', {
+            message: `You ran out of time!`,
+            role: 'loser',
+            winnerName,
+            loserName,
+          });
+        }
+      });
     }
   }, 1000);
 }
+
 
 
 });

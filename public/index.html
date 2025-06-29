@@ -307,6 +307,76 @@
     padding: 1rem;          /* visually balances a bigger tap target */
     min-height: 56px;       /* reaffirm minimum height */
   }
+
+  #jumbotronScoreboard {
+  max-width: 400px;
+  width: 90%;
+  background: #000;
+  padding: 1rem;
+  border: 4px solid #FFD700;
+  border-radius: 10px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#jumbotronScoreboard .scoreRow {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  color: #FFD700;
+  font-size: 1.4rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #FFD700;
+}
+
+#jumbotronScoreboard .scoreRow:last-child {
+  border-bottom: none;
+}
+
+#jumbotronScoreboard .playerName {
+  font-weight: bold;
+}
+
+#jumbotronScoreboard .scoreDigits {
+  font-family: 'Digital-7', 'Courier New', Courier, monospace;
+}
+
+.scoreboard-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+  background: #000;
+  border: 4px solid #FFD700;
+  border-radius: 10px;
+  padding: 1rem 2rem;
+  color: #FFD700;
+  font-family: 'VT323', 'Courier New', monospace;
+}
+
+.scoreboard-header, .scoreboard-scores {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 1.5rem;
+}
+
+.scoreboard-scores {
+  font-size: 2.5rem;
+  margin-top: 0.5rem;
+}
+
+.divider {
+  margin: 0 1rem;
+}
+
+.scoreDigits {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+}
+
+
 }
 </style>
 
@@ -379,20 +449,51 @@
     </div>
   </div>
 
-  <div id="messageContainer"></div>
+  <section id="scoreboardSection" style="margin-top: 2rem;">
+  <div id="jumbotronScoreboard" class="scoreboard-box">
+    <div class="scoreboard-header">
+      <span id="player1Name">Player 1</span>
+      <span class="divider">|</span>
+      <span id="player2Name">Player 2</span>
+    </div>
+    <div class="scoreboard-scores">
+      <span id="player1Score" class="scoreDigits">0</span>
+      <span class="divider">|</span>
+      <span id="player2Score" class="scoreDigits">0</span>
+    </div>
+  </div>
+</section>
 
-  
+  <div id="messageContainer"></div>
 </section>
 
 
 <!-- Game Over UI -->
 <section data-route="/gameover" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <div id="gameOverContainer" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+  <div id="gameOverContainer" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem;">
     <!-- Game over message will be dynamically added here -->
+
+    <!-- Add this container for winner/loser details -->
+    <div id="gameOverResults" style="font-size: 1.2rem; margin-top: 1rem;"></div>
   </div>
+<section id="scoreboardSection" style="margin-top: 2rem;">
+  <div id="jumbotronScoreboard" class="scoreboard-box">
+    <div class="scoreboard-header">
+      <span id="player1Name">Player 1</span>
+      <span class="divider">|</span>
+      <span id="player2Name">Player 2</span>
+    </div>
+    <div class="scoreboard-scores">
+      <span id="player1Score" class="scoreDigits">0</span>
+      <span class="divider">|</span>
+      <span id="player2Score" class="scoreDigits">0</span>
+    </div>
+  </div>
+</section>
 
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
 </section>
+
 
 <!-- Shared Turn History List -->
 <div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
@@ -546,6 +647,20 @@ function handleUsernameEntry() {
     navigateTo('/username');
   }
 }
+
+function updateSplitScoreboard(stats, player1, player2) {
+  document.getElementById('player1Name').textContent = player1;
+  document.getElementById('player2Name').textContent = player2;
+
+  const player1Stats = stats[player1] || { wins: 0 };
+  const player2Stats = stats[player2] || { wins: 0 };
+
+  document.getElementById('player1Score').textContent = player1Stats.wins;
+  document.getElementById('player2Score').textContent = player2Stats.wins;
+}
+
+
+
 
 function markLeadoffInGuesses(guesses, leadoffName) {
   return guesses.map(g => ({
@@ -707,10 +822,17 @@ socket.on('gameStarted', (data) => {
   timerEl.textContent = data.timeLeft || 15;
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
+  socket.emit('getMatchStats');
+
   // Navigate to game view
   navigateTo('/game');
 });
 
+
+socket.on('matchStats', (stats) => {
+  console.log('[CLIENT] Updated matchStats:', stats);
+  updateSplitScoreboard(stats, myUsername, opponentName);
+});
 
 
 
@@ -718,30 +840,25 @@ socket.on('gameOver', (data) => {
   console.log('gameOver received:', data);
   gameOver = true;
 
-  // Disable inputs
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
-  // Clear turn timer
   if (window.timerInterval) {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
   }
   timerEl.textContent = '';
 
-  // Reset and show game over container
   const container = document.getElementById('gameOverContainer');
-  container.style.display = 'block'; // ✅ Ensure visibility
+  container.style.display = 'flex';
   container.innerHTML = '';
 
-  // Show Game Over Message
   const gameOverMsg = document.createElement('div');
   gameOverMsg.style.fontSize = '1.5rem';
   gameOverMsg.style.textAlign = 'center';
   gameOverMsg.style.fontWeight = 'bold';
   gameOverMsg.style.marginTop = '1rem';
 
-  // Determine message content
   if (data.message) {
     gameOverMsg.textContent = data.message;
   } else if (data.reason === 'opponent_left') {
@@ -750,7 +867,6 @@ socket.on('gameOver', (data) => {
     gameOverMsg.textContent = 'Game Over!';
   }
 
-  // Color by role
   if (data.role === 'winner') {
     gameOverMsg.style.color = 'green';
   } else if (data.role === 'loser') {
@@ -761,7 +877,19 @@ socket.on('gameOver', (data) => {
 
   container.appendChild(gameOverMsg);
 
-  // Show or hide rematch button
+  // ✅ Optional: show winner/loser details
+  const resultsDiv = document.getElementById('gameOverResults');
+  if (resultsDiv) {
+    if (data.winnerName && data.loserName) {
+      resultsDiv.innerHTML = `
+        <p><strong>Winner:</strong> ${data.winnerName}</p>
+        <p><strong>Loser:</strong> ${data.loserName}</p>
+      `;
+    } else {
+      resultsDiv.innerHTML = '';
+    }
+  }
+
   if (data.canRematch === false || data.reason === 'opponent_left') {
     rematchBtn.style.display = 'none';
   } else {
@@ -770,10 +898,8 @@ socket.on('gameOver', (data) => {
     rematchBtn.textContent = 'Rematch';
   }
 
-  // 🧭 Navigate to the game over screen
   navigateTo('/gameover');
 });
-
 
 
 
@@ -1023,6 +1149,7 @@ socket.on('rematchStarted', () => {
   if (myRoomId && myUsername) {
     console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    socket.emit('getMatchStats');
   } else {
     console.error('[CLIENT] Missing roomId or username for rematch.');
   }
@@ -1080,8 +1207,6 @@ function resetGameUI() {
     messageContainer.innerHTML = '';
   }
 }
-
-
 
 
 
