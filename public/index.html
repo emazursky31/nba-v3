@@ -290,6 +290,94 @@
     background-color: #0056b3;
   }
 
+ #scoreboardSection {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999; /* Make sure it stays above other elements */
+  width: auto;
+}
+
+#scoreboardSection.hidden {
+  display: none;
+}
+
+#jumbotronScoreboard {
+  background: #111;   /* Dark background like a jumbotron */
+  color: #0f0;        /* Bright green text like a scoreboard */
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-family: 'Courier New', Courier, monospace; /* Retro scoreboard font */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+#jumbotronScoreboard .scoreboard-header {
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#jumbotronScoreboard .scoreboard-scores {
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.2rem;
+}
+
+#jumbotronScoreboard .scoreboard-columns {
+  display: flex;
+  align-items: center;
+}
+
+#jumbotronScoreboard .scoreboard-column {
+  flex: 1;
+  text-align: center;
+}
+
+#jumbotronScoreboard .divider-line {
+  width: 2px;
+  height: 100%;
+  background-color: #444;
+  margin: 0 1rem;
+}
+
+
+
+.scoreboard-box {
+  border: 2px solid #333;
+  background: #111;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: 'Digital-7', monospace;  /* or your choice */
+  text-align: center;
+  width: 160px; /* adjust as needed */
+}
+
+.scoreboard-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.scoreboard-scores {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.5rem;
+}
+
+.divider {
+  margin: 0 0.25rem;
+  color: #aaa;
+}
+
+
 @media (max-width: 480px) {
   #guessControls {
     flex-direction: column;
@@ -308,74 +396,14 @@
     min-height: 56px;       /* reaffirm minimum height */
   }
 
-  #jumbotronScoreboard {
-  max-width: 400px;
-  width: 90%;
-  background: #000;
-  padding: 1rem;
-  border: 4px solid #FFD700;
-  border-radius: 10px;
-  font-family: 'Courier New', Courier, monospace;
-}
-
-#jumbotronScoreboard .scoreRow {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  color: #FFD700;
-  font-size: 1.4rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid #FFD700;
-}
-
-#jumbotronScoreboard .scoreRow:last-child {
-  border-bottom: none;
-}
-
-#jumbotronScoreboard .playerName {
-  font-weight: bold;
-}
-
-#jumbotronScoreboard .scoreDigits {
-  font-family: 'Digital-7', 'Courier New', Courier, monospace;
-}
-
 .scoreboard-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 400px;
-  margin: 0 auto;
-  background: #000;
-  border: 4px solid #FFD700;
-  border-radius: 10px;
-  padding: 1rem 2rem;
-  color: #FFD700;
-  font-family: 'VT323', 'Courier New', monospace;
-}
+    width: 140px;
+    font-size: 0.85rem;
+  }
 
-.scoreboard-header, .scoreboard-scores {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  font-size: 1.5rem;
-}
-
-.scoreboard-scores {
-  font-size: 2.5rem;
-  margin-top: 0.5rem;
-}
-
-.divider {
-  margin: 0 1rem;
-}
-
-.scoreDigits {
-  display: inline-block;
-  min-width: 40px;
-  text-align: center;
-}
-
+  .scoreboard-scores {
+    font-size: 1.2rem;
+  }
 
 }
 </style>
@@ -421,6 +449,21 @@
   </div>
 </section>
 
+<!-- Scoreboard UI -->
+<section id="scoreboardSection">
+  <div id="jumbotronScoreboard" class="scoreboard-box">
+    <div class="scoreboard-header">
+      <span id="player1Name">Player 1</span>
+      <span id="player2Name">Player 2</span>
+    </div>
+    <div class="scoreboard-scores">
+      <span id="player1Score" class="scoreDigits">0</span>
+      <span id="player2Score" class="scoreDigits">0</span>
+    </div>
+  </div>
+</section>
+
+
 <!-- In-Game UI -->
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
  <div id="playersDisplay">
@@ -449,23 +492,9 @@
     </div>
   </div>
 
-  <section id="scoreboardSection" style="margin-top: 2rem;">
-  <div id="jumbotronScoreboard" class="scoreboard-box">
-    <div class="scoreboard-header">
-      <span id="player1Name">Player 1</span>
-      <span class="divider">|</span>
-      <span id="player2Name">Player 2</span>
-    </div>
-    <div class="scoreboard-scores">
-      <span id="player1Score" class="scoreDigits">0</span>
-      <span class="divider">|</span>
-      <span id="player2Score" class="scoreDigits">0</span>
-    </div>
-  </div>
-</section>
-
   <div id="messageContainer"></div>
 </section>
+
 
 
 <!-- Game Over UI -->
@@ -476,21 +505,6 @@
     <!-- Add this container for winner/loser details -->
     <div id="gameOverResults" style="font-size: 1.2rem; margin-top: 1rem;"></div>
   </div>
-<section id="scoreboardSection" style="margin-top: 2rem;">
-  <div id="jumbotronScoreboard" class="scoreboard-box">
-    <div class="scoreboard-header">
-      <span id="player1Name">Player 1</span>
-      <span class="divider">|</span>
-      <span id="player2Name">Player 2</span>
-    </div>
-    <div class="scoreboard-scores">
-      <span id="player1Score" class="scoreDigits">0</span>
-      <span class="divider">|</span>
-      <span id="player2Score" class="scoreDigits">0</span>
-    </div>
-  </div>
-</section>
-
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
 </section>
 
@@ -1368,6 +1382,16 @@ function renderRoute(path) {
     }
   }
 
+  // ✅ NEW: Toggle pinned scoreboard visibility
+  const scoreboard = document.getElementById('scoreboardSection');
+  if (scoreboard) {
+    if (path === '/play' || path === '/gameover') {
+      scoreboard.classList.remove('hidden');
+    } else {
+      scoreboard.classList.add('hidden');
+    }
+  }
+
   if (!matched) {
     const defaultSection = document.querySelector('section[data-route="/username"]');
     if (defaultSection) {
@@ -1383,28 +1407,29 @@ function renderRoute(path) {
   }
 
   if (path === '/waiting') {
-  const codeEl = document.getElementById('displayRoomCode');
-  const inviteWrapper = document.getElementById('inviteLinkWrapper');
-  const inviteInput = document.getElementById('inviteLink');
+    const codeEl = document.getElementById('displayRoomCode');
+    const inviteWrapper = document.getElementById('inviteLinkWrapper');
+    const inviteInput = document.getElementById('inviteLink');
 
-  if (codeEl && myRoomId) {
-    codeEl.textContent = myRoomId;
-  }
+    if (codeEl && myRoomId) {
+      codeEl.textContent = myRoomId;
+    }
 
-  if (inviteWrapper && inviteInput) {
-    if (isPrivateGame && myRoomId) {
-      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
-      inviteInput.value = inviteUrl;
-      inviteWrapper.style.display = 'block';
-      inviteInput.focus();
-      inviteInput.select();
-    } else {
-      inviteInput.value = '';
-      inviteWrapper.style.display = 'none';
+    if (inviteWrapper && inviteInput) {
+      if (isPrivateGame && myRoomId) {
+        const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
+        inviteInput.value = inviteUrl;
+        inviteWrapper.style.display = 'block';
+        inviteInput.focus();
+        inviteInput.select();
+      } else {
+        inviteInput.value = '';
+        inviteWrapper.style.display = 'none';
+      }
     }
   }
 }
-}
+
 
 
 document.getElementById('guessInput').addEventListener('focus', () => {
