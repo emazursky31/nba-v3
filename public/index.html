@@ -298,28 +298,22 @@
 }
 
 #jumbotronScoreboard {
- display: flex;
-  flex-direction: column;
-  border: 2px solid #fff;  /* border around scoreboard */
-  width: 180px;            /* fixed width on desktop */
-  background: #111;        /* dark background */
-  color: rgb(0, 255, 115);             
-  font-family: 'Digital-7', monospace, monospace;
-  border-radius: 6px;
-  overflow: hidden;
-  box-sizing: border-box;
-  user-select: none;
-  margin: 0 auto;          /* center on page */
+   background: #fff !important;
+  color: #111 !important;
+  border: 2px solid #111 !important;
+  width: 180px !important;
+  min-width: 120px !important;
+  max-width: 95vw;
+  font-family: Arial, sans-serif;
+  box-shadow: none;
 }
 
 .scoreboard-box {
-  display: flex;
-  flex-direction: column;
-  border: 2px solid #333;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fff;
-  min-width: 150px; /* adjust as needed */
+  background: #fff !important;
+  border: 2px solid #111 !important;
+  color: #111 !important;
+  min-width: 120px !important;
+  border-radius: 6px;
 }
 
 .scoreboard-header,
@@ -341,24 +335,18 @@
 
 .scoreboard-header .divider,
 .scoreboard-scores .divider {
-  flex: 0 0 1px;
-  width: 1px;
-  background: #333;
-  margin: 0;
-  padding: 0;
-  align-self: stretch;
-  border: none;
+  background: #111 !important;
 }
 
 .scoreboard-header {
-  background: #333;
-  color: #fff;
+   background: #fff !important;
+  color: #111 !important;
+  border-bottom: 1px solid #111 !important;
 }
 
 .scoreboard-scores {
-  background: #f9f9f9;
-  font-weight: bold;
-  font-size: 1.2rem;
+  background: #fff !important;
+  color: #111 !important;
 }
 
 .divider {
@@ -397,52 +385,6 @@
     font-size: 0.95rem;
   }
 }
-
-/* --- Scoreboard white background, black font, black borders, and smaller size ---
-#jumbotronScoreboard {
-  background: #fff !important;
-  color: #111 !important;
-  border: 2px solid #111 !important;
-  width: 180px !important;
-  min-width: 120px !important;
-  max-width: 95vw;
-  font-family: Arial, sans-serif;
-  box-shadow: none;
-}
-.scoreboard-box {
-  background: #fff !important;
-  border: 2px solid #111 !important;
-  color: #111 !important;
-  min-width: 120px !important;
-  border-radius: 6px;
-}
-.scoreboard-header {
-  background: #fff !important;
-  color: #111 !important;
-  border-bottom: 1px solid #111 !important;
-}
-.scoreboard-scores {
-  background: #fff !important;
-  color: #111 !important;
-}
-.scoreboard-header .divider,
-.scoreboard-scores .divider {
-  background: #111 !important;
-}
-@media (max-width: 480px) {
-  #jumbotronScoreboard {
-    width: 98vw !important;
-    min-width: 0 !important;
-    font-size: 0.95rem;
-    padding: 0.2rem 0.1rem;
-  }
-  .scoreboard-box {
-    min-width: 0 !important;
-    font-size: 0.95rem;
-  }
-}
---- End scoreboard style update --- */
-
 
 </style>
 
