@@ -325,14 +325,29 @@
 .scoreboard-header,
 .scoreboard-scores {
   display: flex;
+  flex-direction: row;
   width: 100%;
+  height: 100%;
 }
 
 .scoreboard-header span,
 .scoreboard-scores span {
-  flex: 1; /* equal width columns */
-  text-align: center; /* center content */
+  flex: 1 1 0;
+  width: 50%;
+  box-sizing: border-box;
+  text-align: center;
   padding: 0.5rem;
+}
+
+.scoreboard-header .divider,
+.scoreboard-scores .divider {
+  flex: 0 0 1px;
+  width: 1px;
+  background: #333;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  border: none;
 }
 
 .scoreboard-header {
