@@ -312,37 +312,45 @@
   margin: 0 auto;          /* center on page */
 }
 
-/* Header and scores rows */
+.scoreboard-box {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  min-width: 150px; /* adjust as needed */
+}
+
 .scoreboard-header,
 .scoreboard-scores {
   display: flex;
   width: 100%;
-  height: 50px;
 }
 
-/* Each player name or score container */
 .scoreboard-header span,
 .scoreboard-scores span {
-  flex: 1;               /* equal width */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
+  flex: 1; /* equal width columns */
+  text-align: center; /* center content */
+  padding: 0.5rem;
+}
+
+.scoreboard-header {
+  background: #333;
+  color: #fff;
+}
+
+.scoreboard-scores {
+  background: #f9f9f9;
   font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 10px;
+  font-size: 1.2rem;
 }
 
-/* Vertical dividing line */
-.scoreboard-header .divider,
-.scoreboard-scores .divider {
-  width: 2px;
-  background-color: rgb(0, 255, 115); 
-  margin: 0;
+.divider {
+  border-left: 1px solid #333;
+  flex: 0 0 1px;
+  padding: 0;
 }
-
 
 
 @media (max-width: 480px) {
@@ -424,27 +432,19 @@
 <!-- Scoreboard UI -->
 <section id="scoreboardSection">
   <div id="jumbotronScoreboard" class="scoreboard-box">
-    <div class="scoreboard-columns">
-      <div class="scoreboard-column">
-        <div class="scoreboard-header">
-          <span id="player1Name">Player 1</span>
-        </div>
-        <div class="scoreboard-score">
-          <span id="player1Score">0</span>
-        </div>
-      </div>
-      <div class="divider-line"></div>
-      <div class="scoreboard-column">
-        <div class="scoreboard-header">
-          <span id="player2Name">Player 2</span>
-        </div>
-        <div class="scoreboard-score">
-          <span id="player2Score">0</span>
-        </div>
-      </div>
+    <div class="scoreboard-header">
+      <span id="player1Name">Player 1</span>
+      <span class="divider"></span>
+      <span id="player2Name">Player 2</span>
+    </div>
+    <div class="scoreboard-scores">
+      <span id="player1Score" class="scoreDigits">0</span>
+      <span class="divider"></span>
+      <span id="player2Score" class="scoreDigits">0</span>
     </div>
   </div>
 </section>
+
 
 <!-- In-Game UI -->
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
