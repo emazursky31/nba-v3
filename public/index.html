@@ -673,13 +673,26 @@ copyInviteBtn.onclick = () => {
 
 
 async function initAuthAndRoute() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    await handleAuthSuccess();
-  } else {
-    navigateTo('/signup'); // or your sign-in section
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Error fetching user:', error);
+      // Optionally handle error (e.g., show a message or retry)
+      navigateTo('/signup');
+      return;
+    }
+    const user = data?.user;
+    if (user) {
+      await handleAuthSuccess();
+    } else {
+      navigateTo('/signup'); // or your sign-in section
+    }
+  } catch (err) {
+    console.error('Unexpected error in initAuthAndRoute:', err);
+    navigateTo('/signup');
   }
 }
+
 
 document.addEventListener('DOMContentLoaded', initAuthAndRoute);
 
@@ -1577,12 +1590,32 @@ function renderRoute(path) {
     if (route === path) {
       section.classList.remove('hidden');
       matched = true;
+
+      // Attach event listeners for signup/signin buttons only on signup page
+      if (route === '/signup') {
+        const signupBtn = document.getElementById('signupBtn');
+        const signinBtn = document.getElementById('signinBtn');
+
+        if (signupBtn) {
+          signupBtn.onclick = signUp;
+          console.log('[DEBUG] signupBtn listener attached');
+        } else {
+          console.error('[ERROR] signupBtn not found!');
+        }
+
+        if (signinBtn) {
+          signinBtn.onclick = signIn;
+          console.log('[DEBUG] signinBtn listener attached');
+        } else {
+          console.error('[ERROR] signinBtn not found!');
+        }
+      }
     } else {
       section.classList.add('hidden');
     }
   });
 
-  // ✅ Toggle turn history list visibility
+  // Toggle turn history list visibility
   const guessContainer = document.getElementById('successful-guesses-container');
   if (guessContainer) {
     if (path === '/play' || path === '/gameover') {
@@ -1592,7 +1625,7 @@ function renderRoute(path) {
     }
   }
 
-  // ✅ NEW: Toggle pinned scoreboard visibility
+  // Toggle pinned scoreboard visibility
   const scoreboard = document.getElementById('scoreboardSection');
   if (scoreboard) {
     if (path === '/play' || path === '/gameover') {
@@ -1639,6 +1672,7 @@ function renderRoute(path) {
     }
   }
 }
+
 
 
 
