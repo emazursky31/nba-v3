@@ -414,7 +414,7 @@
   <h2>Sign In</h2>
   <input type="email" id="signin-email" placeholder="Email Address" />
   <input type="password" id="signin-password" placeholder="Password" />
-  <button onclick="signIn()">Sign In</button>
+  <button id="signupBtn">Sign In</button>
 </section>
 
 
@@ -570,7 +570,8 @@
 
 
 
-  console.log('[DEBUG] Loaded savedUsername:', savedUsername);
+const savedUsername = localStorage.getItem('username');
+console.log('[DEBUG] Loaded savedUsername:', savedUsername);
 
   const savedRoom = localStorage.getItem('privateRoomId');
     if (savedRoom) {
@@ -1460,6 +1461,7 @@ async function signUp() {
   navigateTo('/mode');
 }
 
+document.getElementById('signupBtn').addEventListener('click', signUp);
 
 
 async function signIn() {
