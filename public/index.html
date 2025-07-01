@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <title>NBA Teammate Game</title>
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script>
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co'
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk'
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+  window.supabase = supabase // Expose for later use
+</script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
  <style>
@@ -393,14 +403,28 @@
 <body>
 <h1>NBA Teammate Game</h1>
 
-<!-- Step 1: Username Entry -->
+<!-- Step 1: Sign Up/Sign In -->
+<section id="authSection">
+  <h2>Sign Up</h2>
+  <input type="email" id="signup-email" placeholder="Email" />
+  <input type="password" id="signup-password" placeholder="Password" />
+  <button onclick="signUp()">Sign Up</button>
+
+  <h2>Sign In</h2>
+  <input type="email" id="signin-email" placeholder="Email" />
+  <input type="password" id="signin-password" placeholder="Password" />
+  <button onclick="signIn()">Sign In</button>
+</section>
+
+
+<!-- Step 2: Username Entry -->
 <section id="usernameSection" data-route="/username" style="text-align: center; margin-top: 2rem;">
   <h2>Enter Your Username</h2>
   <input type="text" id="usernameInput" placeholder="Choose a username" />
   <button id="submitUsernameBtn">Continue</button>
 </section>
 
-<!-- Step 2: Game Mode Selection -->
+<!-- Step 3: Game Mode Selection -->
 <section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2 id="welcome-message"></h2>
   <h2>Choose Your Game Mode</h2>
@@ -430,7 +454,7 @@
 </section>
 
 <!-- Scoreboard UI -->
-<section id="scoreboardSection">
+<!-- <section id="scoreboardSection">
   <div id="jumbotronScoreboard" class="scoreboard-box">
     <div class="scoreboard-header">
       <span id="player1Name">Player 1</span>
@@ -441,7 +465,7 @@
       <span id="player2Score" class="scoreDigits">0</span>
     </div>
   </div>
-</section>
+</section> -->
 
 
 <!-- In-Game UI -->
@@ -537,11 +561,20 @@
     const rematchBtn = document.getElementById('rematchBtn');
     
 
-    // Load saved username from localStorage
-  const savedUsername = localStorage.getItem('username');
-  if (savedUsername) {
-    myUsername = savedUsername;
+   // ✅ Auth check: sign in or set username
+   
+  (async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    console.log('[DEBUG] No signed-in user. Routing to signup.');
+    navigateTo('/signup');
+    return;
   }
+
+  await handleAuthSuccess(); // sets myUsername
+})();
+
+
 
   console.log('[DEBUG] Loaded savedUsername:', savedUsername);
 
@@ -591,24 +624,35 @@ console.log('[DEBUG] Loaded savedRoom:', savedRoom);
 
   
 
-submitUsernameBtn.onclick = () => {
+submitUsernameBtn.onclick = async () => {
   const entered = usernameInput.value.trim();
   if (!entered) return alert('Please enter a username.');
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('No authenticated user!');
+    return;
+  }
+
+  const { error } = await supabase.from('profiles').upsert([
+    { id: user.id, username: entered }
+  ]);
+  if (error) {
+    alert('Failed to save username: ' + error.message);
+    return;
+  }
 
   myUsername = entered;
   localStorage.setItem('username', myUsername);
 
-  console.log('[DEBUG] Username submitted:', myUsername);
-  console.log('[DEBUG] myRoomId on submit:', myRoomId);
-
   if (myRoomId) {
-    console.log('[DEBUG] Emitting joinGame for private room:', myRoomId);
     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
     navigateTo('/waiting');
   } else {
     navigateTo('/mode');
   }
 };
+
 
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 const copyToast = document.getElementById('copyToast');
@@ -632,15 +676,17 @@ copyInviteBtn.onclick = () => {
 
 
 
-function handleUsernameEntry() {
-  const stored = localStorage.getItem('username');
-  if (stored) {
-    myUsername = stored;
-    navigateTo('/mode');
+async function initAuthAndRoute() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await handleAuthSuccess();
   } else {
-    navigateTo('/username');
+    navigateTo('/signup'); // or your sign-in section
   }
 }
+
+document.addEventListener('DOMContentLoaded', initAuthAndRoute);
+
 
 function updateSplitScoreboard(stats, player1, player2) {
   const p1Name = player1 || 'Player 1';
@@ -1354,6 +1400,125 @@ function renderSuccessfulGuesses() {
   });
 }
 
+
+async function handleAuthSuccess() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    console.error('No user signed in');
+    navigateTo('/');
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+    console.error('Profile lookup failed:', profileError.message);
+    navigateTo('/username');
+    return;
+  }
+
+  if (!profile.username) {
+    navigateTo('/username');
+    return;
+  }
+
+  myUsername = profile.username;
+  localStorage.setItem('username', myUsername);
+
+  navigateTo('/mode');
+}
+
+
+
+async function signUp() {
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    alert('Sign up error: ' + error.message);
+    return;
+  }
+
+  alert('Sign up successful!');
+
+  // ✅ Run your logic next:
+  await handleAuthSuccess();
+}
+
+
+async function signIn() {
+  const email = document.getElementById('signin-email').value;
+  const password = document.getElementById('signin-password').value;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert('Sign in error: ' + error.message);
+    return;
+  }
+
+  alert('Signed in!');
+
+  // ✅ Run your logic next:
+  await handleAuthSuccess();
+}
+
+async function signOut() {
+  const { error } = await window.supabase.auth.signOut();
+  if (error) {
+    alert('Sign out error: ' + error.message);
+    return;
+  }
+  alert('Signed out!');
+  showUser();
+}
+
+async function showUser() {
+  const { data, error } = await window.supabase.auth.getUser();
+  const pre = document.getElementById('current-user');
+  if (error || !data.user) {
+    pre.textContent = 'None';
+  } else {
+    pre.textContent = JSON.stringify(data.user, null, 2);
+  }
+}
+
+// Show user on page load
+showUser();
+
+async function handleUsernameEntry() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (!user) {
+    navigateTo('/signup'); // Or your auth route
+    return;
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', user.id)
+    .single();
+
+  if (profile && profile.username) {
+    myUsername = profile.username;
+    localStorage.setItem('username', myUsername);
+    navigateTo('/mode');
+  } else {
+    navigateTo('/username'); // Let them pick a username if missing
+  }
+}
 
 
 function navigateTo(path) {
