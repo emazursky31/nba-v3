@@ -409,13 +409,14 @@
   <input type="email" id="signup-email" placeholder="Email Address" />
   <input type="password" id="signup-password" placeholder="Password" />
   <input id="signup-username" placeholder="Choose a username" />
-  <button onclick="signUp()">Sign Up</button>
+  <button id="signupBtn">Sign Up</button>
 
   <h2>Sign In</h2>
   <input type="email" id="signin-email" placeholder="Email Address" />
   <input type="password" id="signin-password" placeholder="Password" />
-  <button id="signupBtn">Sign In</button>
+  <button id="signinBtn">Sign In</button>
 </section>
+
 
 
 <!-- Step 2: Game Mode Selection -->
@@ -1427,62 +1428,94 @@ async function handleAuthSuccess() {
   navigateTo('/mode');
 }
 
+   const signupBtn = document.getElementById('signupBtn');
+   const signinBtn = document.getElementById('signinBtn');
 
+   if (signupBtn) {
+      signupBtn.addEventListener('click', signUp);
+      console.log('[DEBUG] signupBtn listener attached');
+    } else {
+      console.error('[ERROR] signupBtn not found!');
+    }
+
+    if (signinBtn) {
+      signinBtn.addEventListener('click', signIn);
+      console.log('[DEBUG] signinBtn listener attached');
+    } else {
+      console.error('[ERROR] signinBtn not found!');
+    }
 
 async function signUp() {
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value.trim();
-  const username = document.getElementById('signup-username').value.trim();
+    console.log('[DEBUG] signUp clicked');
 
-  if (!username) {
-    alert('Please choose a username.');
-    return;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const username = document.getElementById('signup-username').value;
+
+    console.log(`[DEBUG] SignUp data => Email: ${email}, Username: ${username}`);
+
+    if (!email || !password || !username) {
+      alert('Please fill in all sign up fields.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('[ERROR] Sign Up failed:', error.message);
+        alert(error.message);
+        return;
+      }
+
+      console.log('[DEBUG] Sign Up successful:', data);
+
+      // Save the username locally
+      localStorage.setItem('savedUsername', username);
+
+      // Continue to your next step, e.g., routing to lobby
+      navigateTo('/');
+    } catch (err) {
+      console.error('[ERROR] Unexpected:', err);
+    }
   }
-
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) {
-    alert('Sign up error: ' + error.message);
-    return;
-  }
-
-  // Save username in your profiles table
-  const { error: profileError } = await supabase.from('profiles').upsert([
-    { id: data.user.id, username }
-  ]);
-  if (profileError) {
-    alert('Failed to save username: ' + profileError.message);
-    return;
-  }
-
-  localStorage.setItem('username', username);
-  myUsername = username;
-
-  alert('Sign up successful!');
-  navigateTo('/mode');
-}
-
-document.getElementById('signupBtn').addEventListener('click', signUp);
-
 
 async function signIn() {
-  const email = document.getElementById('signin-email').value;
-  const password = document.getElementById('signin-password').value;
+    console.log('[DEBUG] signIn clicked');
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+    const email = document.getElementById('signin-email').value;
+    const password = document.getElementById('signin-password').value;
 
-  if (error) {
-    alert('Sign in error: ' + error.message);
-    return;
+    console.log(`[DEBUG] SignIn data => Email: ${email}`);
+
+    if (!email || !password) {
+      alert('Please fill in both sign in fields.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('[ERROR] Sign In failed:', error.message);
+        alert(error.message);
+        return;
+      }
+
+      console.log('[DEBUG] Sign In successful:', data);
+
+      // Now you can fetch user details, etc.
+      navigateTo('/');
+    } catch (err) {
+      console.error('[ERROR] Unexpected:', err);
+    }
   }
-
-  alert('Signed in!');
-
-  // ✅ Run your logic next:
-  await handleAuthSuccess();
-}
 
 async function signOut() {
   const { error } = await window.supabase.auth.signOut();
