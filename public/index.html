@@ -406,25 +406,19 @@
 <!-- Step 1: Sign Up/Sign In -->
 <section id="authSection">
   <h2>Sign Up</h2>
-  <input type="email" id="signup-email" placeholder="Email" />
+  <input type="email" id="signup-email" placeholder="Email Address" />
   <input type="password" id="signup-password" placeholder="Password" />
+  <input id="signup-username" placeholder="Choose a username" />
   <button onclick="signUp()">Sign Up</button>
 
   <h2>Sign In</h2>
-  <input type="email" id="signin-email" placeholder="Email" />
+  <input type="email" id="signin-email" placeholder="Email Address" />
   <input type="password" id="signin-password" placeholder="Password" />
   <button onclick="signIn()">Sign In</button>
 </section>
 
 
-<!-- Step 2: Username Entry -->
-<section id="usernameSection" data-route="/username" style="text-align: center; margin-top: 2rem;">
-  <h2>Enter Your Username</h2>
-  <input type="text" id="usernameInput" placeholder="Choose a username" />
-  <button id="submitUsernameBtn">Continue</button>
-</section>
-
-<!-- Step 3: Game Mode Selection -->
+<!-- Step 2: Game Mode Selection -->
 <section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2 id="welcome-message"></h2>
   <h2>Choose Your Game Mode</h2>
@@ -1435,24 +1429,37 @@ async function handleAuthSuccess() {
 
 
 async function signUp() {
-  const email = document.getElementById('signup-email').value;
-  const password = document.getElementById('signup-password').value;
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value.trim();
+  const username = document.getElementById('signup-username').value.trim();
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password
-  });
+  if (!username) {
+    alert('Please choose a username.');
+    return;
+  }
 
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
     alert('Sign up error: ' + error.message);
     return;
   }
 
-  alert('Sign up successful!');
+  // Save username in your profiles table
+  const { error: profileError } = await supabase.from('profiles').upsert([
+    { id: data.user.id, username }
+  ]);
+  if (profileError) {
+    alert('Failed to save username: ' + profileError.message);
+    return;
+  }
 
-  // ✅ Run your logic next:
-  await handleAuthSuccess();
+  localStorage.setItem('username', username);
+  myUsername = username;
+
+  alert('Sign up successful!');
+  navigateTo('/mode');
 }
+
 
 
 async function signIn() {
@@ -1622,7 +1629,7 @@ window.addEventListener('popstate', () => {
 
 // Initial route on page load
 document.addEventListener('DOMContentLoaded', () => {
-  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/username' : location.pathname;
+  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
   renderRoute(initialPath);
 });
 
