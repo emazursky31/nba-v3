@@ -561,58 +561,48 @@
 
 <script>
  document.addEventListener('DOMContentLoaded', async () => {
-    const socket = io();
+  const socket = io();
 
-    // Core state
-    let roomId = null;
-    let myRoomId = null;
-    let selectedPlayer = null;
-    let fetchTimeout = null;
-    let gameStarted = false;
-    let gameOver = false;
-    let leadoffPlayerName = null;
-    let myUsername = null;
-    let opponentName = null;
-    let successfulGuesses = [];
-    let isPrivateGame = false;
+  // Core state
+  let roomId = null;
+  let myRoomId = null;
+  let selectedPlayer = null;
+  let fetchTimeout = null;
+  let gameStarted = false;
+  let gameOver = false;
+  let leadoffPlayerName = null;
+  let myUsername = null;
+  let opponentName = null;
+  let successfulGuesses = [];
+  let isPrivateGame = false;
 
-    
+  // ✅ Elements you actually use…
+  const modeSelection = document.getElementById('modeSelection');
+  const privateGameBtn = document.getElementById('privateGameBtn');
+  const findGameBtn = document.getElementById('findGameBtn');
+  const inviteLinkContainer = document.getElementById('inviteLinkContainer');
+  const statusDiv = document.getElementById('status');
+  const waitingRoom = document.getElementById('waitingRoom');
+  const gameArea = document.getElementById('gameArea');
+  const currentPlayerNameEl = document.getElementById('currentPlayerName');
+  const timerEl = document.getElementById('timer');
+  const guessInput = document.getElementById('guessInput');
+  const submitGuessBtn = document.getElementById('submitGuessBtn');
+  const messagesEl = document.getElementById('messageContainer');
+  const autocompleteList = document.getElementById('autocomplete-list');
+  const rematchBtn = document.getElementById('rematchBtn');
 
-    // Elements
-    const usernameSection = document.getElementById('usernameSection');
-    const usernameInput = document.getElementById('usernameInput');
-    const submitUsernameBtn = document.getElementById('submitUsernameBtn');
-    const changeUsernameBtn = document.getElementById('changeUsernameBtn');
-
-    const modeSelection = document.getElementById('modeSelection');
-    const privateGameBtn = document.getElementById('privateGameBtn');
-    const findGameBtn = document.getElementById('findGameBtn');
-    const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-    const statusDiv = document.getElementById('status');
-    const waitingRoom = document.getElementById('waitingRoom');
-    const gameArea = document.getElementById('gameArea');
-    const currentPlayerNameEl = document.getElementById('currentPlayerName');
-    const timerEl = document.getElementById('timer');
-    const guessInput = document.getElementById('guessInput');
-    const submitGuessBtn = document.getElementById('submitGuessBtn');
-    const messagesEl = document.getElementById('messageContainer');
-    const autocompleteList = document.getElementById('autocomplete-list');
-    const rematchBtn = document.getElementById('rematchBtn');
-    
-
- // 🗝️ Check for email confirmation in URL
+  // ✅ Check email confirmation hash
   if (window.location.hash.includes('access_token') && window.location.hash.includes('type=signup')) {
     console.log('[DEBUG] Found email confirmation in URL');
 
-    // Supabase handles parsing the token automatically on page load,
-    // but you can force a refresh if needed:
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) {
       console.error('[ERROR] Email confirmation failed:', error.message);
     } else {
       console.log('[DEBUG] Email confirmed for:', user.email);
       navigateTo('/confirmed');
-      return; // Skip normal routing!
+      return;
     }
   }
 
@@ -620,56 +610,47 @@
   const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
   renderRoute(initialPath);
 
+  // ✅ Load saved username
+  const savedUsername = localStorage.getItem('username');
+  console.log('[DEBUG] Loaded savedUsername:', savedUsername);
+  myUsername = savedUsername;
 
-
-const savedUsername = localStorage.getItem('username');
-console.log('[DEBUG] Loaded savedUsername:', savedUsername);
-
+  // ✅ Load room info
   const savedRoom = localStorage.getItem('privateRoomId');
-    if (savedRoom) {
+  if (savedRoom) {
     myRoomId = savedRoom;
     roomId = savedRoom;
     isPrivateGame = true;
   }
-console.log('[DEBUG] Loaded savedRoom:', savedRoom);
+  console.log('[DEBUG] Loaded savedRoom:', savedRoom);
 
-   // ✅ 1) Handle join from invite link immediately
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
+  // ✅ Handle invite link
+  const params = new URLSearchParams(window.location.search);
+  const roomFromUrl = params.get('room');
 
-    console.log('[DEBUG] roomFromUrl from URL:', roomFromUrl);
-
-    if (roomFromUrl) {
+  if (roomFromUrl) {
     console.log('[DEBUG] Found invite link for room:', roomFromUrl);
     myRoomId = roomFromUrl;
     roomId = roomFromUrl;
     isPrivateGame = true;
-
-    // Persist invite link room for later
     localStorage.setItem('privateRoomId', roomFromUrl);
   }
 
-  console.log('[DEBUG] Final state before routing:');
-  console.log('  myUsername:', myUsername);
-  console.log('  myRoomId:', myRoomId);
-  console.log('  isPrivateGame:', isPrivateGame);
-  // Now decide routing based on loaded state
-  if (myRoomId) {
-    if (myUsername) {
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-      navigateTo('/waiting');
-    } else {
-      navigateTo('/username');
-    }
-  } else {
-    if (myUsername) {
-      navigateTo('/mode');
-    } else {
-      navigateTo('/username');
-    }
+  console.log('[DEBUG] Final state before routing:', { myUsername, myRoomId, isPrivateGame });
+
+  // ✅ Go where they belong
+  if (!myUsername) {
+    console.error('No username found! This should not happen.');
+    return;
   }
 
-  
+  if (myRoomId) {
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    navigateTo('/waiting');
+  } else {
+    navigateTo('/mode');
+  }
+
 
 submitUsernameBtn.onclick = async () => {
   const entered = usernameInput.value.trim();
@@ -1439,7 +1420,7 @@ async function handleAuthSuccess() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
     console.error('No user signed in');
-    navigateTo('/');
+    navigateTo('/signup');
     return;
   }
 
@@ -1451,12 +1432,15 @@ async function handleAuthSuccess() {
 
   if (profileError) {
     console.error('Profile lookup failed:', profileError.message);
-    navigateTo('/username');
+    // You could show an error screen here if you want
     return;
   }
 
   if (!profile.username) {
-    navigateTo('/username');
+    console.error('Username missing in profile! This should not happen.');
+    // You could show an error or force logout:
+    await supabase.auth.signOut();
+    navigateTo('/signup');
     return;
   }
 
@@ -1465,6 +1449,7 @@ async function handleAuthSuccess() {
 
   navigateTo('/mode');
 }
+
 
    const signupBtn = document.getElementById('signupBtn');
    const signinBtn = document.getElementById('signinBtn');
@@ -1544,6 +1529,11 @@ async function signIn() {
   const email = document.getElementById('signin-email').value.trim();
   const password = document.getElementById('signin-password').value.trim();
 
+  if (!email || !password) {
+    alert('Please enter both email and password.');
+    return;
+  }
+
   console.log('[DEBUG] SignIn data =>', email);
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -1559,6 +1549,7 @@ async function signIn() {
   console.log('✅ Sign In successful:', data);
   await handleAuthSuccess();
 }
+
 
 
 async function signOut() {
@@ -1584,27 +1575,6 @@ async function showUser() {
 // Show user on page load
 showUser();
 
-async function handleUsernameEntry() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (!user) {
-    navigateTo('/signup'); // Or your auth route
-    return;
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
-
-  if (profile && profile.username) {
-    myUsername = profile.username;
-    localStorage.setItem('username', myUsername);
-    navigateTo('/mode');
-  } else {
-    navigateTo('/username'); // Let them pick a username if missing
-  }
-}
 
 async function resetPassword() {
   const emailInput = document.getElementById('reset-email');
