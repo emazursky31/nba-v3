@@ -403,23 +403,67 @@
 <body>
 <h1>NBA Teammate Game</h1>
 
-<!-- Step 1: Sign Up/Sign In -->
-<section id="authSection" data-route="/signup" style="text-align: center; margin-top: 2rem;">
-  <h2>Sign Up</h2>
-  <input type="email" id="signup-email" placeholder="Email Address" />
-  <input type="password" id="signup-password" placeholder="Password" />
-  <input id="signup-username" placeholder="Choose a username" />
-  <button id="signupBtn">Sign Up</button>
 
-  <h2>Sign In</h2>
-  <input type="email" id="signin-email" placeholder="Email Address" />
-  <input type="password" id="signin-password" placeholder="Password" />
-  <button id="signinBtn">Sign In</button>
+<!-- 🔑 Sign Up / Sign In -->
+  <section data-route="/signup">
+    <h2>Sign Up</h2>
+    <input type="email" id="signup-email" placeholder="Email">
+    <input type="password" id="signup-password" placeholder="Password">
+    <input id="signup-username" placeholder="Username">
+    <button id="signupBtn">Sign Up</button>
+
+    <h2>Sign In</h2>
+    <input type="email" id="signin-email" placeholder="Email">
+    <input type="password" id="signin-password" placeholder="Password">
+    <button id="signinBtn">Sign In</button>
+
+    <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+  </section>
+
+ <!-- 🔗 Check your email after sign up -->
+  <section data-route="/verify" class="hidden">
+    <h2>Check your email!</h2>
+    <p>We've sent you a confirmation link. Click it to verify your account.</p>
+  </section>
+
+
+   <!-- ✅ Confirmation success -->
+  <section data-route="/confirmed" class="hidden">
+    <h2>Account Confirmed</h2>
+    <p>Your email is verified! You can now continue.</p>
+    <button id="confirmedContinueBtn">Continue</button>
+  </section>
+
+  <!-- 🔑 Reset password -->
+  <section data-route="/reset" class="hidden">
+    <h2>Reset Password</h2>
+    <input type="email" id="reset-email" placeholder="Email">
+    <button id="resetBtn">Send Reset Link</button>
+  </section>
+
+  <!-- ✅ Reset success -->
+  <section data-route="/reset-confirmed" class="hidden">
+    <h2>Password Reset</h2>
+    <p>Check your email for a link to set a new password.</p>
+  </section>
+
+<!-- Set password -->
+  <section data-route="/update-password" class="hidden">
+  <h2>Set a New Password</h2>
+  <input type="password" id="new-password" placeholder="New password" />
+  <button id="updatePasswordBtn">Update Password</button>
 </section>
 
 
+  <!-- ✏️ Create username/profile -->
+  <section data-route="/username" class="hidden">
+    <h2>Create Profile</h2>
+    <input id="create-username" placeholder="Choose a username">
+    <button id="saveUsernameBtn">Save</button>
+  </section>
 
-<!-- Step 2: Game Mode Selection -->
+
+<!-- Game Mode Selection -->
 <section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2 id="welcome-message"></h2>
   <h2>Choose Your Game Mode</h2>
@@ -516,7 +560,7 @@
 
 
 <script>
- document.addEventListener('DOMContentLoaded', () => {
+ document.addEventListener('DOMContentLoaded', async () => {
     const socket = io();
 
     // Core state
@@ -556,18 +600,25 @@
     const rematchBtn = document.getElementById('rematchBtn');
     
 
-   // ✅ Auth check: sign in or set username
-   
-  (async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    console.log('[DEBUG] No signed-in user. Routing to signup.');
-    navigateTo('/signup');
-    return;
+ // 🗝️ Check for email confirmation in URL
+  if (window.location.hash.includes('access_token') && window.location.hash.includes('type=signup')) {
+    console.log('[DEBUG] Found email confirmation in URL');
+
+    // Supabase handles parsing the token automatically on page load,
+    // but you can force a refresh if needed:
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('[ERROR] Email confirmation failed:', error.message);
+    } else {
+      console.log('[DEBUG] Email confirmed for:', user.email);
+      navigateTo('/confirmed');
+      return; // Skip normal routing!
+    }
   }
 
-  await handleAuthSuccess(); // sets myUsername
-})();
+  // ✅ Normal fallback route
+  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
+  renderRoute(initialPath);
 
 
 
@@ -669,32 +720,6 @@ copyInviteBtn.onclick = () => {
       console.error('Clipboard copy failed:', err);
     });
 };
-
-
-
-async function initAuthAndRoute() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error('Error fetching user:', error);
-      // Optionally handle error (e.g., show a message or retry)
-      navigateTo('/signup');
-      return;
-    }
-    const user = data?.user;
-    if (user) {
-      await handleAuthSuccess();
-    } else {
-      navigateTo('/signup'); // or your sign-in section
-    }
-  } catch (err) {
-    console.error('Unexpected error in initAuthAndRoute:', err);
-    navigateTo('/signup');
-  }
-}
-
-
-document.addEventListener('DOMContentLoaded', initAuthAndRoute);
 
 
 function updateSplitScoreboard(stats, player1, player2) {
@@ -1459,76 +1484,82 @@ async function handleAuthSuccess() {
     }
 
 async function signUp() {
-    console.log('[DEBUG] signUp clicked');
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value.trim();
+  const username = document.getElementById('signup-username').value.trim();
 
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const username = document.getElementById('signup-username').value;
+  console.log('[DEBUG] SignUp data =>', email, username);
 
-    console.log(`[DEBUG] SignUp data => Email: ${email}, Username: ${username}`);
+  if (!email || !password || !username) {
+    alert('Please fill in all fields.');
+    return;
+  }
 
-    if (!email || !password || !username) {
-      alert('Please fill in all sign up fields.');
+  if (password.length < 6) {
+    alert('Password should be at least 6 characters long.');
+    return;
+  }
+
+  // ✅ 1) Create user with Supabase Auth
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { username }, // still store in metadata too if you want
+    },
+  });
+
+  if (error) {
+    console.error('SignUp error:', error.message);
+    alert('Sign up failed: ' + error.message);
+    return;
+  }
+
+  console.log('✅ Sign Up successful:', data);
+
+  const user = data.user;
+
+  if (user) {
+    // ✅ 2) Insert into your `profiles` table
+    const { error: insertError } = await supabase
+      .from('profiles')
+      .insert([{ id: user.id, username }]);
+
+    if (insertError) {
+      console.error('Error inserting profile:', insertError.message);
+      alert('Error saving profile: ' + insertError.message);
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-
-      if (error) {
-        console.error('[ERROR] Sign Up failed:', error.message);
-        alert(error.message);
-        return;
-      }
-
-      console.log('[DEBUG] Sign Up successful:', data);
-
-      // Save the username locally
-      localStorage.setItem('savedUsername', username);
-
-      // Continue to your next step, e.g., routing to lobby
-      navigateTo('/');
-    } catch (err) {
-      console.error('[ERROR] Unexpected:', err);
-    }
+    console.log('✅ Profile saved to profiles table');
   }
+
+  // ✅ 3) Redirect to check email
+  navigateTo('/verify');
+}
+
+
 
 async function signIn() {
-    console.log('[DEBUG] signIn clicked');
+  const email = document.getElementById('signin-email').value.trim();
+  const password = document.getElementById('signin-password').value.trim();
 
-    const email = document.getElementById('signin-email').value;
-    const password = document.getElementById('signin-password').value;
+  console.log('[DEBUG] SignIn data =>', email);
 
-    console.log(`[DEBUG] SignIn data => Email: ${email}`);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
-    if (!email || !password) {
-      alert('Please fill in both sign in fields.');
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        console.error('[ERROR] Sign In failed:', error.message);
-        alert(error.message);
-        return;
-      }
-
-      console.log('[DEBUG] Sign In successful:', data);
-
-      // Now you can fetch user details, etc.
-      navigateTo('/');
-    } catch (err) {
-      console.error('[ERROR] Unexpected:', err);
-    }
+  if (error) {
+    console.error('SignIn error:', error.message);
+    return;
   }
+
+  console.log('✅ Sign In successful:', data);
+  await handleAuthSuccess();
+}
+
 
 async function signOut() {
   const { error } = await window.supabase.auth.signOut();
@@ -1575,13 +1606,101 @@ async function handleUsernameEntry() {
   }
 }
 
+async function resetPassword() {
+  const emailInput = document.getElementById('reset-email');
+  const email = emailInput.value.trim();
+
+  if (!email) {
+    alert('Please enter your email address.');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`
+    });
+
+    if (error) {
+      console.error('[ERROR] Supabase reset error:', error.message);
+      alert('Error sending reset email: ' + error.message);
+      return;
+    }
+
+    console.log('[INFO] Password reset email sent:', data);
+    navigateTo('/reset-confirmed'); // Switch to your "Check your email" screen!
+  } catch (err) {
+    console.error('[ERROR] Unexpected:', err);
+    alert('An unexpected error occurred.');
+  }
+}
+
+async function updatePassword() {
+  const newPasswordInput = document.getElementById('new-password');
+  const newPassword = newPasswordInput.value.trim();
+
+  if (!newPassword) {
+    alert('Please enter a new password.');
+    return;
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    console.error('[ERROR] Failed to update password:', error.message);
+    alert('Error updating password: ' + error.message);
+    return;
+  }
+
+  console.log('[INFO] Password updated:', data);
+
+  // ✅ Redirect the user back to sign in, or show success
+  alert('Password updated successfully! Please sign in with your new password.');
+  navigateTo('/signup');
+}
+
 
 function navigateTo(path) {
   history.pushState({}, '', path);
   renderRoute(path);
 }
 
-function renderRoute(path) {
+// 1. Attach route-specific listeners
+function attachRouteListeners(route) {
+  switch (route) {
+    case '/signup':
+      document.getElementById('signupBtn')?.addEventListener('click', signUp);
+      document.getElementById('signinBtn')?.addEventListener('click', signIn);
+      document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('/reset'); // your router handles the switch!
+      });
+      break;
+
+    case '/confirmed':
+      document.getElementById('goToModeBtn')?.addEventListener('click', handleAuthSuccess);
+      break;
+
+    case '/reset':
+      document.getElementById('resetBtn')?.addEventListener('click', resetPassword);
+      break;
+
+    case '/username':
+      document.getElementById('saveUsernameBtn')?.addEventListener('click', saveUsername);
+      break;
+
+      case '/update-password':
+      document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
+      break;
+
+
+    // Add other route handlers here as needed
+  }
+}
+
+// 2. Show/hide sections based on route
+function showRouteSection(path) {
   const allSections = document.querySelectorAll('section[data-route]');
   let matched = false;
 
@@ -1590,58 +1709,22 @@ function renderRoute(path) {
     if (route === path) {
       section.classList.remove('hidden');
       matched = true;
-
-      // Attach event listeners for signup/signin buttons only on signup page
-      if (route === '/signup') {
-        const signupBtn = document.getElementById('signupBtn');
-        const signinBtn = document.getElementById('signinBtn');
-
-        if (signupBtn) {
-          signupBtn.onclick = signUp;
-          console.log('[DEBUG] signupBtn listener attached');
-        } else {
-          console.error('[ERROR] signupBtn not found!');
-        }
-
-        if (signinBtn) {
-          signinBtn.onclick = signIn;
-          console.log('[DEBUG] signinBtn listener attached');
-        } else {
-          console.error('[ERROR] signinBtn not found!');
-        }
-      }
     } else {
       section.classList.add('hidden');
     }
   });
 
-  // Toggle turn history list visibility
-  const guessContainer = document.getElementById('successful-guesses-container');
-  if (guessContainer) {
-    if (path === '/play' || path === '/gameover') {
-      guessContainer.style.display = 'block';
-    } else {
-      guessContainer.style.display = 'none';
-    }
-  }
-
-  // Toggle pinned scoreboard visibility
-  const scoreboard = document.getElementById('scoreboardSection');
-  if (scoreboard) {
-    if (path === '/play' || path === '/gameover') {
-      scoreboard.classList.remove('hidden');
-    } else {
-      scoreboard.classList.add('hidden');
-    }
-  }
-
+  // Fallback if no matching route found
   if (!matched) {
-    const defaultSection = document.querySelector('section[data-route="/username"]');
+    const defaultSection = document.querySelector('section[data-route="/signup"]');
     if (defaultSection) {
       defaultSection.classList.remove('hidden');
     }
   }
+}
 
+// 3. Update UI elements specific to certain routes
+function updateUIForRoute(path) {
   if (path === '/mode') {
     const welcomeEl = document.getElementById('welcome-message');
     if (welcomeEl && myUsername) {
@@ -1671,7 +1754,46 @@ function renderRoute(path) {
       }
     }
   }
+
+  // Guess container visibility
+  const guessContainer = document.getElementById('successful-guesses-container');
+  if (guessContainer) {
+    guessContainer.style.display = (path === '/play' || path === '/gameover') ? 'block' : 'none';
+  }
+
+  // Scoreboard visibility
+  const scoreboard = document.getElementById('scoreboardSection');
+  if (scoreboard) {
+    if (path === '/play' || path === '/gameover') {
+      scoreboard.classList.remove('hidden');
+    } else {
+      scoreboard.classList.add('hidden');
+    }
+  }
 }
+
+// 4. Main renderRoute function
+function renderRoute(path, addToHistory = true) {
+  showRouteSection(path);
+  attachRouteListeners(path);
+  updateUIForRoute(path);
+
+  if (addToHistory && window.location.pathname !== path) {
+    window.history.pushState({}, '', path);
+  }
+}
+
+// 5. Listen for back/forward navigation
+window.addEventListener('popstate', () => {
+  renderRoute(window.location.pathname, false);
+});
+
+// 6. Initial page load render
+document.addEventListener('DOMContentLoaded', () => {
+  renderRoute(window.location.pathname || '/username', false);
+});
+
+
 
 
 
@@ -1693,7 +1815,7 @@ document.getElementById('guessInput').addEventListener('focus', () => {
 
 // Handle browser back/forward navigation
 window.addEventListener('popstate', () => {
-  renderRoute(location.pathname);
+  renderRoute(location.pathname, false);
 });
 
 // Initial route on page load
