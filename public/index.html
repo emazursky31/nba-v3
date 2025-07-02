@@ -455,12 +455,12 @@
 </section>
 
 
-  <!-- ✏️ Create username/profile -->
+  <!-- ✏️ Create username/profile
   <section data-route="/username" class="hidden">
     <h2>Create Profile</h2>
     <input id="create-username" placeholder="Choose a username">
     <button id="saveUsernameBtn">Save</button>
-  </section>
+  </section> -->
 
 
 <!-- Game Mode Selection -->
@@ -1684,10 +1684,6 @@ function attachRouteListeners(route) {
 
     case '/reset':
       document.getElementById('resetBtn')?.addEventListener('click', resetPassword);
-      break;
-
-    case '/username':
-      document.getElementById('saveUsernameBtn')?.addEventListener('click', saveUsername);
       break;
 
       case '/update-password':
