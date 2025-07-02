@@ -1424,31 +1424,34 @@ async function handleAuthSuccess() {
     return;
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .single();
+  // Check for local username first in user_metadata
+  const username = user.user_metadata?.username || null;
 
-  if (profileError) {
-    console.error('Profile lookup failed:', profileError.message);
-    // You could show an error screen here if you want
-    return;
-  }
-
-  if (!profile.username) {
-    console.error('Username missing in profile! This should not happen.');
-    // You could show an error or force logout:
-    await supabase.auth.signOut();
+  if (!username) {
+    console.error('No username found in user_metadata!');
     navigateTo('/signup');
     return;
   }
 
-  myUsername = profile.username;
+  // ✅ Update their profiles row
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('id', user.id);
+
+  if (updateError) {
+    console.error('Error updating profile:', updateError.message);
+    return;
+  }
+
+  console.log('✅ Username saved to profiles:', username);
+
+  myUsername = username;
   localStorage.setItem('username', myUsername);
 
   navigateTo('/mode');
 }
+
 
 
    const signupBtn = document.getElementById('signupBtn');
@@ -1473,54 +1476,33 @@ async function signUp() {
   const password = document.getElementById('signup-password').value.trim();
   const username = document.getElementById('signup-username').value.trim();
 
-  console.log('[DEBUG] SignUp data =>', email, username);
-
   if (!email || !password || !username) {
     alert('Please fill in all fields.');
     return;
   }
 
   if (password.length < 6) {
-    alert('Password should be at least 6 characters long.');
+    alert('Password must be at least 6 characters.');
     return;
   }
 
-  // ✅ 1) Create user with Supabase Auth
+  console.log('[DEBUG] SignUp data =>', email, username);
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { username }, // still store in metadata too if you want
-    },
+      data: { username } // 🗝️ Saves to user_metadata
+    }
   });
 
   if (error) {
     console.error('SignUp error:', error.message);
-    alert('Sign up failed: ' + error.message);
     return;
   }
 
   console.log('✅ Sign Up successful:', data);
-
-  const user = data.user;
-
-  if (user) {
-    // ✅ 2) Insert into your `profiles` table
-    const { error: insertError } = await supabase
-      .from('profiles')
-      .insert([{ id: user.id, username }]);
-
-    if (insertError) {
-      console.error('Error inserting profile:', insertError.message);
-      alert('Error saving profile: ' + insertError.message);
-      return;
-    }
-
-    console.log('✅ Profile saved to profiles table');
-  }
-
-  // ✅ 3) Redirect to check email
-  navigateTo('/verify');
+  navigateTo('/verify'); // tell user to check email!
 }
 
 
