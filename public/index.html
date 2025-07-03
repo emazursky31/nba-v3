@@ -566,21 +566,18 @@
 
 <script>
  document.addEventListener('DOMContentLoaded', async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  console.log('Restored session:', session);
+   const { data } = await supabase.auth.getSession();
+  if (data.session && data.session.user) {
+    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+  }
 
-  updateNavUserState();
+  const urlHash = window.location.hash;
 
-  // If user just confirmed email, navigate to confirmed page automatically
-  // (e.g., by checking URL params or a flag you set in email confirmation link)
-  if (window.location.pathname === '/confirmed') {
-    navigateTo('/confirmed');
-  } else if (session && session.user) {
-    // Otherwise, if logged in, navigate to your default logged-in page
-    navigateTo('/mode'); // or wherever your logged-in landing page is
+  if (urlHash.includes('type=signup')) {
+    console.log('Detected confirmation flow.');
+    navigateTo('/confirmed', { skipPush: true });
   } else {
-    // Not logged in, show signup or signin page
-    navigateTo('/signup');
+    navigateTo('/mode');
   }
 
   // Core state
@@ -1655,10 +1652,22 @@ async function updatePassword() {
 }
 
 
-function navigateTo(path) {
-  history.pushState({}, '', path);
-  renderRoute(path);
+/**
+ * Navigate to a route in the SPA
+ * @param {string} path - The route path, e.g. '/confirmed'
+ * @param {object} options - Optional settings
+ *   options.skipPush - If true, skips updating the browser's address bar
+ */
+function navigateTo(path, options = {}) {
+  if (!options.skipPush) {
+    history.pushState({}, '', path);
+  }
+
+  showRouteSection(path);
+  updateUIForRoute(path);
+  attachRouteListeners(path);
 }
+
 
 // 1. Attach route-specific listeners
 function attachRouteListeners(route) {
@@ -1823,7 +1832,10 @@ document.getElementById('guessInput').addEventListener('focus', () => {
 
 // Handle browser back/forward navigation
 window.addEventListener('popstate', () => {
-  renderRoute(location.pathname, false);
+  const path = window.location.pathname;
+  showRouteSection(path);
+  updateUIForRoute(path);
+  attachRouteListeners(path);
 });
 
 // Initial route on page load
