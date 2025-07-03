@@ -764,8 +764,8 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   navigateTo('/waiting');
 }
 
-function findPublicGame() {
-  console.log('[DEBUG] findPublicGame called');
+function joinPublicGame() {
+  console.log('[DEBUG] joinPublicGame called');
 
   if (!myUsername) return alert('Missing username');
   if (gameStarted && !gameOver) return alert('Finish your current game first.');
