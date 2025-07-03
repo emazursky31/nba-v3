@@ -565,7 +565,7 @@
 
 
 <script>
-  // Core state
+    // Core state
   let roomId = null;
   let myRoomId = null;
   let selectedPlayer = null;
@@ -577,98 +577,93 @@
   let opponentName = null;
   let successfulGuesses = [];
   let isPrivateGame = false;
-  
- document.addEventListener('DOMContentLoaded', async () => {
-   const { data } = await supabase.auth.getSession();
-  if (data.session && data.session.user) {
-    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-  }
 
-  const urlHash = window.location.hash;
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Get session info
+    const { data } = await supabase.auth.getSession();
 
-  if (urlHash.includes('type=signup')) {
-    console.log('Detected confirmation flow.');
-    navigateTo('/confirmed', { skipPush: true });
-  } else {
-    navigateTo('/mode');
-  }
-
-  
-
-  // ✅ Elements you actually use…
-  const modeSelection = document.getElementById('modeSelection');
-  const privateGameBtn = document.getElementById('privateGameBtn');
-  const findGameBtn = document.getElementById('findGameBtn');
-  const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-  const statusDiv = document.getElementById('status');
-  const waitingRoom = document.getElementById('waitingRoom');
-  const gameArea = document.getElementById('gameArea');
-  const currentPlayerNameEl = document.getElementById('currentPlayerName');
-  const timerEl = document.getElementById('timer');
-  const guessInput = document.getElementById('guessInput');
-  const submitGuessBtn = document.getElementById('submitGuessBtn');
-  const messagesEl = document.getElementById('messageContainer');
-  const autocompleteList = document.getElementById('autocomplete-list');
-  const rematchBtn = document.getElementById('rematchBtn');
-
-  // ✅ Check email confirmation hash
-  if (window.location.hash.includes('access_token') && window.location.hash.includes('type=signup')) {
-    console.log('[DEBUG] Found email confirmation in URL');
-
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error('[ERROR] Email confirmation failed:', error.message);
+    if (data.session && data.session.user) {
+      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
     } else {
-      console.log('[DEBUG] Email confirmed for:', user.email);
-      navigateTo('/confirmed');
-      return;
+      myUsername = null;
     }
-  }
 
-  // ✅ Normal fallback route
-  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
-  renderRoute(initialPath);
+    // Email confirmation flow: only check if URL has confirmation tokens
+    if (window.location.hash.includes('access_token') && window.location.hash.includes('type=signup')) {
+      console.log('[DEBUG] Found email confirmation in URL');
 
-  // ✅ Load saved username
-  const savedUsername = localStorage.getItem('username');
-  console.log('[DEBUG] Loaded savedUsername:', savedUsername);
-  myUsername = savedUsername;
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('[ERROR] Email confirmation failed:', error.message);
+        navigateTo('/signup');
+        return;
+      } else {
+        console.log('[DEBUG] Email confirmed for:', user.email);
+        myUsername = user.user_metadata?.username || user.email;
+        navigateTo('/confirmed');
+        return; // stop further routing until user clicks continue
+      }
+    }
 
-  // ✅ Load room info
-  const savedRoom = localStorage.getItem('privateRoomId');
-  if (savedRoom) {
-    myRoomId = savedRoom;
-    roomId = savedRoom;
-    isPrivateGame = true;
-  }
-  console.log('[DEBUG] Loaded savedRoom:', savedRoom);
+    // Load saved username from localStorage if not set by session
+    if (!myUsername) {
+      const savedUsername = localStorage.getItem('username');
+      if (savedUsername) {
+        myUsername = savedUsername;
+        console.log('[DEBUG] Loaded savedUsername from localStorage:', myUsername);
+      }
+    }
 
-  // ✅ Handle invite link
-  const params = new URLSearchParams(window.location.search);
-  const roomFromUrl = params.get('room');
+    // Load saved room info
+    const savedRoom = localStorage.getItem('privateRoomId');
+    if (savedRoom) {
+      myRoomId = savedRoom;
+      roomId = savedRoom;
+      isPrivateGame = true;
+    }
 
-  if (roomFromUrl) {
-    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-    localStorage.setItem('privateRoomId', roomFromUrl);
-  }
+    // Handle invite link room param, override if present
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+      myRoomId = roomFromUrl;
+      roomId = roomFromUrl;
+      isPrivateGame = true;
+      localStorage.setItem('privateRoomId', roomFromUrl);
+    }
 
-  console.log('[DEBUG] Final state before routing:', { myUsername, myRoomId, isPrivateGame });
+    console.log('[DEBUG] Final state before routing:', { myUsername, myRoomId, isPrivateGame });
 
-  // ✅ Go where they belong
-  if (!myUsername) {
-    console.error('No username found! This should not happen.');
-    return;
-  }
+    // Determine initial route based on user and room state
 
-  if (myRoomId) {
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    navigateTo('/waiting');
-  } else {
-    navigateTo('/mode');
-  }
+    if (!myUsername) {
+      // No user info, must sign up or sign in
+      navigateTo('/signup');
+    } else if (myRoomId) {
+      // User has room info, join waiting room
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+      navigateTo('/waiting');
+    } else {
+      // Logged in but no active room, show mode selection
+      navigateTo('/mode');
+    }
+
+    // ✅ Elements you actually use…
+    const modeSelection = document.getElementById('modeSelection');
+    const privateGameBtn = document.getElementById('privateGameBtn');
+    const findGameBtn = document.getElementById('findGameBtn');
+    const inviteLinkContainer = document.getElementById('inviteLinkContainer');
+    const statusDiv = document.getElementById('status');
+    const waitingRoom = document.getElementById('waitingRoom');
+    const gameArea = document.getElementById('gameArea');
+    const currentPlayerNameEl = document.getElementById('currentPlayerName');
+    const timerEl = document.getElementById('timer');
+    const guessInput = document.getElementById('guessInput');
+    const submitGuessBtn = document.getElementById('submitGuessBtn');
+    const messagesEl = document.getElementById('messageContainer');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    const rematchBtn = document.getElementById('rematchBtn');
 
 
 // submitUsernameBtn.onclick = async () => {
@@ -1436,7 +1431,6 @@ async function handleAuthSuccess() {
     return;
   }
 
-  // Check for local username first in user_metadata
   const username = user.user_metadata?.username || null;
 
   if (!username) {
@@ -1445,21 +1439,23 @@ async function handleAuthSuccess() {
     return;
   }
 
-  // ✅ Update their profiles row
+  // Try updating profiles row, but don’t block navigation if it fails
   const { error: updateError } = await supabase
     .from('profiles')
     .update({ username })
     .eq('id', user.id);
 
   if (updateError) {
-    console.error('Error updating profile:', updateError.message);
-    return;
+    console.warn('Warning: Error updating profile:', updateError.message);
+  } else {
+    console.log('✅ Username saved to profiles:', username);
   }
-
-  console.log('✅ Username saved to profiles:', username);
 
   myUsername = username;
   localStorage.setItem('username', myUsername);
+
+  // Clear URL hash to remove confirmation tokens
+  history.replaceState(null, '', window.location.pathname);
 
   navigateTo('/mode');
 }
