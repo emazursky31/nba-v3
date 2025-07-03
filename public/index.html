@@ -650,34 +650,34 @@
   }
 
 
-submitUsernameBtn.onclick = async () => {
-  const entered = usernameInput.value.trim();
-  if (!entered) return alert('Please enter a username.');
+// submitUsernameBtn.onclick = async () => {
+//   const entered = usernameInput.value.trim();
+//   if (!entered) return alert('Please enter a username.');
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    alert('No authenticated user!');
-    return;
-  }
+//   const { data: { user } } = await supabase.auth.getUser();
+//   if (!user) {
+//     alert('No authenticated user!');
+//     return;
+//   }
 
-  const { error } = await supabase.from('profiles').upsert([
-    { id: user.id, username: entered }
-  ]);
-  if (error) {
-    alert('Failed to save username: ' + error.message);
-    return;
-  }
+//   const { error } = await supabase.from('profiles').upsert([
+//     { id: user.id, username: entered }
+//   ]);
+//   if (error) {
+//     alert('Failed to save username: ' + error.message);
+//     return;
+//   }
 
-  myUsername = entered;
-  localStorage.setItem('username', myUsername);
+//   myUsername = entered;
+//   localStorage.setItem('username', myUsername);
 
-  if (myRoomId) {
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    navigateTo('/waiting');
-  } else {
-    navigateTo('/mode');
-  }
-};
+//   if (myRoomId) {
+//     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+//     navigateTo('/waiting');
+//   } else {
+//     navigateTo('/mode');
+//   }
+// };
 
 
 const copyInviteBtn = document.getElementById('copyInviteBtn');
