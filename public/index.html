@@ -566,7 +566,19 @@
 
 <script>
  document.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('Restored session:', session);
+
+  updateNavUserState(session);
+
+  // Initialize socket after session known
   const socket = io();
+
+  // Update UI reactively on auth state changes
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log('Auth state changed:', event, session);
+    updateNavUserState(session);
+  });
 
   // Core state
   let roomId = null;
@@ -1543,23 +1555,28 @@ async function signOut() {
 }
 
 
-async function updateNavUserState() {
-  const { data, error } = await window.supabase.auth.getUser();
+async function updateNavUserState(session) {
   const usernameDiv = document.getElementById('nav-username');
   const signinBtn = document.getElementById('nav-signin-btn');
   const signoutBtn = document.getElementById('nav-signout-btn');
 
-  if (error || !data.user) {
+  if (!usernameDiv || !signinBtn || !signoutBtn) return;
+
+  if (!session || !session.user) {
+    // Not logged in
     usernameDiv.style.display = 'none';
     signinBtn.style.display = 'inline-block';
     signoutBtn.style.display = 'none';
   } else {
-    usernameDiv.textContent = `Hello, ${data.user.user_metadata.username || data.user.email}`;
+    // Logged in
+    const user = session.user;
+    usernameDiv.textContent = `Hello, ${user.user_metadata?.username || user.email}`;
     usernameDiv.style.display = 'inline-block';
     signinBtn.style.display = 'none';
     signoutBtn.style.display = 'inline-block';
   }
 }
+
 
 // Run once on load
 updateNavUserState();
