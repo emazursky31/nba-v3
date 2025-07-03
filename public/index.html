@@ -469,9 +469,7 @@
   <h2>Choose Your Game Mode</h2>
   <button id="privateGameBtn">🔒 Start Private Game</button>
   <button id="findGameBtn">🌐 Join Public Game</button>
-  <br>
-  <button id="changeUsernameBtn" style="margin-top: 1rem;">Change Username</button>
-</section>
+  </section>
 
 <!-- Invite link container (used only in private games) -->
 <section id="inviteLinkContainer" data-route="/invite" class="hidden" style="text-align: center; margin-top: 1rem;"></section>
@@ -736,10 +734,7 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 }
 
 
-    changeUsernameBtn.onclick = () => {
-      localStorage.removeItem('username');
-      location.reload();
-    };
+
 
     if (!roomFromUrl) {
   handleUsernameEntry();
@@ -1640,6 +1635,11 @@ function attachRouteListeners(route) {
 
       case '/update-password':
       document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
+      break;
+
+      case '/mode':
+      document.getElementById('privateGameBtn')?.addEventListener('click', startPrivateGame);
+      document.getElementById('findGameBtn')?.addEventListener('click', joinPublicGame);
       break;
 
 
