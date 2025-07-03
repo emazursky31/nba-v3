@@ -581,7 +581,7 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     socket = io();
-    
+
     // Get session info
     const { data } = await supabase.auth.getSession();
 
@@ -591,10 +591,17 @@
       myUsername = null;
     }
 
-    // Email confirmation flow: only check if URL has confirmation tokens
-    if (window.location.hash.includes('access_token') && window.location.hash.includes('type=signup')) {
-      console.log('[DEBUG] Found email confirmation in URL');
+    // Email confirmation flow: check both hash and search params for confirmation tokens
+    const urlHash = window.location.hash;
+    const urlSearch = window.location.search;
+    const searchParams = new URLSearchParams(urlSearch);
+    const typeParam = searchParams.get('type');
 
+    if (
+      (urlHash.includes('access_token') && (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+    ) {
+      console.log('[DEBUG] Found email confirmation or recovery in URL (hash or search)');
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         console.error('[ERROR] Email confirmation failed:', error.message);
@@ -612,8 +619,8 @@
     if (!myUsername) {
       const savedUsername = localStorage.getItem('username');
       if (savedUsername) {
-        myUsername = savedUsername;
-        console.log('[DEBUG] Loaded savedUsername from localStorage:', myUsername);
+      myUsername = savedUsername;
+      console.log('[DEBUG] Loaded savedUsername from localStorage:', myUsername);
       }
     }
 
@@ -1812,10 +1819,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-
-
-
-
 document.getElementById('guessInput').addEventListener('focus', () => {
   // Only apply if screen width is <= 480px (adjust as needed for "mobile")
   if (window.innerWidth <= 480) {
@@ -1829,7 +1832,6 @@ document.getElementById('guessInput').addEventListener('focus', () => {
     });
   }
 });
-
 
 // Handle browser back/forward navigation
 window.addEventListener('popstate', () => {
