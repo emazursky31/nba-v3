@@ -565,6 +565,19 @@
 
 
 <script>
+  // Core state
+  let roomId = null;
+  let myRoomId = null;
+  let selectedPlayer = null;
+  let fetchTimeout = null;
+  let gameStarted = false;
+  let gameOver = false;
+  let leadoffPlayerName = null;
+  let myUsername = null;
+  let opponentName = null;
+  let successfulGuesses = [];
+  let isPrivateGame = false;
+  
  document.addEventListener('DOMContentLoaded', async () => {
    const { data } = await supabase.auth.getSession();
   if (data.session && data.session.user) {
@@ -580,18 +593,7 @@
     navigateTo('/mode');
   }
 
-  // Core state
-  let roomId = null;
-  let myRoomId = null;
-  let selectedPlayer = null;
-  let fetchTimeout = null;
-  let gameStarted = false;
-  let gameOver = false;
-  let leadoffPlayerName = null;
-  let myUsername = null;
-  let opponentName = null;
-  let successfulGuesses = [];
-  let isPrivateGame = false;
+  
 
   // ✅ Elements you actually use…
   const modeSelection = document.getElementById('modeSelection');
