@@ -1604,6 +1604,8 @@ updateNavUserState();
 document.getElementById('nav-signout-btn').addEventListener('click', async () => {
   await window.supabase.auth.signOut();
   updateNavUserState();
+  // Redirect to signup/signin screen (main app route)
+  navigateTo('/signup');
 });
 
 // Optional: hook up sign in button to your sign-in flow
