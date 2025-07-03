@@ -1640,9 +1640,17 @@ function attachRouteListeners(route) {
       document.getElementById('findGameBtn')?.addEventListener('click', joinPublicGame);
       break;
 
+    case '/play':
+      // Setup listeners or UI related to the gameplay screen here
+      // For example, you might want to add listeners for guess submission buttons:
+      document.getElementById('submitGuessBtn')?.addEventListener('click', submitGuess);
+      document.getElementById('rematchBtn')?.addEventListener('click', requestRematch);
+      break;
+
     // Add other route handlers here as needed
   }
 }
+
 
 
 // 2. Show/hide sections based on route
