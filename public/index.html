@@ -584,12 +584,13 @@
   let socket = null;
 
   document.addEventListener('DOMContentLoaded', async () => {
-    // --- Email confirmation check: run FIRST and exit if matched ---
+    // --- Email confirmation check: run FIRST and route if matched, but DO NOT return ---
     const urlHash = window.location.hash;
     const urlSearch = window.location.search;
     const searchParams = new URLSearchParams(urlSearch);
     const typeParam = searchParams.get('type');
     console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
+    let justConfirmed = false;
     if (
       (urlHash.includes('access_token') && (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
       || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
@@ -607,7 +608,7 @@
         console.error('[ERROR] Exception during email confirmation:', e);
       }
       navigateTo('/confirmed');
-      return; // Prevent any further routing
+      justConfirmed = true;
     }
 
     socket = io();
