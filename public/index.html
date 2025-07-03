@@ -1162,38 +1162,36 @@ guessInput.addEventListener('input', function() {
     }
   });
 
-  submitGuessBtn.onclick = () => {
-    const guess = guessInput.value.trim();
-    clearGuessError();
+  function submitGuess() {
+  const guess = guessInput.value.trim();
+  clearGuessError();
 
-    if (!guess) {
-      showGuessError('Enter a guess');
-      return;
-    }
-    if (guess !== selectedPlayer) {
-      showGuessError('Please select a player from the dropdown list.');
-      return;
-    }
+  if (!guess) {
+    showGuessError('Enter a guess');
+    return;
+  }
+  if (guess !== selectedPlayer) {
+    showGuessError('Please select a player from the dropdown list.');
+    return;
+  }
 
-    socket.emit('playerGuess', { roomId, guess });
-    guessInput.value = '';
-    selectedPlayer = null;
-    submitGuessBtn.disabled = true;
-    clearAutocomplete();
-  };
+  socket.emit('playerGuess', { roomId, guess });
+  guessInput.value = '';
+  selectedPlayer = null;
+  submitGuessBtn.disabled = true;
+  clearAutocomplete();
+}
 
 
-rematchBtn.onclick = () => {
+function requestRematch() {
   if (!myRoomId) {
     console.error('No roomId defined. Cannot request rematch.');
     return;
   }
-
   rematchBtn.disabled = true;
   rematchBtn.textContent = 'Waiting for opponent...';
-
   socket.emit('requestRematch', { roomId: myRoomId });
-};
+}
 
 
 // When another player requests a rematch
