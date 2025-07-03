@@ -565,7 +565,7 @@
 
 
 <script>
-    // Core state
+  // Core state
   let roomId = null;
   let myRoomId = null;
   let selectedPlayer = null;
@@ -577,7 +577,7 @@
   let opponentName = null;
   let successfulGuesses = [];
   let isPrivateGame = false;
-  let socket = null;
+  let socket = io(); // Initialize socket immediately, before DOMContentLoaded
 
   document.addEventListener('DOMContentLoaded', async () => {
     // --- Email confirmation check: run FIRST and exit if matched ---
@@ -605,8 +605,6 @@
       navigateTo('/confirmed');
       return; // Prevent any further routing
     }
-
-    socket = io();
 
     // Get session info
     const { data } = await supabase.auth.getSession();
