@@ -565,7 +565,7 @@
 
 
 <script>
-  // Core state
+    // Core state
   let roomId = null;
   let myRoomId = null;
   let selectedPlayer = null;
@@ -577,7 +577,7 @@
   let opponentName = null;
   let successfulGuesses = [];
   let isPrivateGame = false;
-  let socket = io(); // Initialize socket immediately, before DOMContentLoaded
+  let socket = null;
 
   document.addEventListener('DOMContentLoaded', async () => {
     // --- Email confirmation check: run FIRST and exit if matched ---
@@ -605,6 +605,8 @@
       navigateTo('/confirmed');
       return; // Prevent any further routing
     }
+
+    socket = io();
 
     // Get session info
     const { data } = await supabase.auth.getSession();
@@ -1583,6 +1585,13 @@ async function updateNavUserState(session) {
   }
 }
 
+
+// Listen for auth state changes and update nav accordingly
+if (window.supabase && window.supabase.auth) {
+  window.supabase.auth.onAuthStateChange((event, session) => {
+    updateNavUserState(session);
+  });
+}
 
 // Run once on load
 updateNavUserState();
