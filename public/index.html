@@ -401,6 +401,13 @@
 
 </head>
 <body>
+ <nav>
+  <span id="nav-username" style="display: none;"></span>
+  <button id="nav-signin-btn">Sign In</button>
+  <button id="nav-signout-btn" style="display: none;">Sign Out</button>
+</nav>
+
+
 <h1>NBA Teammate Game</h1>
 
 
@@ -1535,18 +1542,42 @@ async function signOut() {
   showUser();
 }
 
-async function showUser() {
+
+async function updateNavUserState() {
   const { data, error } = await window.supabase.auth.getUser();
-  const pre = document.getElementById('current-user');
+  const usernameDiv = document.getElementById('nav-username');
+  const signinBtn = document.getElementById('nav-signin-btn');
+  const signoutBtn = document.getElementById('nav-signout-btn');
+
   if (error || !data.user) {
-    pre.textContent = 'None';
+    usernameDiv.style.display = 'none';
+    signinBtn.style.display = 'inline-block';
+    signoutBtn.style.display = 'none';
   } else {
-    pre.textContent = JSON.stringify(data.user, null, 2);
+    usernameDiv.textContent = `Hello, ${data.user.user_metadata.username || data.user.email}`;
+    usernameDiv.style.display = 'inline-block';
+    signinBtn.style.display = 'none';
+    signoutBtn.style.display = 'inline-block';
   }
 }
 
-// Show user on page load
-showUser();
+// Run once on load
+updateNavUserState();
+
+// Example: hook up sign out button
+document.getElementById('nav-signout-btn').addEventListener('click', async () => {
+  await window.supabase.auth.signOut();
+  updateNavUserState();
+});
+
+// Optional: hook up sign in button to your sign-in flow
+document.getElementById('nav-signin-btn').addEventListener('click', () => {
+  // redirect to your sign-in page
+  window.location.href = '/signin.html';
+});
+
+
+
 
 
 async function resetPassword() {
