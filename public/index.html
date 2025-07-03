@@ -740,21 +740,20 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   handleUsernameEntry();
 }
 
-   privateGameBtn.onclick = () => {
+  function startPrivateGame() {
+  console.log('[DEBUG] startPrivateGame called');
+
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
   roomId = generatedRoomId;
   myRoomId = generatedRoomId;
 
-  // ✅ Mark this session as a private game
   isPrivateGame = true;
 
   socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
 
-  // Update any dynamic text
   statusDiv.textContent = `Started private room: ${myRoomId}`;
   document.getElementById('displayRoomCode').textContent = myRoomId;
 
-  // Update invite link
   inviteLinkContainer.innerHTML = `
     Share this link to invite a friend:<br>
     <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
@@ -762,12 +761,12 @@ function markLeadoffInGuesses(guesses, leadoffName) {
     </a>
   `;
 
-  // Route to waiting room
   navigateTo('/waiting');
-};
+}
 
+function findPublicGame() {
+  console.log('[DEBUG] findPublicGame called');
 
-  findGameBtn.onclick = () => {
   if (!myUsername) return alert('Missing username');
   if (gameStarted && !gameOver) return alert('Finish your current game first.');
 
@@ -776,10 +775,9 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   socket.emit('findMatch', myUsername);
 
   statusDiv.textContent = 'Looking for a game...';
-
-  // Navigate to the waiting room instead of manually hiding/showing sections
   navigateTo('/waiting');
-};
+}
+
 
 
     socket.on('connect', () => {});
@@ -1621,7 +1619,7 @@ function attachRouteListeners(route) {
       document.getElementById('signinBtn')?.addEventListener('click', signIn);
       document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
         e.preventDefault();
-        navigateTo('/reset'); // your router handles the switch!
+        navigateTo('/reset');
       });
       break;
 
@@ -1633,19 +1631,19 @@ function attachRouteListeners(route) {
       document.getElementById('resetBtn')?.addEventListener('click', resetPassword);
       break;
 
-      case '/update-password':
+    case '/update-password':
       document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
       break;
 
-      case '/mode':
+    case '/mode':
       document.getElementById('privateGameBtn')?.addEventListener('click', startPrivateGame);
       document.getElementById('findGameBtn')?.addEventListener('click', joinPublicGame);
       break;
 
-
     // Add other route handlers here as needed
   }
 }
+
 
 // 2. Show/hide sections based on route
 function showRouteSection(path) {
