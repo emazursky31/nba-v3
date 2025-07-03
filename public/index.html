@@ -577,8 +577,11 @@
   let opponentName = null;
   let successfulGuesses = [];
   let isPrivateGame = false;
+  let socket = null;
 
   document.addEventListener('DOMContentLoaded', async () => {
+    socket = io();
+    
     // Get session info
     const { data } = await supabase.auth.getSession();
 
