@@ -580,6 +580,32 @@
   let socket = null;
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // --- Email confirmation check: run FIRST and exit if matched ---
+    const urlHash = window.location.hash;
+    const urlSearch = window.location.search;
+    const searchParams = new URLSearchParams(urlSearch);
+    const typeParam = searchParams.get('type');
+    console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
+    if (
+      (urlHash.includes('access_token') && (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+    ) {
+      console.log('[DEBUG] Found email confirmation or recovery in URL (hash or search)');
+      // Try to get user, but always route to /confirmed regardless
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('[ERROR] Email confirmation failed:', error.message);
+        } else {
+          console.log('[DEBUG] Email confirmed for:', user?.email);
+        }
+      } catch (e) {
+        console.error('[ERROR] Exception during email confirmation:', e);
+      }
+      navigateTo('/confirmed');
+      return; // Prevent any further routing
+    }
+
     socket = io();
 
     // Get session info
@@ -589,30 +615,6 @@
       myUsername = data.session.user.user_metadata?.username || data.session.user.email;
     } else {
       myUsername = null;
-    }
-
-    // Email confirmation flow: check both hash and search params for confirmation tokens
-    const urlHash = window.location.hash;
-    const urlSearch = window.location.search;
-    const searchParams = new URLSearchParams(urlSearch);
-    const typeParam = searchParams.get('type');
-
-    if (
-      (urlHash.includes('access_token') && (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-    ) {
-      console.log('[DEBUG] Found email confirmation or recovery in URL (hash or search)');
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('[ERROR] Email confirmation failed:', error.message);
-        navigateTo('/signup');
-        return;
-      } else {
-        console.log('[DEBUG] Email confirmed for:', user.email);
-        myUsername = user.user_metadata?.username || user.email;
-        navigateTo('/confirmed');
-        return; // stop further routing until user clicks continue
-      }
     }
 
     // Load saved username from localStorage if not set by session
@@ -1088,8 +1090,6 @@ socket.on('message', (msg) => {
   navigateTo('/play'); // Ensure user is on the gameplay page
   showMessage(msg, 'error');
 });
-
-
 
 socket.on('turnEnded', (data) => {
   navigateTo('/play');
