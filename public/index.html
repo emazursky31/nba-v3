@@ -569,16 +569,19 @@
   const { data: { session }, error } = await supabase.auth.getSession();
   console.log('Restored session:', session);
 
-  updateNavUserState(session);
+  updateNavUserState();
 
-  // Initialize socket after session known
-  const socket = io();
-
-  // Update UI reactively on auth state changes
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth state changed:', event, session);
-    updateNavUserState(session);
-  });
+  // If user just confirmed email, navigate to confirmed page automatically
+  // (e.g., by checking URL params or a flag you set in email confirmation link)
+  if (window.location.pathname === '/confirmed') {
+    navigateTo('/confirmed');
+  } else if (session && session.user) {
+    // Otherwise, if logged in, navigate to your default logged-in page
+    navigateTo('/mode'); // or wherever your logged-in landing page is
+  } else {
+    // Not logged in, show signup or signin page
+    navigateTo('/signup');
+  }
 
   // Core state
   let roomId = null;
@@ -1670,7 +1673,12 @@ function attachRouteListeners(route) {
       break;
 
     case '/confirmed':
-      document.getElementById('confirmedContinueBtn')?.addEventListener('click', handleAuthSuccess);
+     document.getElementById('confirmedContinueBtn')?.addEventListener('click', () => {
+        handleAuthSuccess(); // your existing handler to continue into the app/game
+      });
+
+      // Also update nav user state here so nav reflects logged-in user on confirmed page
+      updateNavUserState();
       break;
 
     case '/reset':
