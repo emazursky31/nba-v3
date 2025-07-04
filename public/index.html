@@ -397,6 +397,63 @@
   }
 }
 
+.auth-tabs-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 2rem auto;
+}
+.auth-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.auth-tab {
+  flex: 1;
+  padding: 1rem 2rem;
+  background: #f0f0f0;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, border-bottom 0.2s, color 0.2s;
+}
+.auth-tab.active {
+  background: #fff;
+  border-bottom: 3px solid #007bff;
+  color: #007bff;
+  z-index: 2;
+}
+.auth-forms-row {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+.auth-form {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  min-width: 260px;
+  width: 100%;
+  max-width: 320px;
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+}
+.auth-form.active {
+  display: flex;
+}
+@media (max-width: 700px) {
+  .auth-forms-row {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+}
 </style>
 
 
@@ -414,19 +471,30 @@
 
 <!-- 🔑 Sign Up / Sign In -->
   <section data-route="/signup">
-    <h2>Sign Up</h2>
-    <input type="email" id="signup-email" placeholder="Email">
-    <input type="password" id="signup-password" placeholder="Password">
-    <input id="signup-username" placeholder="Username">
-    <button id="signupBtn">Sign Up</button>
-
-    <h2>Sign In</h2>
-    <input type="email" id="signin-email" placeholder="Email">
-    <input type="password" id="signin-password" placeholder="Password">
-    <button id="signinBtn">Sign In</button>
-
-    <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+    <div class="auth-tabs-container">
+      <div class="auth-tabs">
+        <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
+        <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
+      </div>
+      <div class="auth-forms-row">
+        <form id="signupForm" class="auth-form active" autocomplete="off">
+          <h2>Sign Up</h2>
+          <input type="email" id="signup-email" placeholder="Email" required>
+          <input type="password" id="signup-password" placeholder="Password" required>
+          <input id="signup-username" placeholder="Username" required>
+          <button id="signupBtn" type="submit">Sign Up</button>
+        </form>
+        <form id="signinForm" class="auth-form" autocomplete="off">
+          <h2>Sign In</h2>
+          <input type="email" id="signin-email" placeholder="Email" required>
+          <input type="password" id="signin-password" placeholder="Password" required>
+          <button id="signinBtn" type="submit">Sign In</button>
+          <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+        </form>
+      </div>
+    </div>
   </section>
+
 
  <!-- 🔗 Check your email after sign up -->
   <section data-route="/verify" class="hidden">
@@ -1861,7 +1929,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+    // After all routing logic:
+    if (justConfirmed) {
+      if (typeParam === 'recovery' || urlHash.includes('type=recovery')) {
+        navigateTo('/update-password');
+        return;
+      } else {
+        navigateTo('/confirmed');
+        return;
+      }
+    }
   }); // End of DOMContentLoaded
+
+  // Tab switching logic for auth forms
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabSignup = document.getElementById('tab-signup');
+      const tabSignin = document.getElementById('tab-signin');
+      const signupForm = document.getElementById('signupForm');
+      const signinForm = document.getElementById('signinForm');
+      tabSignup.addEventListener('click', function() {
+        tabSignup.classList.add('active');
+        tabSignin.classList.remove('active');
+        signupForm.classList.add('active');
+        signinForm.classList.remove('active');
+      });
+      tabSignin.addEventListener('click', function() {
+        tabSignin.classList.add('active');
+        tabSignup.classList.remove('active');
+        signinForm.classList.add('active');
+        signupForm.classList.remove('active');
+      });
+    });
 </script>
 </body>
 </html>
