@@ -2010,6 +2010,16 @@ document.addEventListener('DOMContentLoaded', () => {
         signupForm.classList.remove('active');
       });
     });
+
+    // Attach signup handler to the form submit event instead of button click
+   const signupForm = document.getElementById('signupForm');
+   if (signupForm) {
+     signupForm.addEventListener('submit', function(e) {
+       e.preventDefault();
+       signUp();
+     });
+   }
+   // Remove the old signupBtn click handler if present
 </script>
 </body>
 </html>
