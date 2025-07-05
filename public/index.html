@@ -509,11 +509,13 @@
 
 </head>
 <body>
- <nav>
+<nav>
   <span id="nav-username" style="display: none;"></span>
+  <a href="#" id="nav-home-link" style="display: none;">🏠 Home</a>
   <button id="nav-signin-btn">Sign In</button>
   <button id="nav-signout-btn" style="display: none;">Sign Out</button>
 </nav>
+
 
 
 <h1>NBA Teammate Game</h1>
@@ -589,13 +591,22 @@
   </section> -->
 
 
-<!-- Game Mode Selection -->
-<section id="modeSelection" data-route="/mode" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <h2 id="welcome-message"></h2>
-  <h2>Choose Your Game Mode</h2>
-  <button id="privateGameBtn">🔒 Start Private Game</button>
-  <button id="findGameBtn">🌐 Join Public Game</button>
-  </section>
+<!-- Home Screen -->
+<section id="homeSelection" data-route="/home" class="hidden" style="text-align: center; margin-top: 2rem;">
+  <h2 id="home-welcome"></h2>
+  <h2>🏠 Home</h2>
+
+  <div id="gameModeSelection" style="margin-top: 1rem;">
+    <button id="privateGameBtn">🔒 Start Private Game</button>
+    <button id="findGameBtn">🌐 Join Public Game</button>
+  </div>
+
+  <div id="playerStats" style="margin-top: 2rem;">
+    <h3>Your Stats</h3>
+    <p id="player-history">Games played, wins, and other stats will appear here.</p>
+  </div>
+</section>
+
 
 <!-- Invite link container (used only in private games) -->
 <section id="inviteLinkContainer" data-route="/invite" class="hidden" style="text-align: center; margin-top: 1rem;"></section>
@@ -779,12 +790,11 @@
       socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
       navigateTo('/waiting');
     } else {
-      // Logged in but no active room, show mode selection
-      navigateTo('/mode');
+      // Logged in but no active room, show home screen
+      navigateTo('/home');
     }
 
     // ✅ Elements you actually use…
-    const modeSelection = document.getElementById('modeSelection');
     const privateGameBtn = document.getElementById('privateGameBtn');
     const findGameBtn = document.getElementById('findGameBtn');
     const inviteLinkContainer = document.getElementById('inviteLinkContainer');
@@ -873,6 +883,10 @@ function updateSplitScoreboard(stats, player1, player2) {
 }
 
 
+document.getElementById('nav-home-link')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  navigateTo('/home');
+});
 
 
 
@@ -1589,7 +1603,7 @@ async function handleAuthSuccess() {
   // Clear URL hash to remove confirmation tokens
   history.replaceState(null, '', window.location.pathname);
 
-  navigateTo('/mode');
+  navigateTo('/home');
 }
 
 
@@ -1689,14 +1703,16 @@ async function updateNavUserState(session) {
   const usernameDiv = document.getElementById('nav-username');
   const signinBtn = document.getElementById('nav-signin-btn');
   const signoutBtn = document.getElementById('nav-signout-btn');
+  const homeLink = document.getElementById('nav-home-link'); // ✅ Add this
 
-  if (!usernameDiv || !signinBtn || !signoutBtn) return;
+  if (!usernameDiv || !signinBtn || !signoutBtn || !homeLink) return;
 
   if (!session || !session.user) {
     // Not logged in
     usernameDiv.style.display = 'none';
     signinBtn.style.display = 'inline-block';
     signoutBtn.style.display = 'none';
+    homeLink.style.display = 'none'; // ✅ Hide Home link
   } else {
     // Logged in
     const user = session.user;
@@ -1704,8 +1720,10 @@ async function updateNavUserState(session) {
     usernameDiv.style.display = 'inline-block';
     signinBtn.style.display = 'none';
     signoutBtn.style.display = 'inline-block';
+    homeLink.style.display = 'inline-block'; // ✅ Show Home link
   }
 }
+
 
 
 // Listen for auth state changes and update nav accordingly
@@ -1837,10 +1855,11 @@ function attachRouteListeners(route) {
       document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
       break;
 
-    case '/mode':
+    case '/home':
       document.getElementById('privateGameBtn')?.addEventListener('click', startPrivateGame);
       document.getElementById('findGameBtn')?.addEventListener('click', joinPublicGame);
       break;
+
 
     case '/play':
       // Setup listeners or UI related to the gameplay screen here
@@ -1881,8 +1900,8 @@ function showRouteSection(path) {
 
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
-  if (path === '/mode') {
-    const welcomeEl = document.getElementById('welcome-message');
+  if (path === '/home') {
+    const welcomeEl = document.getElementById('home-welcome');
     if (welcomeEl && myUsername) {
       welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
     }
