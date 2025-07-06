@@ -787,6 +787,9 @@
     if (!myUsername) {
       // No user info, must sign up or sign in
       navigateTo('/signup');
+    } else if (isLeavingGame) {
+      console.log('[DEBUG] Skipping waiting room: isLeavingGame=true');
+      navigateTo('/home');
     } else if (myRoomId) {
       // User has room info, join waiting room
       socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
@@ -887,7 +890,11 @@ function updateSplitScoreboard(stats, player1, player2) {
 
 document.getElementById('nav-home-link')?.addEventListener('click', (e) => {
   e.preventDefault();
-  handleGoHome();
+  isLeavingGame = true;
+  if (socket && socket.connected) {
+    socket.emit('leaveGame');
+  }
+  navigateTo('/home');
 });
 
 
@@ -1933,29 +1940,37 @@ function showRouteSection(path) {
 
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
- if (path === '/home') {
-  // ✅ If connected, emit leaveGame and mark that I'm intentionally leaving
-  if (socket && socket.connected) {
-    isLeavingGame = true;  // NEW: mark that this leave is intentional
-    socket.emit('leaveGame');
+  if (path === '/home') {
+    console.log('[DEBUG] updateUIForRoute: Handling /home');
+
+    // NEW: Mark intentional leave
+    isLeavingGame = true;
+
+    if (socket && socket.connected) {
+      socket.emit('leaveGame');
+    }
+
+    // Fully clear all game state
+    gameStarted = false;
+    gameOver = true;
+    roomId = null;
+    myRoomId = null;
+    isPrivateGame = false;
+    selectedPlayer = null;
+    successfulGuesses = [];
+
+    const welcomeEl = document.getElementById('home-welcome');
+    if (welcomeEl && myUsername) {
+      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+    }
   }
 
-  // ✅ Clear local game state
-  gameStarted = false;
-  gameOver = true;
-  roomId = null;
-  myRoomId = null;
-  isPrivateGame = false;
-  selectedPlayer = null;
-  successfulGuesses = [];
-
-  // ✅ Update welcome message
-  const welcomeEl = document.getElementById('home-welcome');
-  if (welcomeEl && myUsername) {
-    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-  }
-}
   if (path === '/waiting') {
+    if (isLeavingGame) {
+      console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
+      return;  // 🛑 Prevent accidental waiting room navigation
+    }
+
     const codeEl = document.getElementById('displayRoomCode');
     const inviteWrapper = document.getElementById('inviteLinkWrapper');
     const inviteInput = document.getElementById('inviteLink');
@@ -1994,6 +2009,7 @@ function updateUIForRoute(path) {
     }
   }
 }
+
 
 // 4. Main renderRoute function
 function renderRoute(path, addToHistory = true) {
