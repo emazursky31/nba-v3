@@ -887,7 +887,7 @@ function updateSplitScoreboard(stats, player1, player2) {
 
 document.getElementById('nav-home-link')?.addEventListener('click', (e) => {
   e.preventDefault();
-  navigateTo('/home');
+  handleGoHome();
 });
 
 
@@ -1577,6 +1577,24 @@ function renderSuccessfulGuesses() {
       listEl.appendChild(arrow);
     }
   });
+}
+
+function handleGoHome() {
+  if (socket && socket.connected) {
+    socket.emit('leaveGame');
+  }
+
+  localStorage.removeItem('privateRoomId');
+  myRoomId = null;
+  roomId = null;
+
+  gameStarted = false;
+  gameOver = true;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  navigateTo('/home');
 }
 
 
