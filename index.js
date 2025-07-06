@@ -415,6 +415,13 @@ socket.on('disconnect', () => {
 });
 
 
+socket.on('leaveGame', () => {
+  console.log(`User requested leaveGame: ${socket.id}`);
+  handlePlayerDisconnect(socket);
+});
+
+
+
 socket.on('getMatchStats', () => {
   const roomId = socketRoomMap[socket.id];
   if (!roomId || !games[roomId]) {
@@ -677,6 +684,72 @@ function handleJoinGame(socket, roomId, username) {
   }
 }
 
+
+function handlePlayerDisconnect(socket) {
+  console.log(`🛑 handlePlayerDisconnect: ${socket.id}`);
+
+  // Remove from waiting queue if still waiting
+  const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
+  if (waitingIndex !== -1) {
+    waitingPlayers.splice(waitingIndex, 1);
+    console.log(`Removed ${socket.data.username || 'unnamed player'} from waiting queue`);
+  }
+
+  // Always remove from in-game map
+  playersInGame.delete(socket.id);
+
+  // Remove from socketRoomMap
+  const roomId = socketRoomMap[socket.id];
+  if (roomId) {
+    delete socketRoomMap[socket.id];
+    console.log(`Removed socket ${socket.id} from socketRoomMap`);
+  }
+
+  // Remove from any game they’re in
+  for (const [room, game] of Object.entries(games)) {
+    const idx = game.players.indexOf(socket.id);
+    if (idx !== -1) {
+      const disconnectedUsername = game.usernames[socket.id] || 'Unknown';
+
+      // Remove player
+      game.players.splice(idx, 1);
+      delete game.usernames[socket.id];
+      playersInGame.delete(socket.id);
+      delete socketRoomMap[socket.id];
+
+      console.log(`Removed ${disconnectedUsername} from game in room ${room}`);
+
+      io.to(room).emit('playersUpdate', game.players.length);
+
+      // Determine reason
+      const reason = socket.disconnected ? 
+        `Opponent ${disconnectedUsername} disconnected.` :
+        `Opponent ${disconnectedUsername} left the match.`;
+
+      if (game.players.length < 2) {
+        io.to(room).emit('gameOver', reason);
+
+        // Reset game but keep object intact
+        game.players = [];
+        game.usernames = {};
+        game.currentTurn = 0;
+        game.currentPlayerName = null;
+        game.teammates = [];
+        game.successfulGuesses = [];
+        game.rematchVotes = new Set();
+
+        if (game.timer) {
+          clearInterval(game.timer);
+          delete game.timer;
+        }
+
+        console.log(`✅ Game in room ${room} reset: ${reason}`);
+      }
+
+      break; // Found, so break the loop
+    }
+  }
+}
 
 
 

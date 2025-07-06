@@ -1901,7 +1901,18 @@ function showRouteSection(path) {
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
   if (path === '/home') {
+    if (socket && socket.connected) {
+      socket.emit('leaveGame');
+    }
     const welcomeEl = document.getElementById('home-welcome');
+    // ✅ End any current game safely
+    gameStarted = false;
+    gameOver = true;
+    roomId = null;
+    myRoomId = null;
+    isPrivateGame = false;
+    selectedPlayer = null;
+    successfulGuesses = [];
     if (welcomeEl && myUsername) {
       welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
     }
