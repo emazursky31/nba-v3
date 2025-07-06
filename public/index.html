@@ -1066,9 +1066,9 @@ socket.on('gameOver', (data) => {
 
   // ✅ If I intentionally left, skip handling
   if (isLeavingGame) {
-    console.log('[DEBUG] Ignoring gameOver because isLeavingGame === true');
-    isLeavingGame = false; // Reset for future
-    return;
+    console.debug('[DEBUG] Ignoring gameOver because isLeavingGame === true');
+    isLeavingGame = false; // reset for next time
+    return; // skip all the rest
   }
 
   gameOver = true;
@@ -1580,14 +1580,18 @@ function renderSuccessfulGuesses() {
 }
 
 function handleGoHome() {
-  if (socket && socket.connected) {
+  console.debug('[CLIENT] handleGoHome called');
+
+  // Only tell server if actually in a game
+  if (socket && socket.connected && gameStarted && !gameOver) {
+    isLeavingGame = true; // so your gameOver listener knows to ignore it
     socket.emit('leaveGame');
   }
 
+  // Always reset local state
   localStorage.removeItem('privateRoomId');
   myRoomId = null;
   roomId = null;
-
   gameStarted = false;
   gameOver = true;
   isPrivateGame = false;

@@ -700,17 +700,15 @@ function handleJoinGame(socket, roomId, username) {
 function handlePlayerDisconnect(socket) {
   console.log(`🛑 handlePlayerDisconnect: ${socket.id}`);
 
-  // Remove from waiting queue if still waiting
+  // Remove from waiting queue if in it
   const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
   if (waitingIndex !== -1) {
     waitingPlayers.splice(waitingIndex, 1);
     console.log(`Removed ${socket.data.username || 'unnamed player'} from waiting queue`);
   }
 
-  // Always remove from in-game map
+  // Always remove from in-game map & room map
   playersInGame.delete(socket.id);
-
-  // Remove from socketRoomMap
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
     delete socketRoomMap[socket.id];
@@ -723,30 +721,34 @@ function handlePlayerDisconnect(socket) {
     if (idx !== -1) {
       const disconnectedUsername = game.usernames[socket.id] || 'Unknown';
 
-      // Remove player
+      // Remove player from game
       game.players.splice(idx, 1);
       delete game.usernames[socket.id];
       playersInGame.delete(socket.id);
       delete socketRoomMap[socket.id];
 
       console.log(`Removed ${disconnectedUsername} from game in room ${room}`);
-
       io.to(room).emit('playersUpdate', game.players.length);
 
-      if (game.players.length < 2) {
-        // Notify remaining players only
-        game.players.forEach((playerSocketId) => {
-          io.to(playerSocketId).emit('gameOver', {
-            reason: 'opponent_left',
-            message: `${disconnectedUsername} left the match.`,
-            winnerName: game.usernames[playerSocketId],
-            loserName: disconnectedUsername,
-            role: 'winner',
-            canRematch: false,
-          });
-        });
+      // ✅ If only one player left, notify them
+      if (game.players.length === 1) {
+        const remainingPlayerId = game.players[0];
+        const remainingUsername = game.usernames[remainingPlayerId] || 'Remaining Player';
 
-        // Reset game but keep object intact
+        console.log(`Notifying ${remainingUsername} that ${disconnectedUsername} left`);
+
+        io.to(remainingPlayerId).emit('gameOver', {
+          reason: 'opponent_left',
+          message: `${disconnectedUsername} left the match.`,
+          winnerName: remainingUsername,
+          loserName: disconnectedUsername,
+          role: 'winner',
+          canRematch: false
+        });
+      }
+
+      // ✅ Reset game object — do this *after* notifying
+      if (game.players.length < 2) {
         game.players = [];
         game.usernames = {};
         game.currentTurn = 0;
@@ -760,10 +762,10 @@ function handlePlayerDisconnect(socket) {
           delete game.timer;
         }
 
-        console.log(`✅ Game in room ${room} reset due to opponent leaving`);
+        console.log(`✅ Game in room ${room} fully reset due to player leaving`);
       }
 
-      break; // Found game, break out
+      break; // Found the game — done
     }
   }
 }
