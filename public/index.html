@@ -711,6 +711,8 @@
   let successfulGuesses = [];
   let isPrivateGame = false;
   let socket = null;
+  let isLeavingGame = false;
+
 
   document.addEventListener('DOMContentLoaded', async () => {
     // --- Email confirmation check: run FIRST and route if matched, but DO NOT return ---
@@ -1060,9 +1062,18 @@ socket.on('matchStats', (stats) => {
 
 
 socket.on('gameOver', (data) => {
-  console.log('gameOver received:', data);
+  console.log('[DEBUG] gameOver received:', data);
+
+  // ✅ If I intentionally left, skip handling
+  if (isLeavingGame) {
+    console.log('[DEBUG] Ignoring gameOver because isLeavingGame === true');
+    isLeavingGame = false; // Reset for future
+    return;
+  }
+
   gameOver = true;
 
+  // Stop input & timer
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
@@ -1072,7 +1083,7 @@ socket.on('gameOver', (data) => {
   }
   timerEl.textContent = '';
 
-  // ✅ Ensure myUsername & opponentName are set correctly
+  // Ensure myUsername & opponentName
   if (!myUsername && data.winnerName && data.loserName) {
     if (data.role === 'winner') {
       myUsername = data.winnerName;
@@ -1085,6 +1096,7 @@ socket.on('gameOver', (data) => {
     opponentName = (myUsername === data.winnerName) ? data.loserName : data.winnerName;
   }
 
+  // Show game over container
   const container = document.getElementById('gameOverContainer');
   container.style.display = 'flex';
   container.innerHTML = '';
@@ -1098,7 +1110,8 @@ socket.on('gameOver', (data) => {
   if (data.message) {
     gameOverMsg.textContent = data.message;
   } else if (data.reason === 'opponent_left') {
-    gameOverMsg.textContent = 'Your opponent left the game.';
+    const opponent = opponentName || 'Your opponent';
+    gameOverMsg.textContent = `${opponent} left the game.`;
   } else {
     gameOverMsg.textContent = 'Game Over!';
   }
@@ -1133,9 +1146,7 @@ socket.on('gameOver', (data) => {
     rematchBtn.textContent = 'Rematch';
   }
 
-  // ✅ DO NOT manually call updateSplitScoreboard here
-  // The 'matchStats' event from server will handle it
-
+  // Let server 'matchStats' handle scoreboard update
   navigateTo('/gameover');
 });
 
@@ -1900,24 +1911,28 @@ function showRouteSection(path) {
 
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
-  if (path === '/home') {
-    if (socket && socket.connected) {
-      socket.emit('leaveGame');
-    }
-    const welcomeEl = document.getElementById('home-welcome');
-    // ✅ End any current game safely
-    gameStarted = false;
-    gameOver = true;
-    roomId = null;
-    myRoomId = null;
-    isPrivateGame = false;
-    selectedPlayer = null;
-    successfulGuesses = [];
-    if (welcomeEl && myUsername) {
-      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-    }
+ if (path === '/home') {
+  // ✅ If connected, emit leaveGame and mark that I'm intentionally leaving
+  if (socket && socket.connected) {
+    isLeavingGame = true;  // NEW: mark that this leave is intentional
+    socket.emit('leaveGame');
   }
 
+  // ✅ Clear local game state
+  gameStarted = false;
+  gameOver = true;
+  roomId = null;
+  myRoomId = null;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  // ✅ Update welcome message
+  const welcomeEl = document.getElementById('home-welcome');
+  if (welcomeEl && myUsername) {
+    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+  }
+}
   if (path === '/waiting') {
     const codeEl = document.getElementById('displayRoomCode');
     const inviteWrapper = document.getElementById('inviteLinkWrapper');

@@ -390,9 +390,21 @@ socket.on('disconnect', () => {
       }
 
       if (game.players.length < 2) {
-        io.to(room).emit('gameOver', 'Not enough players. Game ended.');
+        // Notify remaining player(s) that opponent left
+        game.players.forEach((playerSocketId) => {
+          if (playerSocketId !== socket.id) {
+            io.to(playerSocketId).emit('gameOver', {
+              reason: 'opponent_left',
+              message: `${disconnectedUsername || 'Your opponent'} left the game.`,
+              winnerName: game.usernames[playerSocketId],
+              loserName: disconnectedUsername,
+              role: 'winner',
+              canRematch: false,
+            });
+          }
+        });
 
-        // Reset game but keep object intact
+        // Reset game as before
         game.players = [];
         game.usernames = {};
         game.currentTurn = 0;
@@ -721,13 +733,18 @@ function handlePlayerDisconnect(socket) {
 
       io.to(room).emit('playersUpdate', game.players.length);
 
-      // Determine reason
-      const reason = socket.disconnected ? 
-        `Opponent ${disconnectedUsername} disconnected.` :
-        `Opponent ${disconnectedUsername} left the match.`;
-
       if (game.players.length < 2) {
-        io.to(room).emit('gameOver', reason);
+        // Notify remaining players only
+        game.players.forEach((playerSocketId) => {
+          io.to(playerSocketId).emit('gameOver', {
+            reason: 'opponent_left',
+            message: `${disconnectedUsername} left the match.`,
+            winnerName: game.usernames[playerSocketId],
+            loserName: disconnectedUsername,
+            role: 'winner',
+            canRematch: false,
+          });
+        });
 
         // Reset game but keep object intact
         game.players = [];
@@ -743,13 +760,14 @@ function handlePlayerDisconnect(socket) {
           delete game.timer;
         }
 
-        console.log(`✅ Game in room ${room} reset: ${reason}`);
+        console.log(`✅ Game in room ${room} reset due to opponent leaving`);
       }
 
-      break; // Found, so break the loop
+      break; // Found game, break out
     }
   }
 }
+
 
 
 
