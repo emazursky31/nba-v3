@@ -714,90 +714,87 @@
   let isLeavingGame = false;
 
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    // --- Email confirmation check: run FIRST and route if matched, but DO NOT return ---
-    const urlHash = window.location.hash;
-    const urlSearch = window.location.search;
-    const searchParams = new URLSearchParams(urlSearch);
-    const typeParam = searchParams.get('type');
-    console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
-    let justConfirmed = false;
-    if (
-      (urlHash.includes('access_token') && (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-    ) {
-      console.log('[DEBUG] Found email confirmation or recovery in URL (hash or search)');
-      // Try to get user, but always route to /confirmed regardless
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) {
-          console.error('[ERROR] Email confirmation failed:', error.message);
-        } else {
-          console.log('[DEBUG] Email confirmed for:', user?.email);
-        }
-      } catch (e) {
-        console.error('[ERROR] Exception during email confirmation:', e);
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[DEBUG] DOMContentLoaded');
+
+  // --- 1️⃣ Email confirmation or recovery flow ---
+  const urlHash = window.location.hash;
+  const urlSearch = window.location.search;
+  const searchParams = new URLSearchParams(urlSearch);
+  const typeParam = searchParams.get('type');
+  console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
+
+  if (
+    (urlHash.includes('access_token') && 
+      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+  ) {
+    console.log('[DEBUG] Found email confirmation or recovery in URL');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('[ERROR] Email confirmation failed:', error.message);
+      } else {
+        console.log('[DEBUG] Email confirmed for:', user?.email);
       }
-      justConfirmed = true;
+    } catch (e) {
+      console.error('[ERROR] Exception during email confirmation:', e);
     }
 
-    socket = io();
+    // ✅ Always route to confirmation screen and stop here
+    navigateTo('/confirmed');
+    return;
+  }
 
-    // Get session info
-    const { data } = await supabase.auth.getSession();
+  // --- 2️⃣ Connect socket early ---
+  socket = io();
 
-    if (data.session && data.session.user) {
-      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-    } else {
-      myUsername = null;
-    }
+  // --- 3️⃣ Get current Supabase session ---
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user) {
+    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+  } else {
+    myUsername = localStorage.getItem('username') || null;
+  }
 
-    // Load saved username from localStorage if not set by session
-    if (!myUsername) {
-      const savedUsername = localStorage.getItem('username');
-      if (savedUsername) {
-      myUsername = savedUsername;
-      console.log('[DEBUG] Loaded savedUsername from localStorage:', myUsername);
-      }
-    }
-
-    // Load saved room info
+  // --- 4️⃣ Load room info ---
+  const params = new URLSearchParams(window.location.search);
+  const roomFromUrl = params.get('room');
+  if (roomFromUrl) {
+    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+    myRoomId = roomFromUrl;
+    roomId = roomFromUrl;
+    isPrivateGame = true;
+    localStorage.setItem('privateRoomId', roomFromUrl);
+  } else {
     const savedRoom = localStorage.getItem('privateRoomId');
     if (savedRoom) {
+      console.log('[DEBUG] Found saved private room:', savedRoom);
       myRoomId = savedRoom;
       roomId = savedRoom;
       isPrivateGame = true;
     }
+  }
 
-    // Handle invite link room param, override if present
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
-    if (roomFromUrl) {
-      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-      myRoomId = roomFromUrl;
-      roomId = roomFromUrl;
-      isPrivateGame = true;
-      localStorage.setItem('privateRoomId', roomFromUrl);
-    }
+  console.log('[DEBUG] Final state before routing:', {
+    myUsername,
+    myRoomId,
+    isPrivateGame,
+    isLeavingGame,
+  });
 
-    console.log('[DEBUG] Final state before routing:', { myUsername, myRoomId, isPrivateGame });
-
-    // Determine initial route based on user and room state
-
-    if (!myUsername) {
-      // No user info, must sign up or sign in
-      navigateTo('/signup');
-    } else if (isLeavingGame) {
-      console.log('[DEBUG] Skipping waiting room: isLeavingGame=true');
-      navigateTo('/home');
-    } else if (myRoomId) {
-      // User has room info, join waiting room
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-      navigateTo('/waiting');
-    } else {
-      // Logged in but no active room, show home screen
-      navigateTo('/home');
-    }
+  // --- 5️⃣ Determine initial route ---
+  if (!myUsername) {
+    navigateTo('/signup');
+  } else if (isLeavingGame) {
+    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+    navigateTo('/home');
+  } else if (myRoomId) {
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    navigateTo('/waiting');
+  } else {
+    navigateTo('/home');
+  }
 
     // ✅ Elements you actually use…
     const privateGameBtn = document.getElementById('privateGameBtn');
@@ -913,14 +910,31 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 //   handleUsernameEntry();
 // }
 
-  function startPrivateGame() {
+function startPrivateGame() {
   console.log('[DEBUG] startPrivateGame called');
 
+  if (isLeavingGame) {
+    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
+    return; // ✅ Do NOT start private game while intentionally leaving
+  }
+
+  if (!myUsername) {
+    alert('Missing username');
+    return;
+  }
+
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game first.');
+    return;
+  }
+
+  isPrivateGame = true;
+  isLeavingGame = false; // ✅ You’re intentionally starting a new match
+
+  // ✅ Generate new room and clear stale room data
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
   roomId = generatedRoomId;
   myRoomId = generatedRoomId;
-
-  isPrivateGame = true;
 
   socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
 
@@ -937,19 +951,39 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   navigateTo('/waiting');
 }
 
+
 function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
-  if (!myUsername) return alert('Missing username');
-  if (gameStarted && !gameOver) return alert('Finish your current game first.');
+  if (isLeavingGame) {
+    console.log('[DEBUG] joinPublicGame aborted: isLeavingGame is true');
+    return; // ✅ Do NOT join if intentionally leaving
+  }
 
+  if (!myUsername) {
+    alert('Missing username');
+    return;
+  }
+
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game first.');
+    return;
+  }
+
+  // ✅ Reset local state for a clean public game join
   isPrivateGame = false;
+  isLeavingGame = false;  // ✅ Reset this flag — you’re intentionally joining
+
+  // ✅ Clear any stale room ID
+  myRoomId = null;
+  roomId = null;
 
   socket.emit('findMatch', myUsername);
 
   statusDiv.textContent = 'Looking for a game...';
   navigateTo('/waiting');
 }
+
 
 
 

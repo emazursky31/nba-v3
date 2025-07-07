@@ -428,7 +428,15 @@ socket.on('disconnect', () => {
 
 
 socket.on('leaveGame', () => {
-  console.log(`User requested leaveGame: ${socket.id}`);
+  console.log(`User ${socket.id} left the game intentionally.`);
+
+  // Remove from waiting queue
+  const idx = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
+  if (idx !== -1) {
+    waitingPlayers.splice(idx, 1);
+  }
+
+  // Remove from any in-progress games
   handlePlayerDisconnect(socket);
 });
 
