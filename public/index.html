@@ -1975,29 +1975,33 @@ function showRouteSection(path) {
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
   if (path === '/home') {
-    console.log('[DEBUG] updateUIForRoute: Handling /home');
+  console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-    // NEW: Mark intentional leave
+  // Safely emit leave
+  if (socket && socket.connected) {
     isLeavingGame = true;
-
-    if (socket && socket.connected) {
-      socket.emit('leaveGame');
-    }
-
-    // Fully clear all game state
-    gameStarted = false;
-    gameOver = true;
-    roomId = null;
-    myRoomId = null;
-    isPrivateGame = false;
-    selectedPlayer = null;
-    successfulGuesses = [];
-
-    const welcomeEl = document.getElementById('home-welcome');
-    if (welcomeEl && myUsername) {
-      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-    }
+    socket.emit('leaveGame');
   }
+
+  // 🧹 Clear local game state
+  gameStarted = false;
+  gameOver = true;
+  roomId = null;
+  myRoomId = null;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  // ✅ Reset the flag NOW that we’re safely Home
+  isLeavingGame = false;
+
+  // Update welcome
+  const welcomeEl = document.getElementById('home-welcome');
+  if (welcomeEl && myUsername) {
+    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+  }
+}
+
 
   if (path === '/waiting') {
     if (isLeavingGame) {
