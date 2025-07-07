@@ -791,10 +791,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else if (isLeavingGame) {
     console.log('[DEBUG] Routing to /home because isLeavingGame=true');
     navigateTo('/home');
-  } else if (myRoomId) {
+  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
     navigateTo('/waiting');
-  } else {
+  }
+  else {
     navigateTo('/home');
   }
 
@@ -958,10 +959,10 @@ function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
   // ✅ Do NOT join if you just left a game intentionally
-  if (isLeavingGame) {
-    console.log('[DEBUG] joinPublicGame skipped because isLeavingGame === true');
-    return;
-  }
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+  console.log('[DEBUG] joinPublicGame aborted: isLeavingGame is true in localStorage');
+  return;
+}
 
   if (!myUsername) {
     alert('Missing username');
