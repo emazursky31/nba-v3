@@ -867,24 +867,44 @@ copyInviteBtn.onclick = () => {
 
 
 function updateSplitScoreboard(stats, player1, player2) {
+  const p1NameEl = document.getElementById('player1Name');
+  const p2NameEl = document.getElementById('player2Name');
+
+  if (!p1NameEl || !p2NameEl) {
+    console.warn('[DEBUG] Scoreboard elements not found. Skipping updateSplitScoreboard.');
+    return; // Or: queue the update!
+  }
+
   const p1Name = player1 || 'Player 1';
   const p2Name = player2 || 'Player 2';
 
-  document.getElementById('player1Name').textContent = p1Name;
-  document.getElementById('player2Name').textContent = p2Name;
+  p1NameEl.textContent = p1Name;
+  p2NameEl.textContent = p2Name;
 
-  // Defensive fallback for stats object
   const safeStats = stats || {};
-
-  // Extract wins safely, default to 0 if missing or invalid
   const player1Stats = safeStats[p1Name];
   const player2Stats = safeStats[p2Name];
-
   const p1Wins = (player1Stats && typeof player1Stats.wins === 'number') ? player1Stats.wins : 0;
   const p2Wins = (player2Stats && typeof player2Stats.wins === 'number') ? player2Stats.wins : 0;
 
   document.getElementById('player1Score').textContent = p1Wins;
   document.getElementById('player2Score').textContent = p2Wins;
+}
+
+function waitForScoreboard() {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (
+        document.getElementById('player1Name') &&
+        document.getElementById('player1Score')
+      ) {
+        resolve();
+      } else {
+        requestAnimationFrame(check);
+      }
+    };
+    check();
+  });
 }
 
 
@@ -1112,9 +1132,10 @@ socket.on('gameStarted', async (data) => {
   // ✅ ✅ ✅ NEW: Navigate to /play FIRST and wait!
   console.log('[DEBUG] Navigating to /play...');
   await navigateTo('/play');
-
-  console.log('[DEBUG] Emitting getMatchStats AFTER /play is ready...');
+  console.debug('[DEBUG] Waiting for scoreboard readiness...');
+  await waitForScoreboard();
   socket.emit('getMatchStats');
+
 });
 
 
