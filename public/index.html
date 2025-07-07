@@ -1048,10 +1048,14 @@ socket.on('matched', ({ roomId, opponent }) => {
 
 // 2. Game Lifecycle
 socket.on('gameStarted', (data) => {
-   if (isLeavingGame) {
+  if (isLeavingGame) {
     console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
     return;
   }
+
+  // 1️⃣ Immediately navigate to /play so DOM elements exist
+  navigateTo('/play');
+
   console.log('[CLIENT] Received gameStarted event:', data);
 
   gameStarted = true;
@@ -1066,65 +1070,66 @@ socket.on('gameStarted', (data) => {
     console.warn('[CLIENT] Cleared leftover timer before starting new one.');
   }
 
-  // Clear input + errors
-  guessInput.disabled = true;
-  submitGuessBtn.disabled = true;
-  guessInput.value = '';
-  clearGuessError();
-  clearAutocomplete();
+  // Use setTimeout 0 to let /play DOM render before manipulating it
+  setTimeout(() => {
+    // Clear input + errors
+    guessInput.disabled = true;
+    submitGuessBtn.disabled = true;
+    guessInput.value = '';
+    clearGuessError();
+    clearAutocomplete();
 
-  // Reset rematch state
-  rematchBtn.style.display = 'none';
-  rematchBtn.disabled = false;
-  rematchBtn.textContent = 'Rematch';
+    // Reset rematch state
+    rematchBtn.style.display = 'none';
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
 
-  // Clear any messages
-  messagesEl.innerHTML = '';
-  messagesEl.style.display = 'block';
+    // Clear any messages
+    messagesEl.innerHTML = '';
+    messagesEl.style.display = 'block';
 
-  // Reset turn history cleanly
-  successfulGuesses = [];
+    // Reset turn history cleanly
+    successfulGuesses = [];
 
-  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
-  leadoffPlayerName = data.leadoffPlayer;
-  successfulGuesses.push({
-    guesser: 'Leadoff',
-    name: leadoffPlayerName,
-    isLeadoff: true
-  });
-}
+    if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
+      leadoffPlayerName = data.leadoffPlayer;
+      successfulGuesses.push({
+        guesser: 'Leadoff',
+        name: leadoffPlayerName,
+        isLeadoff: true
+      });
+    }
 
-  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-  renderSuccessfulGuesses();
+    console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+    renderSuccessfulGuesses();
 
-  // Set current player name
-  currentPlayerNameEl.textContent = data.currentPlayerName;
+    // Set current player name
+    currentPlayerNameEl.textContent = data.currentPlayerName;
 
-  // ✅ Update "You" and "Opponent" names
-  const playerYouEl = document.getElementById('playerYou');
-  const playerOpponentEl = document.getElementById('playerOpponent');
-  if (playerOpponentEl && data.opponentName) {
-  playerOpponentEl.textContent = data.opponentName;
-  opponentName = data.opponentName;  // keep local variable updated
-  }
-  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
+    // ✅ Update "You" and "Opponent" names
+    const playerYouEl = document.getElementById('playerYou');
+    const playerOpponentEl = document.getElementById('playerOpponent');
+    if (playerOpponentEl && data.opponentName) {
+      playerOpponentEl.textContent = data.opponentName;
+      opponentName = data.opponentName;  // keep local variable updated
+    }
+    if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
 
-  // ✅ Highlight active player
-  const isYourTurn = data.currentPlayerName === myUsername;
-  if (playerYouEl && playerOpponentEl) {
-    playerYouEl.classList.toggle('active-turn', isYourTurn);
-    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
-  }
+    // ✅ Highlight active player
+    const isYourTurn = data.currentPlayerName === myUsername;
+    if (playerYouEl && playerOpponentEl) {
+      playerYouEl.classList.toggle('active-turn', isYourTurn);
+      playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
+    }
 
-  // Set initial timer
-  timerEl.textContent = data.timeLeft || 15;
-  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+    // Set initial timer
+    timerEl.textContent = data.timeLeft || 15;
+    console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
-  socket.emit('getMatchStats');
-
-  // Navigate to game view
-  navigateTo('/play');
+    socket.emit('getMatchStats');
+  }, 0);
 });
+
 
 
 socket.on('matchStats', (stats) => {
