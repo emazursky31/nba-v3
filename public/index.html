@@ -959,11 +959,11 @@ function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
   // ✅ If you’re intentionally finding a new game, clear any stale leaving flags FIRST
-  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+  
     console.log('[DEBUG] joinPublicGame: Clearing stale isLeavingGame flag');
     isLeavingGame = false;
     localStorage.removeItem('isLeavingGame');
-  }
+  
 
   if (!myUsername) {
     alert('Missing username');
@@ -1003,9 +1003,8 @@ function joinPublicGame() {
 socket.on('playersUpdate', (count) => {
   console.log('[DEBUG] playersUpdate received:', count);
 
-  // ✅ Consistently check AND clear stale flag if you’re not leaving anymore
-  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-    console.log('[DEBUG] Ignoring playersUpdate because isLeavingGame is true');
+  if (isLeavingGame) {
+    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
     return;
   }
 
@@ -1015,12 +1014,10 @@ socket.on('playersUpdate', (count) => {
     rematchBtn.style.display = 'none';
     navigateTo('/waiting');
   } else {
-    // ✅ Once a match is found, ensure leaving flag is reset so you don’t block yourself
-    isLeavingGame = false;
-    localStorage.removeItem('isLeavingGame');
     navigateTo('/play');
   }
 });
+
 
 
 
