@@ -1919,6 +1919,7 @@ async function updatePassword() {
  * @param {object} options - Optional settings
  *   options.skipPush - If true, skips updating the browser's address bar
  */
+// navigateTo now uses requestAnimationFrame to wait for next paint
 function navigateTo(path, options = {}) {
   return new Promise((resolve) => {
     if (!options.skipPush) {
@@ -1929,11 +1930,12 @@ function navigateTo(path, options = {}) {
     updateUIForRoute(path);
     attachRouteListeners(path);
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       resolve();
-    }, 0);
+    });
   });
 }
+
 
 
 
