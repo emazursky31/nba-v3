@@ -1020,6 +1020,10 @@ function joinPublicGame() {
 
 // 2. Game Lifecycle
 socket.on('gameStarted', (data) => {
+   if (isLeavingGame) {
+    console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
+    return;
+  }
   console.log('[CLIENT] Received gameStarted event:', data);
 
   gameStarted = true;

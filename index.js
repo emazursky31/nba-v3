@@ -428,17 +428,19 @@ socket.on('disconnect', () => {
 
 
 socket.on('leaveGame', () => {
-  console.log(`User ${socket.id} left the game intentionally.`);
+  console.log(`🚪 leaveGame: ${socket.id}`);
 
-  // Remove from waiting queue
-  const idx = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
-  if (idx !== -1) {
-    waitingPlayers.splice(idx, 1);
+  // Remove from waiting queue if in it
+  const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
+  if (waitingIndex !== -1) {
+    waitingPlayers.splice(waitingIndex, 1);
+    console.log(`Removed ${socket.data.username} from waiting queue`);
   }
 
-  // Remove from any in-progress games
+  // Handle disconnect logic too
   handlePlayerDisconnect(socket);
 });
+
 
 
 
