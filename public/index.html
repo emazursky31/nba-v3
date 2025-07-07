@@ -955,9 +955,10 @@ function startPrivateGame() {
 function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
+  // ✅ Do NOT join if you just left a game intentionally
   if (isLeavingGame) {
-    console.log('[DEBUG] joinPublicGame aborted: isLeavingGame is true');
-    return; // ✅ Do NOT join if intentionally leaving
+    console.log('[DEBUG] joinPublicGame skipped because isLeavingGame === true');
+    return;
   }
 
   if (!myUsername) {
@@ -965,24 +966,26 @@ function joinPublicGame() {
     return;
   }
 
+  // ✅ Extra safety: block if game is active & not over
   if (gameStarted && !gameOver) {
     alert('Finish your current game first.');
     return;
   }
 
-  // ✅ Reset local state for a clean public game join
-  isPrivateGame = false;
-  isLeavingGame = false;  // ✅ Reset this flag — you’re intentionally joining
-
-  // ✅ Clear any stale room ID
+  // ✅ Clear any stale room info
   myRoomId = null;
   roomId = null;
+  isPrivateGame = false;
+
+  // ✅ Since you are intentionally finding a match, clear the leave flag
+  isLeavingGame = false;
 
   socket.emit('findMatch', myUsername);
 
   statusDiv.textContent = 'Looking for a game...';
   navigateTo('/waiting');
 }
+
 
 
 
@@ -1934,10 +1937,15 @@ function attachRouteListeners(route) {
       break;
 
     case '/home':
-      document.getElementById('privateGameBtn')?.addEventListener('click', startPrivateGame);
-      document.getElementById('findGameBtn')?.addEventListener('click', joinPublicGame);
+      document.getElementById('privateGameBtn')?.addEventListener('click', () => {
+        isLeavingGame = false;  // ✅ I want to join a new game now
+        startPrivateGame();
+      });
+      document.getElementById('findGameBtn')?.addEventListener('click', () => {
+        isLeavingGame = false;  // ✅ I want to find a public game now
+        joinPublicGame();
+      });
       break;
-
 
     case '/play':
       // Setup listeners or UI related to the gameplay screen here
@@ -1978,10 +1986,10 @@ function showRouteSection(path) {
 
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
-  if (path === '/home') {
+ if (path === '/home') {
   console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  // Safely emit leave
+  // ✅ Mark that you are intentionally leaving
   if (socket && socket.connected) {
     isLeavingGame = true;
     socket.emit('leaveGame');
@@ -1996,8 +2004,8 @@ function updateUIForRoute(path) {
   selectedPlayer = null;
   successfulGuesses = [];
 
-  // ✅ Reset the flag NOW that we’re safely Home
-  isLeavingGame = false;
+  // ✅ DO NOT reset isLeavingGame here!
+  // Let it stay true until you explicitly join or navigate away.
 
   // Update welcome
   const welcomeEl = document.getElementById('home-welcome');
@@ -2005,6 +2013,7 @@ function updateUIForRoute(path) {
     welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
   }
 }
+
 
 
   if (path === '/waiting') {
