@@ -955,43 +955,41 @@ function startPrivateGame() {
 }
 
 
-function joinPublicGame() {
+async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
-  // ✅ If you’re intentionally finding a new game, clear any stale leaving flags FIRST
-  
-    console.log('[DEBUG] joinPublicGame: Clearing stale isLeavingGame flag');
-    isLeavingGame = false;
-    localStorage.removeItem('isLeavingGame');
-  
+  // Clear any stale leaving flags
+  console.log('[DEBUG] joinPublicGame: Clearing stale isLeavingGame flag');
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
 
   if (!myUsername) {
     alert('Missing username');
     return;
   }
 
-  // ✅ Extra safety: block if already in a game
   if (gameStarted && !gameOver) {
     alert('Finish your current game first.');
     return;
   }
 
-  // ✅ Always clear stale room info & mark this as public game
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
 
-  // ✅ Also reset local game state just in case
   selectedPlayer = null;
   successfulGuesses = [];
   gameOver = false;
 
+  statusDiv.textContent = 'Looking for a game...';
+
+  console.log('[DEBUG] Navigating to /waiting...');
+  await navigateTo('/waiting');
+
   console.log('[DEBUG] Emitting findMatch with username:', myUsername);
   socket.emit('findMatch', myUsername);
-
-  statusDiv.textContent = 'Looking for a game...';
-  navigateTo('/waiting');
 }
+
 
 
 
@@ -1053,42 +1051,28 @@ socket.on('gameStarted', (data) => {
     return;
   }
 
-  // 1️⃣ Immediately navigate to /play so DOM elements exist
   navigateTo('/play');
-
   console.log('[CLIENT] Received gameStarted event:', data);
 
-  gameStarted = true;
-  gameOver = false;
-
-  leadoffPlayerName = data.leadoffPlayer || null;
-
-  // Clear old timers
-  if (window.timerInterval) {
-    clearInterval(window.timerInterval);
-    window.timerInterval = null;
-    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
-  }
-
-  // Use setTimeout 0 to let /play DOM render before manipulating it
   setTimeout(() => {
-    // Clear input + errors
-    guessInput.disabled = true;
-    submitGuessBtn.disabled = true;
-    guessInput.value = '';
+    // Defensive: ensure all elements exist or query them here after navigation if needed
+    if (guessInput) guessInput.disabled = true;
+    if (submitGuessBtn) submitGuessBtn.disabled = true;
+    if (guessInput) guessInput.value = '';
     clearGuessError();
     clearAutocomplete();
 
-    // Reset rematch state
-    rematchBtn.style.display = 'none';
-    rematchBtn.disabled = false;
-    rematchBtn.textContent = 'Rematch';
+    if (rematchBtn) {
+      rematchBtn.style.display = 'none';
+      rematchBtn.disabled = false;
+      rematchBtn.textContent = 'Rematch';
+    }
 
-    // Clear any messages
-    messagesEl.innerHTML = '';
-    messagesEl.style.display = 'block';
+    if (messagesEl) {
+      messagesEl.innerHTML = '';
+      messagesEl.style.display = 'block';
+    }
 
-    // Reset turn history cleanly
     successfulGuesses = [];
 
     if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
@@ -1103,32 +1087,29 @@ socket.on('gameStarted', (data) => {
     console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
     renderSuccessfulGuesses();
 
-    // Set current player name
-    currentPlayerNameEl.textContent = data.currentPlayerName;
+    if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName;
 
-    // ✅ Update "You" and "Opponent" names
     const playerYouEl = document.getElementById('playerYou');
     const playerOpponentEl = document.getElementById('playerOpponent');
     if (playerOpponentEl && data.opponentName) {
       playerOpponentEl.textContent = data.opponentName;
-      opponentName = data.opponentName;  // keep local variable updated
+      opponentName = data.opponentName;
     }
     if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
 
-    // ✅ Highlight active player
     const isYourTurn = data.currentPlayerName === myUsername;
     if (playerYouEl && playerOpponentEl) {
       playerYouEl.classList.toggle('active-turn', isYourTurn);
       playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
     }
 
-    // Set initial timer
-    timerEl.textContent = data.timeLeft || 15;
+    if (timerEl) timerEl.textContent = data.timeLeft || 15;
     console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
     socket.emit('getMatchStats');
   }, 0);
 });
+
 
 
 
@@ -1932,14 +1913,21 @@ async function updatePassword() {
  *   options.skipPush - If true, skips updating the browser's address bar
  */
 function navigateTo(path, options = {}) {
-  if (!options.skipPush) {
-    history.pushState({}, '', path);
-  }
+  return new Promise((resolve) => {
+    if (!options.skipPush) {
+      history.pushState({}, '', path);
+    }
 
-  showRouteSection(path);
-  updateUIForRoute(path);
-  attachRouteListeners(path);
+    showRouteSection(path);
+    updateUIForRoute(path);
+    attachRouteListeners(path);
+
+    setTimeout(() => {
+      resolve();
+    }, 0);
+  });
 }
+
 
 
 // 1. Attach route-specific listeners
