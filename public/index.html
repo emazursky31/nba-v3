@@ -958,31 +958,35 @@ function startPrivateGame() {
 function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
-  // ✅ Do NOT join if you just left a game intentionally
+  // ✅ If you’re intentionally finding a new game, clear any stale leaving flags FIRST
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-  console.log('[DEBUG] joinPublicGame aborted: isLeavingGame is true in localStorage');
-  return;
-}
+    console.log('[DEBUG] joinPublicGame: Clearing stale isLeavingGame flag');
+    isLeavingGame = false;
+    localStorage.removeItem('isLeavingGame');
+  }
 
   if (!myUsername) {
     alert('Missing username');
     return;
   }
 
-  // ✅ Extra safety: block if game is active & not over
+  // ✅ Extra safety: block if already in a game
   if (gameStarted && !gameOver) {
     alert('Finish your current game first.');
     return;
   }
 
-  // ✅ Clear any stale room info
+  // ✅ Always clear stale room info & mark this as public game
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
 
-  // ✅ Since you are intentionally finding a match, clear the leave flag
-  isLeavingGame = false;
+  // ✅ Also reset local game state just in case
+  selectedPlayer = null;
+  successfulGuesses = [];
+  gameOver = false;
 
+  console.log('[DEBUG] Emitting findMatch with username:', myUsername);
   socket.emit('findMatch', myUsername);
 
   statusDiv.textContent = 'Looking for a game...';
@@ -993,11 +997,13 @@ function joinPublicGame() {
 
 
 
+
     socket.on('connect', () => {});
 
 socket.on('playersUpdate', (count) => {
   console.log('[DEBUG] playersUpdate received:', count);
 
+  // ✅ Consistently check AND clear stale flag if you’re not leaving anymore
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
     console.log('[DEBUG] Ignoring playersUpdate because isLeavingGame is true');
     return;
@@ -1009,18 +1015,26 @@ socket.on('playersUpdate', (count) => {
     rematchBtn.style.display = 'none';
     navigateTo('/waiting');
   } else {
+    // ✅ Once a match is found, ensure leaving flag is reset so you don’t block yourself
+    isLeavingGame = false;
+    localStorage.removeItem('isLeavingGame');
     navigateTo('/play');
   }
 });
 
 
- socket.on('matched', ({ roomId, opponent }) => {
+
+socket.on('matched', ({ roomId, opponent }) => {
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
     console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
     return;
   }
 
   if (gameStarted && !gameOver) return;
+
+  // ✅ Once matched, clear stale flags
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
 
   myRoomId = roomId;
   opponentName = opponent;
