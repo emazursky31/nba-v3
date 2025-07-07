@@ -995,19 +995,31 @@ function joinPublicGame() {
 
     socket.on('connect', () => {});
 
-  socket.on('playersUpdate', (count) => {
+socket.on('playersUpdate', (count) => {
+  console.log('[DEBUG] playersUpdate received:', count);
+
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+    console.log('[DEBUG] Ignoring playersUpdate because isLeavingGame is true');
+    return;
+  }
+
   statusDiv.textContent = `Players in room: ${count}`;
 
   if (count < 2) {
     rematchBtn.style.display = 'none';
     navigateTo('/waiting');
   } else {
-    navigateTo('/play'); // or '/game' or whatever route you've assigned to the main gameplay area
+    navigateTo('/play');
   }
 });
 
 
-   socket.on('matched', ({ roomId, opponent }) => {
+ socket.on('matched', ({ roomId, opponent }) => {
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+    console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
+    return;
+  }
+
   if (gameStarted && !gameOver) return;
 
   myRoomId = roomId;
@@ -1015,11 +1027,10 @@ function joinPublicGame() {
 
   statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
 
-  // Navigate to waiting room while joining the game
   navigateTo('/waiting');
-
   socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
 });
+
 
 
 
