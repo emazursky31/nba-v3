@@ -708,77 +708,81 @@ function handleJoinGame(socket, roomId, username) {
 
 
 function handlePlayerDisconnect(socket) {
-  console.log(`🛑 handlePlayerDisconnect: ${socket.id}`);
+  console.log(`🛑 handlePlayerDisconnect: ${socket.id} (${socket.data.username || 'unknown user'})`);
 
-  // Remove from waiting queue if in it
+  // 1️⃣ Remove from waiting queue if present
   const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
   if (waitingIndex !== -1) {
     waitingPlayers.splice(waitingIndex, 1);
-    console.log(`Removed ${socket.data.username || 'unnamed player'} from waiting queue`);
+    console.log(`✅ Removed from waitingPlayers: ${socket.data.username || 'unnamed player'}`);
   }
 
-  // Always remove from in-game map & room map
+  // 2️⃣ Always clean up maps
   playersInGame.delete(socket.id);
+
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
     delete socketRoomMap[socket.id];
-    console.log(`Removed socket ${socket.id} from socketRoomMap`);
+    console.log(`✅ Removed from socketRoomMap for room: ${roomId}`);
   }
 
-  // Remove from any game they’re in
+  // 3️⃣ Remove from any active game
   for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
-    if (idx !== -1) {
-      const disconnectedUsername = game.usernames[socket.id] || 'Unknown';
+    if (idx === -1) continue;
 
-      // Remove player from game
-      game.players.splice(idx, 1);
-      delete game.usernames[socket.id];
-      playersInGame.delete(socket.id);
-      delete socketRoomMap[socket.id];
+    const disconnectedUsername = game.usernames[socket.id] || `Socket ${socket.id}`;
 
-      console.log(`Removed ${disconnectedUsername} from game in room ${room}`);
-      io.to(room).emit('playersUpdate', game.players.length);
+    // Remove player
+    game.players.splice(idx, 1);
+    delete game.usernames[socket.id];
+    playersInGame.delete(socket.id);
+    delete socketRoomMap[socket.id];
 
-      // ✅ If only one player left, notify them
-      if (game.players.length === 1) {
-        const remainingPlayerId = game.players[0];
-        const remainingUsername = game.usernames[remainingPlayerId] || 'Remaining Player';
+    console.log(`✅ Removed ${disconnectedUsername} from active game in room ${room}`);
+    io.to(room).emit('playersUpdate', game.players.length);
 
-        console.log(`Notifying ${remainingUsername} that ${disconnectedUsername} left`);
+    // 4️⃣ If exactly one player remains, notify them
+    if (game.players.length === 1) {
+      const remainingId = game.players[0];
+      const remainingUsername = game.usernames[remainingId] || `Socket ${remainingId}`;
 
-        io.to(remainingPlayerId).emit('gameOver', {
-          reason: 'opponent_left',
-          message: `${disconnectedUsername} left the match.`,
-          winnerName: remainingUsername,
-          loserName: disconnectedUsername,
-          role: 'winner',
-          canRematch: false
-        });
-      }
+      console.log(`ℹ️ Notifying ${remainingUsername} that ${disconnectedUsername} left the match`);
 
-      // ✅ Reset game object — do this *after* notifying
-      if (game.players.length < 2) {
-        game.players = [];
-        game.usernames = {};
-        game.currentTurn = 0;
-        game.currentPlayerName = null;
-        game.teammates = [];
-        game.successfulGuesses = [];
-        game.rematchVotes = new Set();
-
-        if (game.timer) {
-          clearInterval(game.timer);
-          delete game.timer;
-        }
-
-        console.log(`✅ Game in room ${room} fully reset due to player leaving`);
-      }
-
-      break; // Found the game — done
+      io.to(remainingId).emit('gameOver', {
+        reason: 'opponent_left',
+        message: `${disconnectedUsername} left the match.`,
+        winnerName: remainingUsername,
+        loserName: disconnectedUsername,
+        role: 'winner',
+        canRematch: false
+      });
     }
+
+    // 5️⃣ If no players left, or after notifying remaining player, fully reset the game object
+    if (game.players.length < 2) {
+      console.log(`🧹 Resetting game in room ${room} due to insufficient players`);
+
+      game.players = [];
+      game.usernames = {};
+      game.currentTurn = 0;
+      game.currentPlayerName = null;
+      game.teammates = [];
+      game.successfulGuesses = [];
+      game.rematchVotes = new Set();
+
+      if (game.timer) {
+        clearInterval(game.timer);
+        delete game.timer;
+      }
+
+      console.log(`✅ Game in room ${room} fully reset`);
+    }
+
+    break; // Stop looping once we handled this socket
   }
 }
+
 
 
 
