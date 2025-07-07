@@ -722,6 +722,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlSearch = window.location.search;
   const searchParams = new URLSearchParams(urlSearch);
   const typeParam = searchParams.get('type');
+  const urlParams = new URLSearchParams(window.location.search);
+  const justConfirmed = urlParams.get('justConfirmed') === 'true';
   console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
 
   if (
@@ -1630,24 +1632,29 @@ function renderSuccessfulGuesses() {
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
 
-  // Only tell server if actually in a game
+  // ✅ Mark that you’re intentionally leaving — and persist it!
+  isLeavingGame = true;
+  localStorage.setItem('isLeavingGame', 'true');
+
+  // ✅ Tell server if in an active game
   if (socket && socket.connected && gameStarted && !gameOver) {
-    isLeavingGame = true; // so your gameOver listener knows to ignore it
     socket.emit('leaveGame');
   }
 
-  // Always reset local state
-  localStorage.removeItem('privateRoomId');
+  // ✅ Always clear local game state
   myRoomId = null;
   roomId = null;
+  isPrivateGame = false;
   gameStarted = false;
   gameOver = true;
-  isPrivateGame = false;
   selectedPlayer = null;
   successfulGuesses = [];
 
+  localStorage.removeItem('privateRoomId');
+
   navigateTo('/home');
 }
+
 
 
 async function handleAuthSuccess() {
