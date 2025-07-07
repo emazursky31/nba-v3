@@ -1045,69 +1045,76 @@ socket.on('matched', ({ roomId, opponent }) => {
 
 
 // 2. Game Lifecycle
-socket.on('gameStarted', (data) => {
+socket.on('gameStarted', async (data) => {
   if (isLeavingGame) {
     console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
     return;
   }
 
-  navigateTo('/play');
   console.log('[CLIENT] Received gameStarted event:', data);
 
-  setTimeout(() => {
-    // Defensive: ensure all elements exist or query them here after navigation if needed
-    if (guessInput) guessInput.disabled = true;
-    if (submitGuessBtn) submitGuessBtn.disabled = true;
-    if (guessInput) guessInput.value = '';
-    clearGuessError();
-    clearAutocomplete();
+  gameStarted = true;
+  gameOver = false;
 
-    if (rematchBtn) {
-      rematchBtn.style.display = 'none';
-      rematchBtn.disabled = false;
-      rematchBtn.textContent = 'Rematch';
-    }
+  leadoffPlayerName = data.leadoffPlayer || null;
 
-    if (messagesEl) {
-      messagesEl.innerHTML = '';
-      messagesEl.style.display = 'block';
-    }
+  if (window.timerInterval) {
+    clearInterval(window.timerInterval);
+    window.timerInterval = null;
+    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
+  }
 
-    successfulGuesses = [];
+  guessInput.disabled = true;
+  submitGuessBtn.disabled = true;
+  guessInput.value = '';
+  clearGuessError();
+  clearAutocomplete();
 
-    if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
-      leadoffPlayerName = data.leadoffPlayer;
-      successfulGuesses.push({
-        guesser: 'Leadoff',
-        name: leadoffPlayerName,
-        isLeadoff: true
-      });
-    }
+  rematchBtn.style.display = 'none';
+  rematchBtn.disabled = false;
+  rematchBtn.textContent = 'Rematch';
 
-    console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-    renderSuccessfulGuesses();
+  messagesEl.innerHTML = '';
+  messagesEl.style.display = 'block';
 
-    if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName;
+  successfulGuesses = [];
+  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
+    leadoffPlayerName = data.leadoffPlayer;
+    successfulGuesses.push({
+      guesser: 'Leadoff',
+      name: leadoffPlayerName,
+      isLeadoff: true
+    });
+  }
 
-    const playerYouEl = document.getElementById('playerYou');
-    const playerOpponentEl = document.getElementById('playerOpponent');
-    if (playerOpponentEl && data.opponentName) {
-      playerOpponentEl.textContent = data.opponentName;
-      opponentName = data.opponentName;
-    }
-    if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
+  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+  renderSuccessfulGuesses();
 
-    const isYourTurn = data.currentPlayerName === myUsername;
-    if (playerYouEl && playerOpponentEl) {
-      playerYouEl.classList.toggle('active-turn', isYourTurn);
-      playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
-    }
+  currentPlayerNameEl.textContent = data.currentPlayerName;
 
-    if (timerEl) timerEl.textContent = data.timeLeft || 15;
-    console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+  if (playerOpponentEl && data.opponentName) {
+    playerOpponentEl.textContent = data.opponentName;
+    opponentName = data.opponentName;
+  }
+  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
 
-    socket.emit('getMatchStats');
-  }, 0);
+  const isYourTurn = data.currentPlayerName === myUsername;
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.toggle('active-turn', isYourTurn);
+    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
+  }
+
+  timerEl.textContent = data.timeLeft || 15;
+  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+
+  // ✅ ✅ ✅ NEW: Navigate to /play FIRST and wait!
+  console.log('[DEBUG] Navigating to /play...');
+  await navigateTo('/play');
+
+  console.log('[DEBUG] Emitting getMatchStats AFTER /play is ready...');
+  socket.emit('getMatchStats');
 });
 
 
