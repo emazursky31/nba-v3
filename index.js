@@ -124,63 +124,71 @@ io.on('connection', (socket) => {
 
 
 socket.on('findMatch', (username) => {
-    socket.data.username = username;
+  socket.data.username = username;
 
-    // ✅ Player must not already be in a game
-    if (playersInGame.has(socket.id)) {
-      console.log(`⚠️  ${username} (${socket.id}) tried to find match but is already in a game`);
+  // ✅ Player must not already be in a game
+  if (playersInGame.has(socket.id)) {
+    console.log(`⚠️  ${username} (${socket.id}) tried to find match but is already in a game`);
+    return;
+  }
+
+  // ✅ Remove stale/disconnected sockets from waiting queue
+  while (waitingPlayers.length > 0 && !waitingPlayers[0].socket.connected) {
+    const stale = waitingPlayers.shift();
+    console.log(`⚠️ Removed stale socket ${stale.socket.id} from waitingPlayers`);
+  }
+
+  if (waitingPlayers.length > 0) {
+    const { socket: opponentSocket } = waitingPlayers.shift();
+    const opponentUsername = opponentSocket.data.username;
+
+    // Defensive: ensure opponent is connected
+    if (!opponentSocket.connected) {
+      console.log(`⚠️ Opponent socket ${opponentSocket.id} disconnected after shift. Re-queueing ${username}`);
+      waitingPlayers.push({ socket });
+      socket.emit('waitingForMatch');
       return;
     }
 
-    // ✅ Filter out any stale or disconnected sockets first
-    while (waitingPlayers.length > 0 && !waitingPlayers[0].socket.connected) {
-      const stale = waitingPlayers.shift();
-      console.log(`⚠️ Removed stale socket ${stale.socket.id} from waitingPlayers`);
+    const roomId = `room-${socket.id}-${opponentSocket.id}`;
+    console.log(`✅ Matched players ${username} (${socket.id}) and ${opponentUsername} (${opponentSocket.id}) in room ${roomId}`);
+
+    // ✅ Track socket-room mapping (only one map needed)
+    socketRoomMap[socket.id] = roomId;
+    socketRoomMap[opponentSocket.id] = roomId;
+
+    // Store roomId on socket.data for both
+    socket.data.roomId = roomId;
+    opponentSocket.data.roomId = roomId;
+
+    // Add players to the in-game set
+    playersInGame.add(socket.id);
+    playersInGame.add(opponentSocket.id);
+
+    // Handle joining game for both players
+    handleJoinGame(socket, roomId, username);
+    handleJoinGame(opponentSocket, roomId, opponentUsername);
+
+    // Check if game ready to start
+    if (!(games[roomId]?.players?.length >= 2)) {
+      console.log(`⚠️ Not enough players to start game in ${roomId}`);
+      return;
     }
 
-    if (waitingPlayers.length > 0) {
-      const { socket: opponentSocket } = waitingPlayers.shift();
-      const opponentUsername = opponentSocket.data.username;
+    // Start the game
+    startGame(roomId);
 
-      // ✅ Defensive: make sure opponent is still connected
-      if (!opponentSocket.connected) {
-        console.log(`⚠️ Opponent socket ${opponentSocket.id} disconnected after shift. Re-queueing ${username}`);
-        waitingPlayers.push({ socket });
-        socket.emit('waitingForMatch');
-        return;
-      }
+    // Notify clients
+    socket.emit('matched', { roomId, opponent: opponentUsername });
+    opponentSocket.emit('matched', { roomId, opponent: username });
 
-      const roomId = `room-${socket.id}-${opponentSocket.id}`;
-      console.log(`✅ Matched players ${username} (${socket.id}) and ${opponentUsername} (${opponentSocket.id}) in room ${roomId}`);
+  } else {
+    console.log(`🕐 No opponents. ${username} (${socket.id}) added to waiting queue`);
+    waitingPlayers.push({ socket });
+    socket.emit('waitingForMatch');
+  }
+});
 
-      // ✅ Track rooms & players
-      socketRoomMap[socket.id] = roomId;
-      opponentSocketRoomMap[opponentSocket.id] = roomId;
-      socket.data.roomId = roomId;
-      opponentSocket.data.roomId = roomId;
-
-      playersInGame.add(socket.id);
-      playersInGame.add(opponentSocket.id);
-
-      handleJoinGame(socket, roomId, username);
-      handleJoinGame(opponentSocket, roomId, opponentUsername);
-
-      if (games[roomId]?.players?.length < 2) {
-        console.log(`⚠️ Not enough players to start game in ${roomId}`);
-        return;
-      }
-
-      startGame(roomId);
-
-      socket.emit('matched', { roomId, opponent: opponentUsername });
-      opponentSocket.emit('matched', { roomId, opponent: username });
-
-    } else {
-      console.log(`🕐 No opponents. ${username} (${socket.id}) added to waiting queue`);
-      waitingPlayers.push({ socket });
-      socket.emit('waitingForMatch');
-    }
-  });
 
 
 
