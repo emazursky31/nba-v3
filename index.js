@@ -139,13 +139,32 @@ socket.on('findMatch', (username) => {
   }
 
   if (waitingPlayers.length > 0) {
-    const { socket: opponentSocket } = waitingPlayers.shift();
+    let opponentEntry = waitingPlayers.shift();
+
+    // Skip if opponent socket is the same as current socket
+    while (opponentEntry && opponentEntry.socket.id === socket.id) {
+      console.log(`⚠️ Skipped matching socket with itself: ${socket.id}`);
+      opponentEntry = waitingPlayers.shift();
+    }
+
+    if (!opponentEntry) {
+      // No valid opponent found after skipping self, re-queue and wait
+      if (!waitingPlayers.some(entry => entry.socket.id === socket.id)) {
+        waitingPlayers.push({ socket });
+      }
+      socket.emit('waitingForMatch');
+      return;
+    }
+
+    const opponentSocket = opponentEntry.socket;
     const opponentUsername = opponentSocket.data.username;
 
     // Defensive: ensure opponent is connected
     if (!opponentSocket.connected) {
       console.log(`⚠️ Opponent socket ${opponentSocket.id} disconnected after shift. Re-queueing ${username}`);
-      waitingPlayers.push({ socket });
+      if (!waitingPlayers.some(entry => entry.socket.id === socket.id)) {
+        waitingPlayers.push({ socket });
+      }
       socket.emit('waitingForMatch');
       return;
     }
@@ -153,7 +172,7 @@ socket.on('findMatch', (username) => {
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
     console.log(`✅ Matched players ${username} (${socket.id}) and ${opponentUsername} (${opponentSocket.id}) in room ${roomId}`);
 
-    // ✅ Track socket-room mapping (only one map needed)
+    // ✅ Track socket-room mapping (single map)
     socketRoomMap[socket.id] = roomId;
     socketRoomMap[opponentSocket.id] = roomId;
 
@@ -184,14 +203,15 @@ socket.on('findMatch', (username) => {
 
   } else {
     console.log(`🕐 No opponents. ${username} (${socket.id}) added to waiting queue`);
-    waitingPlayers.push({ socket });
+
+    // Avoid duplicates in waiting queue
+    if (!waitingPlayers.some(entry => entry.socket.id === socket.id)) {
+      waitingPlayers.push({ socket });
+    }
+
     socket.emit('waitingForMatch');
   }
 });
-
-
-
-
 
 
 
@@ -370,38 +390,37 @@ socket.on('requestRematch', ({ roomId }) => {
 
 // Disconnect cleanup
 socket.on('disconnect', () => {
-  console.log(`User disconnected: ${socket.id}`);
+  const username = socket.data?.username || 'an unnamed player';
+  console.log(`User disconnected: ${socket.id} (${username})`);
 
   // Remove from waitingPlayers queue if waiting
   const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
   if (waitingIndex !== -1) {
     waitingPlayers.splice(waitingIndex, 1);
-    console.log(`Removed ${socket.data.username || 'an unnamed player'} from waiting queue`);
+    console.log(`Removed ${username} from waiting queue`);
   }
 
-  // Clean up from playersInGame
-  playersInGame.delete(socket.id); // ✅ new
+  playersInGame.delete(socket.id);
 
-  // Remove from socketRoomMap
+  // Remove from socketRoomMap (once)
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
-    delete socketRoomMap[socket.id]; // ✅ already good
+    delete socketRoomMap[socket.id];
     console.log(`Removed socket ${socket.id} from socketRoomMap`);
   }
 
-  // Remove from games and handle game cleanup
   for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
     if (idx !== -1) {
-      const disconnectedUsername = game.usernames[socket.id];
+      const disconnectedUsername = game.usernames[socket.id] || username;
 
-      // Remove player
+      // Remove player from game
       game.players.splice(idx, 1);
       delete game.usernames[socket.id];
-      playersInGame.delete(socket.id); // ✅ again, just to be safe
-      delete socketRoomMap[socket.id]; // ✅ again, just to be safe
+      playersInGame.delete(socket.id);
+
       io.to(room).emit('playersUpdate', game.players.length);
-      console.log(`${disconnectedUsername || socket.id} removed from game in room ${room}`);
+      console.log(`${disconnectedUsername} removed from game in room ${room}`);
 
       if (game.timer) {
         clearInterval(game.timer);
@@ -416,13 +435,14 @@ socket.on('disconnect', () => {
       }
 
       if (game.players.length < 2) {
-        // Notify remaining player(s) that opponent left
-        game.players.forEach((playerSocketId) => {
-          if (playerSocketId !== socket.id) {
-            io.to(playerSocketId).emit('gameOver', {
+        // Notify remaining players
+        game.players.forEach(playerSocketId => {
+          const playerSocket = io.sockets.sockets.get(playerSocketId);
+          if (playerSocket && playerSocket.connected) {
+            playerSocket.emit('gameOver', {
               reason: 'opponent_left',
-              message: `${disconnectedUsername || 'Your opponent'} left the game.`,
-              winnerName: game.usernames[playerSocketId],
+              message: `${disconnectedUsername} left the game.`,
+              winnerName: game.usernames[playerSocketId] || 'Player',
               loserName: disconnectedUsername,
               role: 'winner',
               canRematch: false,
@@ -430,7 +450,7 @@ socket.on('disconnect', () => {
           }
         });
 
-        // Reset game as before
+        // Reset game state
         game.players = [];
         game.usernames = {};
         game.currentTurn = 0;
@@ -451,6 +471,7 @@ socket.on('disconnect', () => {
     }
   }
 });
+
 
 
 socket.on('leaveGame', () => {

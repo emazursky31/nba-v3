@@ -1154,15 +1154,27 @@ socket.on('playersUpdate', (count) => {
     return;
   }
 
-  statusDiv.textContent = `Players in room: ${count}`;
+  const statusDiv = document.getElementById('statusDiv');
+  const rematchBtn = document.getElementById('rematchBtn');
 
-  if (count < 2) {
-    rematchBtn.style.display = 'none';
-    navigateTo('/waiting');
+  if (statusDiv) {
+    statusDiv.textContent = `Players in room: ${count}`;
   } else {
-    navigateTo('/play');
+    console.warn('statusDiv not found in DOM');
+  }
+
+  if (rematchBtn) {
+    if (count < 2) {
+      rematchBtn.style.display = 'none';
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/play');
+    }
+  } else {
+    console.warn('rematchBtn not found in DOM');
   }
 });
+
 
 
 
