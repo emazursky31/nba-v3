@@ -716,90 +716,101 @@
   let currentRoute = '';
 
 
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[DEBUG] DOMContentLoaded');
+ document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[DEBUG] DOMContentLoaded');
 
-  // --- 1️⃣ Email confirmation or recovery flow ---
-  const urlHash = window.location.hash;
-  const urlSearch = window.location.search;
-  const searchParams = new URLSearchParams(urlSearch);
-  const typeParam = searchParams.get('type');
-  const urlParams = new URLSearchParams(window.location.search);
-  const justConfirmed = urlParams.get('justConfirmed') === 'true';
-  console.log('[DEBUG] On load: urlHash:', urlHash, 'urlSearch:', urlSearch, 'typeParam:', typeParam);
+    // ✅ Listen for auth state changes too — always keep nav fresh
+    supabase.auth.onAuthStateChange((_event, session) => {
+      updateNavUserState(session);
+    });
 
-  if (
-    (urlHash.includes('access_token') && 
-      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-  ) {
-    console.log('[DEBUG] Found email confirmation or recovery in URL');
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('[ERROR] Email confirmation failed:', error.message);
-      } else {
-        console.log('[DEBUG] Email confirmed for:', user?.email);
+    // --- 1️⃣ Email confirmation or recovery flow ---
+    const urlHash = window.location.hash;
+    const searchParams = new URLSearchParams(window.location.search);
+    const typeParam = searchParams.get('type');
+
+    console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
+
+    if (
+      (urlHash.includes('access_token') &&
+        (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+    ) {
+      console.log('[DEBUG] Found email confirmation or recovery in URL');
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('[ERROR] Email confirmation failed:', error.message);
+        } else {
+          console.log('[DEBUG] Email confirmed for:', user?.email);
+
+          // ✅ Get fresh session and update nav
+          const { data: { session } } = await supabase.auth.getSession();
+          await updateNavUserState(session);
+
+          myUsername = user.user_metadata?.username || user.email;
+          localStorage.setItem('username', myUsername);
+        }
+      } catch (e) {
+        console.error('[ERROR] Exception during email confirmation:', e);
       }
-    } catch (e) {
-      console.error('[ERROR] Exception during email confirmation:', e);
+
+      // ✅ Always route to confirmation screen and stop here
+      navigateTo('/confirmed');
+      return;
     }
 
-    // ✅ Always route to confirmation screen and stop here
-    navigateTo('/confirmed');
-    return;
-  }
+    // --- 2️⃣ Connect socket early ---
+    socket = io();
 
-  // --- 2️⃣ Connect socket early ---
-  socket = io();
+    // --- 3️⃣ Get current Supabase session ---
+    const { data } = await supabase.auth.getSession();
+    await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
 
-  // --- 3️⃣ Get current Supabase session ---
-  const { data } = await supabase.auth.getSession();
-  if (data.session?.user) {
-    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-  } else {
-    myUsername = localStorage.getItem('username') || null;
-  }
+    if (data.session?.user) {
+      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+    } else {
+      myUsername = localStorage.getItem('username') || null;
+    }
 
-  // --- 4️⃣ Load room info ---
-  const params = new URLSearchParams(window.location.search);
-  const roomFromUrl = params.get('room');
-  if (roomFromUrl) {
-    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-    localStorage.setItem('privateRoomId', roomFromUrl);
-  } else {
-    const savedRoom = localStorage.getItem('privateRoomId');
-    if (savedRoom) {
-      console.log('[DEBUG] Found saved private room:', savedRoom);
-      myRoomId = savedRoom;
-      roomId = savedRoom;
+    // --- 4️⃣ Load room info ---
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+      myRoomId = roomFromUrl;
+      roomId = roomFromUrl;
       isPrivateGame = true;
+      localStorage.setItem('privateRoomId', roomFromUrl);
+    } else {
+      const savedRoom = localStorage.getItem('privateRoomId');
+      if (savedRoom) {
+        console.log('[DEBUG] Found saved private room:', savedRoom);
+        myRoomId = savedRoom;
+        roomId = savedRoom;
+        isPrivateGame = true;
+      }
     }
-  }
 
-  console.log('[DEBUG] Final state before routing:', {
-    myUsername,
-    myRoomId,
-    isPrivateGame,
-    isLeavingGame,
-  });
+    console.log('[DEBUG] Final state before routing:', {
+      myUsername,
+      myRoomId,
+      isPrivateGame,
+      isLeavingGame,
+    });
 
-  // --- 5️⃣ Determine initial route ---
-  if (!myUsername) {
-    navigateTo('/signup');
-  } else if (isLeavingGame) {
-    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-    navigateTo('/home');
-  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    navigateTo('/waiting');
-  }
-  else {
-    navigateTo('/home');
-  }
+    // --- 5️⃣ Determine initial route ---
+    if (!myUsername) {
+      navigateTo('/signup');
+    } else if (isLeavingGame) {
+      console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+      navigateTo('/home');
+    } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/home');
+    }
 
     // ✅ Elements you actually use…
     const privateGameBtn = document.getElementById('privateGameBtn');
@@ -980,8 +991,6 @@ function startPrivateGame() {
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
-  // Clear any stale leaving flags
-  console.log('[DEBUG] joinPublicGame: Clearing stale isLeavingGame flag');
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
 
@@ -1003,7 +1012,11 @@ async function joinPublicGame() {
   successfulGuesses = [];
   gameOver = false;
 
-  statusDiv.textContent = 'Looking for a game...';
+  if (statusDiv) {
+    statusDiv.textContent = 'Looking for a game...';
+  } else {
+    console.warn('[WARN] statusDiv not found!');
+  }
 
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
@@ -1011,10 +1024,6 @@ async function joinPublicGame() {
   console.log('[DEBUG] Emitting findMatch with username:', myUsername);
   socket.emit('findMatch', myUsername);
 }
-
-
-
-
 
 
 
@@ -2090,33 +2099,41 @@ function updateUIForRoute(path) {
 
 
 
-  if (path === '/waiting') {
-    if (isLeavingGame) {
-      console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
-      return;  // 🛑 Prevent accidental waiting room navigation
-    }
+if (path === '/waiting') {
+  if (isLeavingGame) {
+    console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
+    return; // 🛑 Prevent accidental waiting room navigation
+  }
 
-    const codeEl = document.getElementById('displayRoomCode');
-    const inviteWrapper = document.getElementById('inviteLinkWrapper');
-    const inviteInput = document.getElementById('inviteLink');
+  const codeEl = document.getElementById('displayRoomCode');
+  const inviteWrapper = document.getElementById('inviteLinkWrapper');
+  const inviteInput = document.getElementById('inviteLink');
+  const statusDiv = document.getElementById('statusDiv'); // ✅ Add this
 
-    if (codeEl && myRoomId) {
-      codeEl.textContent = myRoomId;
-    }
+  if (statusDiv) {
+    statusDiv.textContent = 'Waiting for an opponent...'; // ✅ Or any default text
+  } else {
+    console.warn('[WARN] statusDiv not found on /waiting!');
+  }
 
-    if (inviteWrapper && inviteInput) {
-      if (isPrivateGame && myRoomId) {
-        const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
-        inviteInput.value = inviteUrl;
-        inviteWrapper.style.display = 'block';
-        inviteInput.focus();
-        inviteInput.select();
-      } else {
-        inviteInput.value = '';
-        inviteWrapper.style.display = 'none';
-      }
+  if (codeEl && myRoomId) {
+    codeEl.textContent = myRoomId;
+  }
+
+  if (inviteWrapper && inviteInput) {
+    if (isPrivateGame && myRoomId) {
+      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
+      inviteInput.value = inviteUrl;
+      inviteWrapper.style.display = 'block';
+      inviteInput.focus();
+      inviteInput.select();
+    } else {
+      inviteInput.value = '';
+      inviteWrapper.style.display = 'none';
     }
   }
+}
+
 
   // Guess container visibility
   const guessContainer = document.getElementById('successful-guesses-container');
