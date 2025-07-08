@@ -716,7 +716,7 @@
   let currentRoute = '';
   let statusDiv = null;
   let socketConnected = false;
-  const emitQueue = [];
+  let emitQueue = [];
 
 
  document.addEventListener('DOMContentLoaded', async () => {
@@ -1104,40 +1104,26 @@ async function joinPublicGame() {
   successfulGuesses = [];
   gameOver = false;
 
-  if (statusDiv) {
-    statusDiv.textContent = 'Looking for a game...';
-  } else {
-    console.warn('[WARN] statusDiv not found!');
-  }
-
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
 
-  if (socketConnected) {
-    console.log('[DEBUG] Emitting findMatch with username:', myUsername);
-    safeEmit('findMatch', myUsername);
-  } else {
-    console.log('[DEBUG] Socket not connected — will emit findMatch on connect');
-    socket.once('connect', () => {
-      console.log('[DEBUG] Socket reconnected — emitting findMatch:', myUsername);
-      safeEmit('findMatch', myUsername);
-    });
-  }
+  console.log('[DEBUG] Using safeEmit to find match:', myUsername);
+  safeEmit('findMatch', myUsername);
 }
 
 
 
 
-socket.on('connect', () => {
-  console.log('[DEBUG] Socket connected:', socket.id);
-  socketConnected = true;
 
-  // Flush queued emits
-  while (emitQueue.length > 0) {
-    const { event, data } = emitQueue.shift();
+socket.on('connect', () => {
+  console.log('[safeEmit] Socket connected — flushing queue');
+  emitQueue.forEach(({ event, data }) => {
+    console.log(`[safeEmit] Emitting queued "${event}"`);
     socket.emit(event, data);
-  }
+  });
+  emitQueue = []; // Clear the queue
 });
+
 
 socket.on('disconnect', (reason) => {
   console.log('[DEBUG] Socket disconnected:', reason);
@@ -1145,13 +1131,14 @@ socket.on('disconnect', (reason) => {
 });
 
 function safeEmit(event, data) {
-  if (socketConnected) {
+  if (socket.connected) {
     socket.emit(event, data);
   } else {
-    console.log(`[DEBUG] Socket not connected, queueing event: ${event}`);
+    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
     emitQueue.push({ event, data });
   }
 }
+
 
 socket.on('playersUpdate', (count) => {
   console.log('[DEBUG] playersUpdate received:', count);
