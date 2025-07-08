@@ -1116,12 +1116,8 @@ async function joinPublicGame() {
 
 
 socket.on('connect', () => {
-  console.log('[safeEmit] Socket connected — flushing queue');
-  emitQueue.forEach(({ event, data }) => {
-    console.log(`[safeEmit] Emitting queued "${event}"`);
-    socket.emit(event, data);
-  });
-  emitQueue = []; // Clear the queue
+  console.log('[safeEmit] Socket connected — flushing emitQueue');
+  flushEmitQueue();
 });
 
 
@@ -1131,11 +1127,21 @@ socket.on('disconnect', (reason) => {
 });
 
 function safeEmit(event, data) {
+  emitQueue.push({ event, data });
+
   if (socket.connected) {
-    socket.emit(event, data);
+    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
+    flushEmitQueue();
   } else {
     console.log(`[safeEmit] Socket not connected — queued "${event}"`);
-    emitQueue.push({ event, data });
+  }
+}
+
+function flushEmitQueue() {
+  while (socket.connected && emitQueue.length > 0) {
+    const { event, data } = emitQueue.shift();
+    console.log(`[safeEmit] Flushing queued "${event}"`);
+    socket.emit(event, data);
   }
 }
 
