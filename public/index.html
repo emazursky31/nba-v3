@@ -715,6 +715,7 @@
 // ✅ Global route tracker
   let currentRoute = '';
   let statusDiv = null;
+  let socketConnected = false;
 
 
  document.addEventListener('DOMContentLoaded', async () => {
@@ -763,6 +764,7 @@
 
     // --- 2️⃣ Connect socket early ---
     socket = io();
+  
 
     // --- 3️⃣ Get current Supabase session ---
     const { data } = await supabase.auth.getSession();
@@ -990,6 +992,10 @@ function startPrivateGame() {
 
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
+   if (!socketConnected) {
+    alert('Still connecting... please wait.');
+    return;
+  }
 
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
@@ -1027,7 +1033,15 @@ async function joinPublicGame() {
 
 
 
-    socket.on('connect', () => {});
+ socket.on('connect', () => {
+  socketConnected = true;
+  console.log('[DEBUG] Socket connected:', socket.id);
+});
+
+socket.on('disconnect', (reason) => {
+  socketConnected = false;
+  console.log('[DEBUG] Socket disconnected:', reason);
+});
 
 socket.on('playersUpdate', (count) => {
   console.log('[DEBUG] playersUpdate received:', count);
