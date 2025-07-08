@@ -721,6 +721,8 @@
  document.addEventListener('DOMContentLoaded', async () => {
     console.log('[DEBUG] DOMContentLoaded');
 
+    let justConfirmed = false;
+
     // ✅ Listen for auth state changes too — always keep nav fresh
     supabase.auth.onAuthStateChange((_event, session) => {
       updateNavUserState(session);
