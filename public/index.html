@@ -1867,6 +1867,208 @@ async function handleAuthSuccess() {
 }
 
 
+
+//    const signupBtn = document.getElementById('signupBtn');
+//    const signinBtn = document.getElementById('signinBtn');
+
+//    if (signupBtn) {
+//       signupBtn.addEventListener('click', signUp);
+//       console.log('[DEBUG] signupBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signupBtn not found!');
+//     }
+
+//     if (signinBtn) {
+//       signinBtn.addEventListener('click', signIn);
+//       console.log('[DEBUG] signinBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signinBtn not found!');
+//     }
+
+// async function signUp() {
+//   const email = document.getElementById('signup-email').value.trim();
+//   const password = document.getElementById('signup-password').value.trim();
+//   const username = document.getElementById('signup-username').value.trim();
+
+//   if (!email || !password || !username) {
+//     alert('Please fill in all fields.');
+//     return;
+//   }
+
+//   if (password.length < 6) {
+//     alert('Password must be at least 6 characters.');
+//     return;
+//   }
+
+//   console.log('[DEBUG] SignUp data =>', email, username);
+
+//   const { data, error } = await supabase.auth.signUp({
+//     email,
+//     password,
+//     options: {
+//       data: { username } // 🗝️ Saves to user_metadata
+//     }
+//   });
+
+//   if (error) {
+//     console.error('SignUp error:', error.message);
+//     return;
+//   }
+
+//   console.log('✅ Sign Up successful:', data);
+//   navigateTo('/verify'); // tell user to check email!
+// }
+
+
+
+// async function signIn() {
+//   const email = document.getElementById('signin-email').value.trim();
+//   const password = document.getElementById('signin-password').value.trim();
+
+//   if (!email || !password) {
+//     alert('Please enter both email and password.');
+//     return;
+//   }
+
+//   console.log('[DEBUG] SignIn data =>', email);
+
+//   const { data, error } = await supabase.auth.signInWithPassword({
+//     email,
+//     password
+//   });
+
+//   if (error) {
+//     console.error('SignIn error:', error.message);
+//     return;
+//   }
+
+//   console.log('✅ Sign In successful:', data);
+//   await handleAuthSuccess();
+// }
+
+
+
+async function signOut() {
+  const { error } = await window.supabase.auth.signOut();
+  if (error) {
+    alert('Sign out error: ' + error.message);
+    return;
+  }
+  alert('Signed out!');
+  showUser();
+}
+
+
+async function updateNavUserState(session) {
+  const usernameDiv = document.getElementById('nav-username');
+  const signinBtn = document.getElementById('nav-signin-btn');
+  const signoutBtn = document.getElementById('nav-signout-btn');
+  const homeLink = document.getElementById('nav-home-link'); // ✅ Add this
+
+  if (!usernameDiv || !signinBtn || !signoutBtn || !homeLink) return;
+
+  if (!session || !session.user) {
+    // Not logged in
+    usernameDiv.style.display = 'none';
+    signinBtn.style.display = 'inline-block';
+    signoutBtn.style.display = 'none';
+    homeLink.style.display = 'none'; // ✅ Hide Home link
+  } else {
+    // Logged in
+    const user = session.user;
+    usernameDiv.textContent = `Hello, ${user.user_metadata?.username || user.email}`;
+    usernameDiv.style.display = 'inline-block';
+    signinBtn.style.display = 'none';
+    signoutBtn.style.display = 'inline-block';
+    homeLink.style.display = 'inline-block'; // ✅ Show Home link
+  }
+}
+
+
+
+// Listen for auth state changes and update nav accordingly
+if (window.supabase && window.supabase.auth) {
+  window.supabase.auth.onAuthStateChange((event, session) => {
+    updateNavUserState(session);
+  });
+}
+
+// Run once on load
+updateNavUserState();
+
+// Example: hook up sign out button
+document.getElementById('nav-signout-btn').addEventListener('click', async () => {
+  await window.supabase.auth.signOut();
+  updateNavUserState();
+  // Redirect to signup/signin screen (main app route)
+  navigateTo('/signup');
+});
+
+// Optional: hook up sign in button to your sign-in flow
+document.getElementById('nav-signin-btn').addEventListener('click', () => {
+  // redirect to your sign-in page
+  window.location.href = '/signin.html';
+});
+
+
+
+
+
+async function resetPassword() {
+  const emailInput = document.getElementById('reset-email');
+  const email = emailInput.value.trim();
+
+  if (!email) {
+    alert('Please enter your email address.');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`
+    });
+
+    if (error) {
+      console.error('[ERROR] Supabase reset error:', error.message);
+      alert('Error sending reset email: ' + error.message);
+      return;
+    }
+
+    console.log('[INFO] Password reset email sent:', data);
+    navigateTo('/reset-confirmed'); // Switch to your "Check your email" screen!
+  } catch (err) {
+    console.error('[ERROR] Unexpected:', err);
+    alert('An unexpected error occurred.');
+  }
+}
+
+async function updatePassword() {
+  const newPasswordInput = document.getElementById('new-password');
+  const newPassword = newPasswordInput.value.trim();
+
+  if (!newPassword) {
+    alert('Please enter a new password.');
+    return;
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    console.error('[ERROR] Failed to update password:', error.message);
+    alert('Error updating password: ' + error.message);
+    return;
+  }
+
+  console.log('[INFO] Password updated:', data);
+
+  // ✅ Redirect the user back to sign in, or show success
+  alert('Password updated successfully! Please sign in with your new password.');
+  navigateTo('/signup');
+}
+
+
 /**
  * Navigate to a route in the SPA
  * @param {string} path - The route path, e.g. '/confirmed'
