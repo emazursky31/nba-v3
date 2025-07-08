@@ -819,33 +819,37 @@
     console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
 
     if (
-      (urlHash.includes('access_token') &&
-        (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-      || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-    ) {
-      console.log('[DEBUG] Found email confirmation or recovery in URL');
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) {
-          console.error('[ERROR] Email confirmation failed:', error.message);
-        } else {
-          console.log('[DEBUG] Email confirmed for:', user?.email);
+     (urlHash.includes('access_token') &&
+       (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+     || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+   ) {
+     console.log('[DEBUG] Found email confirmation or recovery in URL');
+     try {
+       const { data: { user }, error } = await supabase.auth.getUser();
+       if (error) {
+         console.error('[ERROR] Email confirmation failed:', error.message);
+       } else {
+         console.log('[DEBUG] Email confirmed for:', user?.email);
 
-          // ✅ Get fresh session and update nav
-          const { data: { session } } = await supabase.auth.getSession();
-          await updateNavUserState(session);
+         // Update username here (but don't update nav yet)
+         myUsername = user.user_metadata?.username || user.email;
+         localStorage.setItem('username', myUsername);
 
-          myUsername = user.user_metadata?.username || user.email;
-          localStorage.setItem('username', myUsername);
-        }
-      } catch (e) {
-        console.error('[ERROR] Exception during email confirmation:', e);
-      }
+         // Get fresh session (optional)
+         const { data: { session } } = await supabase.auth.getSession();
 
-      // ✅ Always route to confirmation screen and stop here
-      navigateTo('/confirmed');
-      return;
-    }
+         // Navigate first
+         await navigateTo('/confirmed');
+
+         // Then update nav *after* navigation completes
+         await updateNavUserState(session);
+       }
+     } catch (e) {
+       console.error('[ERROR] Exception during email confirmation:', e);
+     }
+
+     return;
+   }
 
     // --- 2️⃣ Connect socket early ---
     socket = io();
@@ -1077,10 +1081,6 @@ function startPrivateGame() {
 
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
-   if (!socketConnected) {
-    alert('Still connecting... please wait.');
-    return;
-  }
 
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
@@ -1112,9 +1112,18 @@ async function joinPublicGame() {
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
 
-  console.log('[DEBUG] Emitting findMatch with username:', myUsername);
-  socket.emit('findMatch', myUsername);
+  if (socketConnected) {
+    console.log('[DEBUG] Emitting findMatch with username:', myUsername);
+    socket.emit('findMatch', myUsername);
+  } else {
+    console.log('[DEBUG] Socket not connected — will emit findMatch on connect');
+    socket.once('connect', () => {
+      console.log('[DEBUG] Socket reconnected — emitting findMatch:', myUsername);
+      socket.emit('findMatch', myUsername);
+    });
+  }
 }
+
 
 
 
