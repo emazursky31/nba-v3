@@ -1104,12 +1104,19 @@ async function joinPublicGame() {
   successfulGuesses = [];
   gameOver = false;
 
+  // ✅ Ensure socket is initialized
+  if (!socket) {
+    console.log('[joinPublicGame] Socket is null — initializing');
+    initSocket();
+  }
+
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
 
   console.log('[DEBUG] Using safeEmit to find match:', myUsername);
   safeEmit('findMatch', myUsername);
 }
+
 
 
 
@@ -1127,9 +1134,14 @@ socket.on('disconnect', (reason) => {
 });
 
 function safeEmit(event, data) {
+  if (!socket) {
+    console.warn(`[safeEmit] Socket is null — initializing socket`);
+    initSocket();  // Or however you handle (re)connecting
+  }
+
   emitQueue.push({ event, data });
 
-  if (socket.connected) {
+  if (socket && socket.connected) {
     console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
     flushEmitQueue();
   } else {
@@ -1138,12 +1150,18 @@ function safeEmit(event, data) {
 }
 
 function flushEmitQueue() {
+  if (!socket) {
+    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+    return;
+  }
+
   while (socket.connected && emitQueue.length > 0) {
     const { event, data } = emitQueue.shift();
     console.log(`[safeEmit] Flushing queued "${event}"`);
     socket.emit(event, data);
   }
 }
+
 
 
 socket.on('playersUpdate', (count) => {
