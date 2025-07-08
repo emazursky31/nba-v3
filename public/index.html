@@ -723,6 +723,89 @@
 
     let justConfirmed = false;
 
+    // ✅ Sign Up handler
+  async function signUp(e) {
+    e.preventDefault(); // 🛑 Stop default form submit
+
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value.trim();
+    const username = document.getElementById('signup-username').value.trim();
+
+    if (!email || !password || !username) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters.');
+      return;
+    }
+
+    console.log('[DEBUG] SignUp data =>', email, username);
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username }
+      }
+    });
+
+    if (error) {
+      console.error('SignUp error:', error.message);
+      return;
+    }
+
+    console.log('✅ Sign Up successful:', data);
+    navigateTo('/verify'); // 👈 Show verification screen
+  }
+
+  // ✅ Sign In handler
+  async function signIn(e) {
+    e.preventDefault(); // 🛑 Stop default form submit
+
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value.trim();
+
+    if (!email || !password) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    console.log('[DEBUG] SignIn data =>', email);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('SignIn error:', error.message);
+      alert(error.message);
+      return;
+    }
+
+    console.log('✅ Sign In successful:', data);
+    navigateTo('/home'); // 👈 Take them to home or wherever
+  }
+
+  // ✅ Attach listeners to forms
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) {
+    signupForm.addEventListener('submit', signUp);
+    console.log('[DEBUG] signupForm listener attached');
+  } else {
+    console.error('[ERROR] signupForm not found!');
+  }
+
+  const signinForm = document.getElementById('signinForm');
+  if (signinForm) {
+    signinForm.addEventListener('submit', signIn);
+    console.log('[DEBUG] signinForm listener attached');
+  } else {
+    console.error('[ERROR] signinForm not found!');
+  }
+
     // ✅ Listen for auth state changes too — always keep nav fresh
     supabase.auth.onAuthStateChange((_event, session) => {
       updateNavUserState(session);
@@ -1760,83 +1843,83 @@ async function handleAuthSuccess() {
 
 
 
-   const signupBtn = document.getElementById('signupBtn');
-   const signinBtn = document.getElementById('signinBtn');
+//    const signupBtn = document.getElementById('signupBtn');
+//    const signinBtn = document.getElementById('signinBtn');
 
-   if (signupBtn) {
-      signupBtn.addEventListener('click', signUp);
-      console.log('[DEBUG] signupBtn listener attached');
-    } else {
-      console.error('[ERROR] signupBtn not found!');
-    }
+//    if (signupBtn) {
+//       signupBtn.addEventListener('click', signUp);
+//       console.log('[DEBUG] signupBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signupBtn not found!');
+//     }
 
-    if (signinBtn) {
-      signinBtn.addEventListener('click', signIn);
-      console.log('[DEBUG] signinBtn listener attached');
-    } else {
-      console.error('[ERROR] signinBtn not found!');
-    }
+//     if (signinBtn) {
+//       signinBtn.addEventListener('click', signIn);
+//       console.log('[DEBUG] signinBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signinBtn not found!');
+//     }
 
-async function signUp() {
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value.trim();
-  const username = document.getElementById('signup-username').value.trim();
+// async function signUp() {
+//   const email = document.getElementById('signup-email').value.trim();
+//   const password = document.getElementById('signup-password').value.trim();
+//   const username = document.getElementById('signup-username').value.trim();
 
-  if (!email || !password || !username) {
-    alert('Please fill in all fields.');
-    return;
-  }
+//   if (!email || !password || !username) {
+//     alert('Please fill in all fields.');
+//     return;
+//   }
 
-  if (password.length < 6) {
-    alert('Password must be at least 6 characters.');
-    return;
-  }
+//   if (password.length < 6) {
+//     alert('Password must be at least 6 characters.');
+//     return;
+//   }
 
-  console.log('[DEBUG] SignUp data =>', email, username);
+//   console.log('[DEBUG] SignUp data =>', email, username);
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { username } // 🗝️ Saves to user_metadata
-    }
-  });
+//   const { data, error } = await supabase.auth.signUp({
+//     email,
+//     password,
+//     options: {
+//       data: { username } // 🗝️ Saves to user_metadata
+//     }
+//   });
 
-  if (error) {
-    console.error('SignUp error:', error.message);
-    return;
-  }
+//   if (error) {
+//     console.error('SignUp error:', error.message);
+//     return;
+//   }
 
-  console.log('✅ Sign Up successful:', data);
-  navigateTo('/verify'); // tell user to check email!
-}
+//   console.log('✅ Sign Up successful:', data);
+//   navigateTo('/verify'); // tell user to check email!
+// }
 
 
 
-async function signIn() {
-  const email = document.getElementById('signin-email').value.trim();
-  const password = document.getElementById('signin-password').value.trim();
+// async function signIn() {
+//   const email = document.getElementById('signin-email').value.trim();
+//   const password = document.getElementById('signin-password').value.trim();
 
-  if (!email || !password) {
-    alert('Please enter both email and password.');
-    return;
-  }
+//   if (!email || !password) {
+//     alert('Please enter both email and password.');
+//     return;
+//   }
 
-  console.log('[DEBUG] SignIn data =>', email);
+//   console.log('[DEBUG] SignIn data =>', email);
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+//   const { data, error } = await supabase.auth.signInWithPassword({
+//     email,
+//     password
+//   });
 
-  if (error) {
-    console.error('SignIn error:', error.message);
-    return;
-  }
+//   if (error) {
+//     console.error('SignIn error:', error.message);
+//     return;
+//   }
 
-  console.log('✅ Sign In successful:', data);
-  await handleAuthSuccess();
-}
+//   console.log('✅ Sign In successful:', data);
+//   await handleAuthSuccess();
+// }
 
 
 
