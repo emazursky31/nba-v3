@@ -714,6 +714,7 @@
   let isLeavingGame = false;
 // ✅ Global route tracker
   let currentRoute = '';
+  let statusDiv = null;
 
 
  document.addEventListener('DOMContentLoaded', async () => {
@@ -816,7 +817,6 @@
     const privateGameBtn = document.getElementById('privateGameBtn');
     const findGameBtn = document.getElementById('findGameBtn');
     const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-    const statusDiv = document.getElementById('status');
     const waitingRoom = document.getElementById('waitingRoom');
     const gameArea = document.getElementById('gameArea');
     const currentPlayerNameEl = document.getElementById('currentPlayerName');
