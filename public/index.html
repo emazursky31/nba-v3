@@ -2005,6 +2005,39 @@ document.addEventListener('DOMContentLoaded', async () => {
   const searchParams = new URLSearchParams(window.location.search);
   const typeParam = searchParams.get('type');
 
+  const tabSignup = document.getElementById('tab-signup');
+  const tabSignin = document.getElementById('tab-signin');
+  const signupForm = document.getElementById('signupForm');
+  const signinForm = document.getElementById('signinForm');
+
+  if (tabSignup && tabSignin && signupForm && signinForm) {
+    tabSignup.addEventListener('click', (e) => {
+      e.preventDefault();
+      tabSignup.classList.add('active');
+      tabSignin.classList.remove('active');
+
+      signupForm.classList.add('active');
+      signupForm.classList.remove('hidden');
+
+      signinForm.classList.remove('active');
+      signinForm.classList.add('hidden');
+    });
+
+    tabSignin.addEventListener('click', (e) => {
+      e.preventDefault();
+      tabSignin.classList.add('active');
+      tabSignup.classList.remove('active');
+
+      signinForm.classList.add('active');
+      signinForm.classList.remove('hidden');
+
+      signupForm.classList.remove('active');
+      signupForm.classList.add('hidden');
+    });
+  } else {
+    console.error('[ERROR] Tabs or forms not found!');
+  }
+
   let justConfirmed = false;
 
   // ✅ Check for confirmation/recovery type
