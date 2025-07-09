@@ -1326,17 +1326,23 @@ async function signUp(e) {
 
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value.trim();
+  const username = document.getElementById('signup-username').value.trim(); 
 
-  if (!email || !password) {
+  if (!email || !password || !username) {
     alert('Please fill in all fields.');
     return;
   }
 
-  console.log('[DEBUG] SignUp data =>', email);
+  console.log('[DEBUG] SignUp data =>', email, username);
 
   const { data, error } = await supabase.auth.signUp({
     email,
-    password
+    password,
+    options: {
+      data: {
+        username: username  // ✅ store in user_metadata!
+      }
+    }
   });
 
   if (error) {
@@ -1347,7 +1353,7 @@ async function signUp(e) {
 
   console.log('✅ Sign Up successful:', data);
 
-  // ✅ Navigate to your verify page
+  // Take them to verify page so they check their email
   navigateTo('/verify');
 }
 
@@ -1992,150 +1998,78 @@ document.getElementById('guessInput')?.addEventListener('focus', () => {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[DEBUG] DOMContentLoaded');
 
-  // Grab your elements
-  const signupForm = document.getElementById('signupForm');
-  const signinForm = document.getElementById('signinForm');
-  const tabSignup = document.getElementById('tab-signup');
-  const tabSignin = document.getElementById('tab-signin');
-  const guessInput = document.getElementById('guessInput');
-  const submitGuessBtn = document.getElementById('submitGuessBtn');
-  const navSignoutBtn = document.getElementById('nav-signout-btn');
-  const navSigninBtn = document.getElementById('nav-signin-btn');
-  const navHomeLink = document.getElementById('nav-home-link');
-
-  statusDiv = document.getElementById('statusDiv');
-  if (!statusDiv) console.warn('[WARN] statusDiv not found!');
-
-  let justConfirmed = false;
+  // Grab global statusDiv if needed
+  statusDiv = document.getElementById('statusDiv') || null;
 
   const urlHash = window.location.hash;
   const searchParams = new URLSearchParams(window.location.search);
   const typeParam = searchParams.get('type');
 
-  // 🟢 1️⃣ --- Handle email confirmation ---
+  let justConfirmed = false;
+
+  // ✅ Check for confirmation/recovery type
   if (
-    urlHash.includes('access_token') &&
-    (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm'))
+    (urlHash.includes('access_token') &&
+      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
   ) {
     console.log('[DEBUG] Detected confirmation link.');
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
+
       if (error) {
         console.error('[ERROR] Email confirmation failed:', error.message);
-      } else if (user && user.email_confirmed_at) {
-        console.log('[DEBUG] Email confirmed for:', user.email);
-        myUsername = user.user_metadata?.username || user.email;
+      } else {
+        console.log('[DEBUG] Email confirmed for:', user?.email);
+
+        if (user?.user_metadata?.username) {
+          myUsername = user.user_metadata.username;
+          console.log('[DEBUG] Username from user_metadata:', myUsername);
+        } else {
+          myUsername = user?.email?.split('@')[0] || null;
+          console.warn('[WARN] No username found in user_metadata. Fallback:', myUsername);
+        }
+
         localStorage.setItem('username', myUsername);
 
         const { data: { session } } = await supabase.auth.getSession();
         await updateNavUserState(session);
 
         justConfirmed = true;
+
+        // ✅ Take them to your confirmation page
         navigateTo('/confirmed');
-        return; // ✅ Stop further logic
-      } else {
-        console.log('[DEBUG] Email NOT confirmed yet, staying on /verify.');
-        navigateTo('/verify');
-        return; // ✅ Stay here
+        return;
       }
-    } catch (err) {
-      console.error('[ERROR] Exception in confirmation:', err);
+    } catch (e) {
+      console.error('[ERROR] Exception during email confirmation:', e);
     }
+
+    return; // ✅ Exit early if confirmation flow handled
   }
 
-  // 🟢 2️⃣ --- Auth tab switching ---
-  if (tabSignup && tabSignin && signupForm && signinForm) {
-    tabSignup.addEventListener('click', () => {
-      tabSignup.classList.add('active');
-      tabSignin.classList.remove('active');
-      signupForm.classList.add('active');
-      signinForm.classList.remove('active');
-    });
-
-    tabSignin.addEventListener('click', () => {
-      tabSignin.classList.add('active');
-      tabSignup.classList.remove('active');
-      signinForm.classList.add('active');
-      signupForm.classList.remove('active');
-    });
-  }
-
-  // 🟢 3️⃣ --- Attach signup & signin form handlers ---
-  if (signupForm) {
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await signUp(e);
-    });
-  }
-
-  if (signinForm) {
-    signinForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await signIn(e);
-    });
-  }
-
-  // 🟢 4️⃣ --- Autocomplete logic ---
-  if (guessInput) {
-    guessInput.addEventListener('input', function () {
-      // your autocomplete logic
-    });
-    guessInput.addEventListener('change', () => {
-      if (guessInput.value !== selectedPlayer) {
-        selectedPlayer = null;
-        submitGuessBtn.disabled = true;
-      }
-    });
-  }
-
-  // 🟢 5️⃣ --- Nav handlers ---
-  if (navHomeLink) {
-    navHomeLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      isLeavingGame = true;
-      if (socket && socket.connected) safeEmit('leaveGame');
-      navigateTo('/home');
-    });
-  }
-
-  if (navSignoutBtn) {
-    navSignoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      updateNavUserState();
-      navigateTo('/signup');
-    });
-  }
-
-  if (navSigninBtn) {
-    navSigninBtn.addEventListener('click', () => {
-      navigateTo('/signin');
-    });
-  }
-
-  // 🟢 6️⃣ --- Auth state listener ---
-  supabase.auth.onAuthStateChange((_event, session) => {
-    updateNavUserState(session);
-  });
-
-  // 🟢 7️⃣ --- Get session + update user ---
+  // ✅ The rest of your normal routing logic...
   const { data } = await supabase.auth.getSession();
   await updateNavUserState(data.session);
 
   if (data.session?.user) {
-    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+    myUsername = data.session.user.user_metadata?.username || data.session.user.email || null;
   } else {
     myUsername = localStorage.getItem('username') || null;
   }
 
-  // 🟢 8️⃣ --- Final routing logic ---
   if (justConfirmed) {
     navigateTo('/confirmed');
-  } else if (!myUsername) {
+    return;
+  }
+
+  if (!myUsername) {
     navigateTo('/signup');
   } else {
     navigateTo('/home');
   }
 });
+
 
 
 
