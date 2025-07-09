@@ -1321,35 +1321,36 @@ function resetGameUI() {
 
 
   // ✅ Sign Up handler
-  async function signUp(e) {
-    e.preventDefault(); // 🛑 Stop default form submit
+async function signUp(e) {
+  e.preventDefault();
 
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value.trim();
 
-    if (!email || !password) {
-      alert('Please fill in all fields.');
-      return;
-    }
-
-    console.log('[DEBUG] SignUp data =>', email);
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      console.error('SignUp error:', error.message);
-      alert(error.message);
-      return;
-    }
-
-    console.log('✅ Sign Up successful:', data);
-
-    // Optionally navigate to confirmation or home
-    navigateTo('/confirmed');
+  if (!email || !password) {
+    alert('Please fill in all fields.');
+    return;
   }
+
+  console.log('[DEBUG] SignUp data =>', email);
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    console.error('SignUp error:', error.message);
+    alert(error.message);
+    return;
+  }
+
+  console.log('✅ Sign Up successful:', data);
+
+  // ✅ Navigate to your verify page
+  navigateTo('/verify');
+}
+
 
 function attachCopyInviteListener() {
   const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -1991,63 +1992,58 @@ document.getElementById('guessInput')?.addEventListener('focus', () => {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[DEBUG] DOMContentLoaded');
 
-  // Grab elements early
-  const privateGameBtn = document.getElementById('privateGameBtn');
-  const findGameBtn = document.getElementById('findGameBtn');
-  const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-  const waitingRoom = document.getElementById('waitingRoom');
-  const gameArea = document.getElementById('gameArea');
-  const currentPlayerNameEl = document.getElementById('currentPlayerName');
-  const timerEl = document.getElementById('timer');
-  const guessInput = document.getElementById('guessInput');
-  const submitGuessBtn = document.getElementById('submitGuessBtn');
-  const messagesEl = document.getElementById('messageContainer');
-  const autocompleteList = document.getElementById('autocomplete-list');
-  const rematchBtn = document.getElementById('rematchBtn');
-  const tabSignup = document.getElementById('tab-signup');
-  const tabSignin = document.getElementById('tab-signin');
+  // Grab your elements
   const signupForm = document.getElementById('signupForm');
   const signinForm = document.getElementById('signinForm');
+  const tabSignup = document.getElementById('tab-signup');
+  const tabSignin = document.getElementById('tab-signin');
+  const guessInput = document.getElementById('guessInput');
+  const submitGuessBtn = document.getElementById('submitGuessBtn');
+  const navSignoutBtn = document.getElementById('nav-signout-btn');
+  const navSigninBtn = document.getElementById('nav-signin-btn');
+  const navHomeLink = document.getElementById('nav-home-link');
+
+  statusDiv = document.getElementById('statusDiv');
+  if (!statusDiv) console.warn('[WARN] statusDiv not found!');
 
   let justConfirmed = false;
 
-  statusDiv = document.getElementById('statusDiv');
-  if (!statusDiv) {
-    console.warn('[WARN] statusDiv not found!');
-  }
-
-  // --- 1️⃣ Email confirmation or recovery flow ---
   const urlHash = window.location.hash;
   const searchParams = new URLSearchParams(window.location.search);
   const typeParam = searchParams.get('type');
 
+  // 🟢 1️⃣ --- Handle email confirmation ---
   if (
-    (urlHash.includes('access_token') &&
-      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm'))) ||
-    (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+    urlHash.includes('access_token') &&
+    (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm'))
   ) {
+    console.log('[DEBUG] Detected confirmation link.');
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         console.error('[ERROR] Email confirmation failed:', error.message);
-      } else {
-        console.log('[DEBUG] Email confirmed for:', user?.email);
+      } else if (user && user.email_confirmed_at) {
+        console.log('[DEBUG] Email confirmed for:', user.email);
         myUsername = user.user_metadata?.username || user.email;
         localStorage.setItem('username', myUsername);
-        const { data: { session } } = await supabase.auth.getSession();
 
-        await navigateTo('/confirmed');
+        const { data: { session } } = await supabase.auth.getSession();
         await updateNavUserState(session);
 
-        justConfirmed = true; // Set this flag so final routing logic can handle
+        justConfirmed = true;
+        navigateTo('/confirmed');
+        return; // ✅ Stop further logic
+      } else {
+        console.log('[DEBUG] Email NOT confirmed yet, staying on /verify.');
+        navigateTo('/verify');
+        return; // ✅ Stay here
       }
-    } catch (e) {
-      console.error('[ERROR] Exception during email confirmation:', e);
+    } catch (err) {
+      console.error('[ERROR] Exception in confirmation:', err);
     }
-    return; // Exit early after email confirmation flow
   }
 
-  // --- Attach auth tab switching logic ---
+  // 🟢 2️⃣ --- Auth tab switching ---
   if (tabSignup && tabSignin && signupForm && signinForm) {
     tabSignup.addEventListener('click', () => {
       tabSignup.classList.add('active');
@@ -2064,32 +2060,64 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // --- Attach signup form submit handler ---
+  // 🟢 3️⃣ --- Attach signup & signin form handlers ---
   if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await signUp();
+      await signUp(e);
     });
-  } else {
-    console.error('[ERROR] signupForm not found!');
   }
 
-  // --- Attach signin form submit handler ---
   if (signinForm) {
     signinForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await signIn();
+      await signIn(e);
     });
-  } else {
-    console.error('[ERROR] signinForm not found!');
   }
 
-  // --- Auth state listener ---
+  // 🟢 4️⃣ --- Autocomplete logic ---
+  if (guessInput) {
+    guessInput.addEventListener('input', function () {
+      // your autocomplete logic
+    });
+    guessInput.addEventListener('change', () => {
+      if (guessInput.value !== selectedPlayer) {
+        selectedPlayer = null;
+        submitGuessBtn.disabled = true;
+      }
+    });
+  }
+
+  // 🟢 5️⃣ --- Nav handlers ---
+  if (navHomeLink) {
+    navHomeLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLeavingGame = true;
+      if (socket && socket.connected) safeEmit('leaveGame');
+      navigateTo('/home');
+    });
+  }
+
+  if (navSignoutBtn) {
+    navSignoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      updateNavUserState();
+      navigateTo('/signup');
+    });
+  }
+
+  if (navSigninBtn) {
+    navSigninBtn.addEventListener('click', () => {
+      navigateTo('/signin');
+    });
+  }
+
+  // 🟢 6️⃣ --- Auth state listener ---
   supabase.auth.onAuthStateChange((_event, session) => {
     updateNavUserState(session);
   });
 
-  // --- Get current session and update nav ---
+  // 🟢 7️⃣ --- Get session + update user ---
   const { data } = await supabase.auth.getSession();
   await updateNavUserState(data.session);
 
@@ -2099,91 +2127,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     myUsername = localStorage.getItem('username') || null;
   }
 
-  // --- Load room info from URL or localStorage ---
-  const roomFromUrl = searchParams.get('room');
-  if (roomFromUrl) {
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-    localStorage.setItem('privateRoomId', roomFromUrl);
-  } else {
-    const savedRoom = localStorage.getItem('privateRoomId');
-    if (savedRoom) {
-      myRoomId = savedRoom;
-      roomId = savedRoom;
-      isPrivateGame = true;
-    }
-  }
-
-  // --- Attach nav home link click handler ---
-  const navHomeLink = document.getElementById('nav-home-link');
-  if (navHomeLink) {
-    navHomeLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      isLeavingGame = true;
-      if (socket && socket.connected) {
-        safeEmit('leaveGame');
-      }
-      navigateTo('/home');
-    });
-  }
-
-  // --- Autocomplete input listeners ---
-  if (guessInput) {
-    guessInput.addEventListener('input', function () {
-      // Your existing autocomplete logic here...
-    });
-
-    guessInput.addEventListener('change', () => {
-      if (guessInput.value !== selectedPlayer) {
-        selectedPlayer = null;
-        submitGuessBtn.disabled = true;
-      }
-    });
-  } else {
-    console.error('[ERROR] guessInput not found!');
-  }
-
-  // --- Nav signout button handler ---
-  const navSignoutBtn = document.getElementById('nav-signout-btn');
-  if (navSignoutBtn) {
-    navSignoutBtn.addEventListener('click', async () => {
-      await window.supabase.auth.signOut();
-      updateNavUserState();
-      navigateTo('/signup');
-    });
-  }
-
-  // --- Nav signin button handler ---
-  const navSigninBtn = document.getElementById('nav-signin-btn');
-  if (navSigninBtn) {
-    navSigninBtn.addEventListener('click', () => {
-      window.location.href = '/signin.html';
-    });
-  }
-
-  // --- Determine initial route based on user/game state ---
+  // 🟢 8️⃣ --- Final routing logic ---
   if (justConfirmed) {
-    if (typeParam === 'recovery' || urlHash.includes('type=recovery')) {
-      navigateTo('/update-password');
-      return;
-    } else {
-      navigateTo('/confirmed');
-      return;
-    }
-  }
-
-  if (!myUsername) {
+    navigateTo('/confirmed');
+  } else if (!myUsername) {
     navigateTo('/signup');
-  } else if (isLeavingGame) {
-    navigateTo('/home');
-  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-    safeEmit('joinGame', { roomId: myRoomId, username: myUsername });
-    navigateTo('/waiting');
   } else {
     navigateTo('/home');
   }
 });
+
 
 
 
