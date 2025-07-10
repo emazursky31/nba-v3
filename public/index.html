@@ -699,6 +699,50 @@
 
 <script>
     // Core state
+    // --- Socket initialization helper ---
+    function initSocket() {
+      if (window.socket && window.socket.connected) {
+        window.socket.disconnect();
+      }
+      socket = io();
+      window.socket = socket;
+
+      // Attach all event listeners again (idempotent)
+      socket.on('connect', () => {
+        console.log('[safeEmit] Socket connected — flushing emitQueue');
+        flushEmitQueue && flushEmitQueue();
+      });
+      socket.on('disconnect', (reason) => {
+        console.log('[DEBUG] Socket disconnected:', reason);
+        socketConnected = false;
+      });
+      socket.on('playersUpdate', (count) => {
+        console.log('[DEBUG] playersUpdate received:', count);
+        if (isLeavingGame) {
+          console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+          return;
+        }
+        const statusDiv = document.getElementById('statusDiv');
+        const rematchBtn = document.getElementById('rematchBtn');
+        if (statusDiv) {
+          statusDiv.textContent = `Players in room: ${count}`;
+        } else {
+          console.warn('statusDiv not found in DOM');
+        }
+        if (rematchBtn) {
+          if (count < 2) {
+            rematchBtn.style.display = 'none';
+            navigateTo('/waiting');
+          } else {
+            navigateTo('/play');
+          }
+        } else {
+          console.warn('rematchBtn not found in DOM');
+        }
+      });
+      // Add other socket event listeners here as needed (matched, gameStarted, etc.)
+      // If you add new listeners elsewhere, consider moving them here for consistency.
+    }
   let roomId = null;
   let myRoomId = null;
   let selectedPlayer = null;
