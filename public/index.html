@@ -698,19 +698,65 @@
 
 
 <script>
+
     // Core state
-    // --- Socket initialization helper ---
+    let roomId = null;
+    let myRoomId = null;
+    let selectedPlayer = null;
+    let fetchTimeout = null;
+    let gameStarted = false;
+    let gameOver = false;
+    let leadoffPlayerName = null;
+    let myUsername = null;
+    let opponentName = null;
+    let successfulGuesses = [];
+    let isPrivateGame = false;
+    let socket = null;
+    let isLeavingGame = false;
+    // ✅ Global route tracker
+    let currentRoute = '';
+    let statusDiv = null;
+    let socketConnected = false;
+    let emitQueue = [];
+
+    // --- Socket helpers first ---
+    function flushEmitQueue() {
+      if (!socket) {
+        console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+        return;
+      }
+      while (socket.connected && emitQueue.length > 0) {
+        const { event, data } = emitQueue.shift();
+        console.log(`[safeEmit] Flushing queued "${event}"`);
+        socket.emit(event, data);
+      }
+    }
+
+    function safeEmit(event, data) {
+      if (!socket) {
+        console.warn(`[safeEmit] Socket is null — initializing socket`);
+        initSocket();
+      }
+      emitQueue.push({ event, data });
+      if (socket && socket.connected) {
+        console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
+        flushEmitQueue();
+      } else {
+        console.log(`[safeEmit] Socket not connected — queued "${event}"`);
+      }
+    }
+
+    // --- Now define initSocket after helpers ---
     function initSocket() {
       if (window.socket && window.socket.connected) {
         window.socket.disconnect();
       }
       socket = io();
       window.socket = socket;
-
       // Attach all event listeners again (idempotent)
       socket.on('connect', () => {
         console.log('[safeEmit] Socket connected — flushing emitQueue');
-        flushEmitQueue && flushEmitQueue();
+        flushEmitQueue();
       });
       socket.on('disconnect', (reason) => {
         console.log('[DEBUG] Socket disconnected:', reason);
@@ -743,24 +789,6 @@
       // Add other socket event listeners here as needed (matched, gameStarted, etc.)
       // If you add new listeners elsewhere, consider moving them here for consistency.
     }
-  let roomId = null;
-  let myRoomId = null;
-  let selectedPlayer = null;
-  let fetchTimeout = null;
-  let gameStarted = false;
-  let gameOver = false;
-  let leadoffPlayerName = null;
-  let myUsername = null;
-  let opponentName = null;
-  let successfulGuesses = [];
-  let isPrivateGame = false;
-  let socket = null;
-  let isLeavingGame = false;
-// ✅ Global route tracker
-  let currentRoute = '';
-  let statusDiv = null;
-  let socketConnected = false;
-  let emitQueue = [];
 
 
  document.addEventListener('DOMContentLoaded', async () => {
