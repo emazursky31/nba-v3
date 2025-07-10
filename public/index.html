@@ -701,25 +701,34 @@
     // ============================================
   // 1️⃣ Global variables
   // ============================================
-  let roomId = null;
-  let myRoomId = null;
-  let selectedPlayer = null;
-  let fetchTimeout = null;
-  let gameStarted = false;
-  let gameOver = false;
-  let leadoffPlayerName = null;
-  let myUsername = null;
-  let opponentName = null;
-  let successfulGuesses = [];
-  let isPrivateGame = false;
-  let socket = null;
-  let isLeavingGame = false;
-// ✅ Global route tracker
-  let currentRoute = '';
-  let statusDiv = null;
-  let socketConnected = false;
-  let emitQueue = [];
+  // ✅ Game state
+let roomId = null;
+let myRoomId = null;
+let selectedPlayer = null;
+let fetchTimeout = null;
+let gameStarted = false;
+let gameOver = false;
+let leadoffPlayerName = null;
+let myUsername = null;
+let opponentName = null;
+let successfulGuesses = [];
+let isPrivateGame = false;
+let socket = null;
+let isLeavingGame = false;
+let socketConnected = false;
+let emitQueue = [];
 
+// ✅ Routing state
+let currentRoute = '';
+let statusDiv = null;
+
+// ✅ DOM refs for gameplay UI
+let guessInput;
+let submitGuessBtn;
+let timerEl;
+let rematchBtn;
+let messagesEl;
+let currentPlayerNameEl;
 
    
 
