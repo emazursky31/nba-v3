@@ -698,467 +698,388 @@
 
 
 <script>
-    // ============================================
-  // 1️⃣ Global variables
-  // ============================================
-  // ✅ Game state
-let roomId = null;
-let myRoomId = null;
-let selectedPlayer = null;
-let fetchTimeout = null;
-let gameStarted = false;
-let gameOver = false;
-let leadoffPlayerName = null;
-let myUsername = null;
-let opponentName = null;
-let successfulGuesses = [];
-let isPrivateGame = false;
-let socket = null;
-let isLeavingGame = false;
-let socketConnected = false;
-let emitQueue = [];
+    // Core state
+  let roomId = null;
+  let myRoomId = null;
+  let selectedPlayer = null;
+  let fetchTimeout = null;
+  let gameStarted = false;
+  let gameOver = false;
+  let leadoffPlayerName = null;
+  let myUsername = null;
+  let opponentName = null;
+  let successfulGuesses = [];
+  let isPrivateGame = false;
+  let socket = null;
+  let isLeavingGame = false;
+// ✅ Global route tracker
+  let currentRoute = '';
+  let statusDiv = null;
+  let socketConnected = false;
+  let emitQueue = [];
 
-// ✅ Routing state
-let currentRoute = '';
-let statusDiv = null;
 
-// ✅ DOM refs for gameplay UI
-let guessInput;
-let submitGuessBtn;
-let timerEl;
-let rematchBtn;
-let messagesEl;
-let currentPlayerNameEl;
+ document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[DEBUG] DOMContentLoaded');
 
-   
+    let justConfirmed = false;
 
-  // ============================================
-  // 2️⃣ initSocket — only attaches once
-  // ============================================
+    // ✅ Sign Up handler
+  async function signUp(e) {
+    e.preventDefault(); // 🛑 Stop default form submit
 
-  function initSocket() {
-     if (socket && socket.connected) {
-    console.log('[initSocket] Socket already connected');
-    return;
-  }
-  if (socket) {
-    console.log('[initSocket] Socket exists but disconnected — reconnecting');
-  }
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value.trim();
+    const username = document.getElementById('signup-username').value.trim();
 
-    socket = io(); 
+    if (!email || !password || !username) {
+      alert('Please fill in all fields.');
+      return;
+    }
 
-    socket.on('connect', () => {
-      console.log('[initSocket] Socket connected!');
-      flushEmitQueue();
-    });
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters.');
+      return;
+    }
 
-    socket.on('playersUpdate', (count) => {
-      console.log('[DEBUG] playersUpdate received:', count);
-      if (statusDiv) {
-        statusDiv.textContent = `Players in room: ${count}`;
-      } else {
-        console.warn('[WARN] statusDiv not found!');
+    console.log('[DEBUG] SignUp data =>', email, username);
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username }
       }
     });
 
+    if (error) {
+      console.error('SignUp error:', error.message);
+      return;
+    }
 
+    console.log('✅ Sign Up successful:', data);
+    navigateTo('/verify'); // 👈 Show verification screen
+  }
 
-    socket.on('matched', ({ roomId, opponent }) => {
-      if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-        console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
-        return;
+  // ✅ Sign In handler
+  async function signIn(e) {
+    e.preventDefault(); // 🛑 Stop default form submit
+
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value.trim();
+
+    if (!email || !password) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    console.log('[DEBUG] SignIn data =>', email);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('SignIn error:', error.message);
+      alert(error.message);
+      return;
+    }
+
+    console.log('✅ Sign In successful:', data);
+    navigateTo('/home'); // 👈 Take them to home or wherever
+  }
+
+  // ✅ Attach listeners to forms
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) {
+    signupForm.addEventListener('submit', signUp);
+    console.log('[DEBUG] signupForm listener attached');
+  } else {
+    console.error('[ERROR] signupForm not found!');
+  }
+
+  const signinForm = document.getElementById('signinForm');
+  if (signinForm) {
+    signinForm.addEventListener('submit', signIn);
+    console.log('[DEBUG] signinForm listener attached');
+  } else {
+    console.error('[ERROR] signinForm not found!');
+  }
+
+    // ✅ Listen for auth state changes too — always keep nav fresh
+    supabase.auth.onAuthStateChange((_event, session) => {
+      updateNavUserState(session);
+    });
+
+    // --- 1️⃣ Email confirmation or recovery flow ---
+    const urlHash = window.location.hash;
+    const searchParams = new URLSearchParams(window.location.search);
+    const typeParam = searchParams.get('type');
+
+    console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
+
+    if (
+     (urlHash.includes('access_token') &&
+       (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+     || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+   ) {
+     console.log('[DEBUG] Found email confirmation or recovery in URL');
+     try {
+       const { data: { user }, error } = await supabase.auth.getUser();
+       if (error) {
+         console.error('[ERROR] Email confirmation failed:', error.message);
+       } else {
+         console.log('[DEBUG] Email confirmed for:', user?.email);
+
+         // Update username here (but don't update nav yet)
+         myUsername = user.user_metadata?.username || user.email;
+         localStorage.setItem('username', myUsername);
+
+         // Get fresh session (optional)
+         const { data: { session } } = await supabase.auth.getSession();
+
+         // Navigate first
+         await navigateTo('/confirmed');
+
+         // Then update nav *after* navigation completes
+         await updateNavUserState(session);
+       }
+     } catch (e) {
+       console.error('[ERROR] Exception during email confirmation:', e);
+     }
+
+     return;
+   }
+
+    // --- 2️⃣ Connect socket early ---
+    socket = io();
+  
+
+    // --- 3️⃣ Get current Supabase session ---
+    const { data } = await supabase.auth.getSession();
+    await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
+
+    if (data.session?.user) {
+      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+    } else {
+      myUsername = localStorage.getItem('username') || null;
+    }
+
+    // --- 4️⃣ Load room info ---
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+      myRoomId = roomFromUrl;
+      roomId = roomFromUrl;
+      isPrivateGame = true;
+      localStorage.setItem('privateRoomId', roomFromUrl);
+    } else {
+      const savedRoom = localStorage.getItem('privateRoomId');
+      if (savedRoom) {
+        console.log('[DEBUG] Found saved private room:', savedRoom);
+        myRoomId = savedRoom;
+        roomId = savedRoom;
+        isPrivateGame = true;
       }
+    }
 
-      if (gameStarted && !gameOver) return;
+    console.log('[DEBUG] Final state before routing:', {
+      myUsername,
+      myRoomId,
+      isPrivateGame,
+      isLeavingGame,
+    });
 
-      isLeavingGame = false;
-      localStorage.removeItem('isLeavingGame');
-
-      myRoomId = roomId;
-      opponentName = opponent;
-
-      if (statusDiv) {
-        statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
-      }
-
+    // --- 5️⃣ Determine initial route ---
+    if (!myUsername) {
+      navigateTo('/signup');
+    } else if (isLeavingGame) {
+      console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+      navigateTo('/home');
+    } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
       navigateTo('/waiting');
-      safeEmit('joinGame', { roomId: myRoomId, username: myUsername });
+    } else {
+      navigateTo('/home');
+    }
+
+    // ✅ Elements you actually use…
+    const privateGameBtn = document.getElementById('privateGameBtn');
+    const findGameBtn = document.getElementById('findGameBtn');
+    const inviteLinkContainer = document.getElementById('inviteLinkContainer');
+    const waitingRoom = document.getElementById('waitingRoom');
+    const gameArea = document.getElementById('gameArea');
+    const currentPlayerNameEl = document.getElementById('currentPlayerName');
+    const timerEl = document.getElementById('timer');
+    const guessInput = document.getElementById('guessInput');
+    const submitGuessBtn = document.getElementById('submitGuessBtn');
+    const messagesEl = document.getElementById('messageContainer');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    const rematchBtn = document.getElementById('rematchBtn');
+
+
+// submitUsernameBtn.onclick = async () => {
+//   const entered = usernameInput.value.trim();
+//   if (!entered) return alert('Please enter a username.');
+
+//   const { data: { user } } = await supabase.auth.getUser();
+//   if (!user) {
+//     alert('No authenticated user!');
+//     return;
+//   }
+
+//   const { error } = await supabase.from('profiles').upsert([
+//     { id: user.id, username: entered }
+//   ]);
+//   if (error) {
+//     alert('Failed to save username: ' + error.message);
+//     return;
+//   }
+
+//   myUsername = entered;
+//   localStorage.setItem('username', myUsername);
+
+//   if (myRoomId) {
+//     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+//     navigateTo('/waiting');
+//   } else {
+//     navigateTo('/mode');
+//   }
+// };
+
+
+const copyInviteBtn = document.getElementById('copyInviteBtn');
+const copyToast = document.getElementById('copyToast');
+const inviteInput = document.getElementById('inviteLink');
+
+copyInviteBtn.onclick = () => {
+  navigator.clipboard.writeText(inviteInput.value)
+    .then(() => {
+      copyToast.style.display = 'block';
+
+      // Hide toast after 2 seconds
+      setTimeout(() => {
+        copyToast.style.display = 'none';
+      }, 2000);
+    })
+    .catch(err => {
+      alert('Failed to copy link. Please copy it manually.');
+      console.error('Clipboard copy failed:', err);
     });
+};
 
 
+function updateSplitScoreboard(stats, player1, player2) {
+  const p1NameEl = document.getElementById('player1Name');
+  const p2NameEl = document.getElementById('player2Name');
 
-socket.on('gameStarted', async (data) => {
-  if (isLeavingGame) {
-    console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
-    return;
+  if (!p1NameEl || !p2NameEl) {
+    console.warn('[DEBUG] Scoreboard elements not found. Skipping updateSplitScoreboard.');
+    return; // Or: queue the update!
   }
 
-  console.log('[CLIENT] Received gameStarted event:', data);
+  const p1Name = player1 || 'Player 1';
+  const p2Name = player2 || 'Player 2';
 
-  gameStarted = true;
-  gameOver = false;
+  p1NameEl.textContent = p1Name;
+  p2NameEl.textContent = p2Name;
 
-  leadoffPlayerName = data.leadoffPlayer || null;
+  const safeStats = stats || {};
+  const player1Stats = safeStats[p1Name];
+  const player2Stats = safeStats[p2Name];
+  const p1Wins = (player1Stats && typeof player1Stats.wins === 'number') ? player1Stats.wins : 0;
+  const p2Wins = (player2Stats && typeof player2Stats.wins === 'number') ? player2Stats.wins : 0;
 
-  if (window.timerInterval) {
-    clearInterval(window.timerInterval);
-    window.timerInterval = null;
-    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
+  document.getElementById('player1Score').textContent = p1Wins;
+  document.getElementById('player2Score').textContent = p2Wins;
+}
+
+function waitForScoreboard() {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (
+        document.getElementById('player1Name') &&
+        document.getElementById('player1Score')
+      ) {
+        resolve();
+      } else {
+        requestAnimationFrame(check);
+      }
+    };
+    check();
+  });
+}
+
+
+document.getElementById('nav-home-link')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  isLeavingGame = true;
+  if (socket && socket.connected) {
+    socket.emit('leaveGame');
   }
-
-  if (guessInput) {
-    guessInput.disabled = true;
-    guessInput.value = '';
-  }
-
-  if (submitGuessBtn) submitGuessBtn.disabled = true;
-
-  clearGuessError();
-  clearAutocomplete();
-
-  if (rematchBtn) {
-    rematchBtn.style.display = 'none';
-    rematchBtn.disabled = false;
-    rematchBtn.textContent = 'Rematch';
-  }
-
-  if (messagesEl) {
-    messagesEl.innerHTML = '';
-    messagesEl.style.display = 'block';
-  }
-
-  successfulGuesses = [];
-  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
-    leadoffPlayerName = data.leadoffPlayer;
-    successfulGuesses.push({
-      guesser: 'Leadoff',
-      name: leadoffPlayerName,
-      isLeadoff: true
-    });
-  }
-
-  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-  renderSuccessfulGuesses();
-
-  if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName;
-
-  // These aren't global yet — so query them here with defensive checks
-  const playerYouEl = document.getElementById('playerYou');
-  const playerOpponentEl = document.getElementById('playerOpponent');
-
-  if (playerOpponentEl && data.opponentName) {
-    playerOpponentEl.textContent = data.opponentName;
-    opponentName = data.opponentName;
-  }
-  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
-
-  const isYourTurn = data.currentPlayerName === myUsername;
-  if (playerYouEl && playerOpponentEl) {
-    playerYouEl.classList.toggle('active-turn', isYourTurn);
-    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
-  }
-
-  if (timerEl) timerEl.textContent = data.timeLeft || 15;
-  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
-
-  // ✅ Navigate to /play FIRST and wait for UI to be ready
-  console.log('[DEBUG] Navigating to /play...');
-  await navigateTo('/play');
-  console.debug('[DEBUG] Waiting for scoreboard readiness...');
-  await waitForScoreboard();
-
-  safeEmit('getMatchStats');
+  navigateTo('/home');
 });
 
 
 
-    socket.on('matchStats', (stats) => {
-      console.log('[CLIENT] Updated matchStats:', stats);
-      updateSplitScoreboard(stats, myUsername, opponentName);
-    });
-
-    socket.on('gameOver', (data) => {
-      console.log('[DEBUG] gameOver received:', data);
-
-      // ✅ If I intentionally left, skip handling
-      if (isLeavingGame) {
-        console.debug('[DEBUG] Ignoring gameOver because isLeavingGame === true');
-        isLeavingGame = false; // reset for next time
-        return; // skip all the rest
-      }
-
-      gameOver = true;
-
-      // Stop input & timer
-      guessInput.disabled = true;
-      submitGuessBtn.disabled = true;
-
-      if (window.timerInterval) {
-        clearInterval(window.timerInterval);
-        window.timerInterval = null;
-      }
-      timerEl.textContent = '';
-
-      // Ensure myUsername & opponentName
-      if (!myUsername && data.winnerName && data.loserName) {
-        if (data.role === 'winner') {
-          myUsername = data.winnerName;
-          opponentName = data.loserName;
-        } else {
-          myUsername = data.loserName;
-          opponentName = data.winnerName;
-        }
-      } else if (!opponentName && data.winnerName && data.loserName) {
-        opponentName = (myUsername === data.winnerName) ? data.loserName : data.winnerName;
-      }
-
-      // Show game over container
-      const container = document.getElementById('gameOverContainer');
-      container.style.display = 'flex';
-      container.innerHTML = '';
-
-      const gameOverMsg = document.createElement('div');
-      gameOverMsg.style.fontSize = '1.5rem';
-      gameOverMsg.style.textAlign = 'center';
-      gameOverMsg.style.fontWeight = 'bold';
-      gameOverMsg.style.marginTop = '1rem';
-
-      if (data.message) {
-        gameOverMsg.textContent = data.message;
-      } else if (data.reason === 'opponent_left') {
-        const opponent = opponentName || 'Your opponent';
-        gameOverMsg.textContent = `${opponent} left the game.`;
-      } else {
-        gameOverMsg.textContent = 'Game Over!';
-      }
-
-      if (data.role === 'winner') {
-        gameOverMsg.style.color = 'green';
-      } else if (data.role === 'loser') {
-        gameOverMsg.style.color = 'darkred';
-      } else {
-        gameOverMsg.style.color = 'gray';
-      }
-
-      container.appendChild(gameOverMsg);
-
-      const resultsDiv = document.getElementById('gameOverResults');
-      if (resultsDiv) {
-        if (data.winnerName && data.loserName) {
-          resultsDiv.innerHTML = `
-        <p><strong>Winner:</strong> ${data.winnerName}</p>
-        <p><strong>Loser:</strong> ${data.loserName}</p>
-      `;
-        } else {
-          resultsDiv.innerHTML = '';
-        }
-      }
-
-      if (data.canRematch === false || data.reason === 'opponent_left') {
-        rematchBtn.style.display = 'none';
-      } else {
-        rematchBtn.style.display = 'block';
-        rematchBtn.disabled = false;
-        rematchBtn.textContent = 'Rematch';
-      }
-
-      // Let server 'matchStats' handle scoreboard update
-      navigateTo('/gameover');
-    });
-
-
-    socket.on('yourTurn', (data) => {
-      navigateTo('/play');
-
-      const turnSection = document.getElementById('turnSection');
-      if (!turnSection) {
-        console.warn('[WARN] turnSection not found');
-        return;
-      }
-
-      turnSection.classList.add('your-turn');
-      turnSection.classList.remove('opponent-turn');
-      turnSection.style.display = 'block';
-
-      const guessControls = document.getElementById('guessControls');
-      if (guessControls) {
-        guessControls.style.display = 'block';
-      }
-
-      if (guessInput) guessInput.disabled = false;
-      if (submitGuessBtn) submitGuessBtn.disabled = !(guessInput?.value.trim());
-
-      if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
-      if (timerEl) timerEl.textContent = data.timeLeft || 15;
-
-      if (messagesEl) messagesEl.style.display = 'block';
-
-      showMessage(data.message || "It's your turn to guess!", 'info');
-
-      const turnPromptEl = document.getElementById('turnPromptText');
-      if (turnPromptEl) {
-        turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
-      }
-
-      // Highlight current player
-      const playerYouEl = document.getElementById('playerYou');
-      const playerOpponentEl = document.getElementById('playerOpponent');
-
-      if (playerYouEl && playerOpponentEl) {
-        playerYouEl.classList.add('active-turn');
-        playerOpponentEl.classList.remove('active-turn');
-      }
-    });
-
-    socket.on('opponentTurn', (data) => {
-      navigateTo('/play');
-
-      const turnSection = document.getElementById('turnSection');
-      if (!turnSection) {
-        console.warn('[WARN] turnSection not found');
-        return;
-      }
-
-      turnSection.classList.remove('your-turn');
-      turnSection.classList.add('opponent-turn');
-      turnSection.style.display = 'block';
-
-      const guessControls = document.getElementById('guessControls');
-      if (guessControls) {
-        guessControls.style.display = 'none';
-      }
-
-      if (guessInput) guessInput.disabled = true;
-      if (submitGuessBtn) submitGuessBtn.disabled = true;
-
-      if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
-      if (timerEl) timerEl.textContent = '';
-
-      if (messagesEl) messagesEl.style.display = 'block';
-
-      showMessage(data.message || "Waiting for your opponent to guess...", 'info');
-
-      const turnPromptEl = document.getElementById('turnPromptText');
-      if (turnPromptEl) {
-        turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
-      }
-
-      // Highlight opponent player
-      const playerYouEl = document.getElementById('playerYou');
-      const playerOpponentEl = document.getElementById('playerOpponent');
-
-      if (playerYouEl && playerOpponentEl) {
-        playerYouEl.classList.remove('active-turn');
-        playerOpponentEl.classList.add('active-turn');
-      }
-    });
-
-
-
-    socket.on('message', (msg) => {
-      navigateTo('/play'); // Ensure user is on the gameplay page
-      showMessage(msg, 'error');
-    });
-
-
-    socket.on('turnEnded', (data) => {
-      navigateTo('/play');
-
-      if (Array.isArray(data.successfulGuesses)) {
-        successfulGuesses = markLeadoffInGuesses(data.successfulGuesses, leadoffPlayerName);
-        renderSuccessfulGuesses();
-      }
-
-      if (data.message) {
-        showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
-      }
-
-      updateTurn(data);
-    });
-
-
-
-    socket.on('timerTick', (data) => {
-      timerEl.textContent = data.timeLeft;
-    });
-
-
-    socket.on('disconnect', (reason) => {
-      console.log('[DEBUG] Socket disconnected:', reason);
-      socketConnected = false;
-    });
-
-    // When another player requests a rematch
-    socket.on('rematchRequested', ({ username }) => {
-      showMessage(`${username} wants a rematch! Click your Rematch button to accept.`, 'info', true);
-    });
-
-    // When rematch actually starts
-    socket.on('rematchStarted', () => {
-      resetGameUI();
-
-      // Clear any rematch prompt message
-      const rematchInfo = document.getElementById('rematch-info');
-      if (rematchInfo) rematchInfo.remove();
-
-      // Reset rematch button styles
-      rematchBtn.disabled = false;
-      rematchBtn.style.backgroundColor = ''; // Reset highlight
-      rematchBtn.textContent = 'Rematch';
-
-      // ✅ Re-join the same room to trigger new game start
-      if (myRoomId && myUsername) {
-        console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
-        safeEmit('joinGame', { roomId: myRoomId, username: myUsername });
-        safeEmit('getMatchStats');
-      } else {
-        console.error('[CLIENT] Missing roomId or username for rematch.');
-      }
-    });
-
-
-
-    // ✅ Add more listeners as needed
-  }
-
-
-  // ============================================
-  // 3️⃣ Safe emit pattern
-  // ============================================
-function safeEmit(event, data) {
-  if (!socket) {
-    console.warn(`[safeEmit] Socket is null — initializing socket`);
-    initSocket();
-  }
-
-  if (socket && socket.connected) {
-    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
-    socket.emit(event, data);   // ✅ direct emit
-  } else {
-    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
-    emitQueue.push({ event, data });
-  }
+function markLeadoffInGuesses(guesses, leadoffName) {
+  return guesses.map(g => ({
+    ...g,
+    isLeadoff: g.name === leadoffName
+  }));
 }
 
-function flushEmitQueue() {
-  if (!socket) {
-    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+
+
+
+//     if (!roomFromUrl) {
+//   handleUsernameEntry();
+// }
+
+function startPrivateGame() {
+  console.log('[DEBUG] startPrivateGame called');
+
+  if (isLeavingGame) {
+    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
+    return; // ✅ Do NOT start private game while intentionally leaving
+  }
+
+  if (!myUsername) {
+    alert('Missing username');
     return;
   }
 
-  while (socket.connected && emitQueue.length > 0) {
-    const { event, data } = emitQueue.shift();
-    console.log(`[flushEmitQueue] Flushing queued "${event}"`);
-    socket.emit(event, data);   // ✅ direct emit
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game first.');
+    return;
   }
+
+  isPrivateGame = true;
+  isLeavingGame = false; // ✅ You’re intentionally starting a new match
+
+  // ✅ Generate new room and clear stale room data
+  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+  roomId = generatedRoomId;
+  myRoomId = generatedRoomId;
+
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+
+  statusDiv.textContent = `Started private room: ${myRoomId}`;
+  document.getElementById('displayRoomCode').textContent = myRoomId;
+
+  inviteLinkContainer.innerHTML = `
+    Share this link to invite a friend:<br>
+    <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+      ${window.location.origin}?room=${myRoomId}
+    </a>
+  `;
+
+  navigateTo('/waiting');
 }
 
 
-
-
-   // ============================================
-  // 4️⃣ App Helpers
-  // ============================================
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
 
@@ -1196,49 +1117,488 @@ async function joinPublicGame() {
   safeEmit('findMatch', myUsername);
 }
 
-function startPrivateGame() {
-  console.log('[DEBUG] startPrivateGame called');
 
-  if (isLeavingGame) {
-    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
-    return;
+
+
+
+
+socket.on('connect', () => {
+  console.log('[safeEmit] Socket connected — flushing emitQueue');
+  flushEmitQueue();
+});
+
+
+socket.on('disconnect', (reason) => {
+  console.log('[DEBUG] Socket disconnected:', reason);
+  socketConnected = false;
+});
+
+function safeEmit(event, data) {
+  if (!socket) {
+    console.warn(`[safeEmit] Socket is null — initializing socket`);
+    initSocket();  // Or however you handle (re)connecting
   }
 
-  if (!myUsername) {
-    alert('Missing username');
-    return;
+  emitQueue.push({ event, data });
+
+  if (socket && socket.connected) {
+    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
+    flushEmitQueue();
+  } else {
+    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
   }
-
-  if (gameStarted && !gameOver) {
-    alert('Finish your current game first.');
-    return;
-  }
-
-  isPrivateGame = true;
-  isLeavingGame = false;
-
-  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-  roomId = generatedRoomId;
-  myRoomId = generatedRoomId;
-
-  safeEmit('joinGame', { roomId: myRoomId, username: myUsername });
-
-  if (statusDiv) {
-    statusDiv.textContent = `Started private room: ${myRoomId}`;
-  }
-
-  document.getElementById('displayRoomCode').textContent = myRoomId;
-
-  inviteLinkContainer.innerHTML = `
-    Share this link to invite a friend:<br>
-    <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-      ${window.location.origin}?room=${myRoomId}
-    </a>
-  `;
-
-  navigateTo('/waiting');
 }
 
+function flushEmitQueue() {
+  if (!socket) {
+    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+    return;
+  }
+
+  while (socket.connected && emitQueue.length > 0) {
+    const { event, data } = emitQueue.shift();
+    console.log(`[safeEmit] Flushing queued "${event}"`);
+    socket.emit(event, data);
+  }
+}
+
+
+
+socket.on('playersUpdate', (count) => {
+  console.log('[DEBUG] playersUpdate received:', count);
+
+  if (isLeavingGame) {
+    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+    return;
+  }
+
+  const statusDiv = document.getElementById('statusDiv');
+  const rematchBtn = document.getElementById('rematchBtn');
+
+  if (statusDiv) {
+    statusDiv.textContent = `Players in room: ${count}`;
+  } else {
+    console.warn('statusDiv not found in DOM');
+  }
+
+  if (rematchBtn) {
+    if (count < 2) {
+      rematchBtn.style.display = 'none';
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/play');
+    }
+  } else {
+    console.warn('rematchBtn not found in DOM');
+  }
+});
+
+
+
+
+
+socket.on('matched', ({ roomId, opponent }) => {
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+    console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
+    return;
+  }
+
+  if (gameStarted && !gameOver) return;
+
+  // ✅ Once matched, clear stale flags
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
+
+  myRoomId = roomId;
+  opponentName = opponent;
+
+  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+
+  navigateTo('/waiting');
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+});
+
+
+
+
+
+// 2. Game Lifecycle
+socket.on('gameStarted', async (data) => {
+  if (isLeavingGame) {
+    console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
+    return;
+  }
+
+  console.log('[CLIENT] Received gameStarted event:', data);
+
+  gameStarted = true;
+  gameOver = false;
+
+  leadoffPlayerName = data.leadoffPlayer || null;
+
+  if (window.timerInterval) {
+    clearInterval(window.timerInterval);
+    window.timerInterval = null;
+    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
+  }
+
+  guessInput.disabled = true;
+  submitGuessBtn.disabled = true;
+  guessInput.value = '';
+  clearGuessError();
+  clearAutocomplete();
+
+  rematchBtn.style.display = 'none';
+  rematchBtn.disabled = false;
+  rematchBtn.textContent = 'Rematch';
+
+  messagesEl.innerHTML = '';
+  messagesEl.style.display = 'block';
+
+  successfulGuesses = [];
+  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
+    leadoffPlayerName = data.leadoffPlayer;
+    successfulGuesses.push({
+      guesser: 'Leadoff',
+      name: leadoffPlayerName,
+      isLeadoff: true
+    });
+  }
+
+  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+  renderSuccessfulGuesses();
+
+  currentPlayerNameEl.textContent = data.currentPlayerName;
+
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+  if (playerOpponentEl && data.opponentName) {
+    playerOpponentEl.textContent = data.opponentName;
+    opponentName = data.opponentName;
+  }
+  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
+
+  const isYourTurn = data.currentPlayerName === myUsername;
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.toggle('active-turn', isYourTurn);
+    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
+  }
+
+  timerEl.textContent = data.timeLeft || 15;
+  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+
+  // ✅ ✅ ✅ NEW: Navigate to /play FIRST and wait!
+  console.log('[DEBUG] Navigating to /play...');
+  await navigateTo('/play');
+  console.debug('[DEBUG] Waiting for scoreboard readiness...');
+  await waitForScoreboard();
+  socket.emit('getMatchStats');
+
+});
+
+
+
+
+socket.on('matchStats', (stats) => {
+  console.log('[CLIENT] Updated matchStats:', stats);
+  updateSplitScoreboard(stats, myUsername, opponentName);
+});
+
+
+
+socket.on('gameOver', (data) => {
+  console.log('[DEBUG] gameOver received:', data);
+
+  // ✅ If I intentionally left, skip handling
+  if (isLeavingGame) {
+    console.debug('[DEBUG] Ignoring gameOver because isLeavingGame === true');
+    isLeavingGame = false; // reset for next time
+    return; // skip all the rest
+  }
+
+  gameOver = true;
+
+  // Stop input & timer
+  guessInput.disabled = true;
+  submitGuessBtn.disabled = true;
+
+  if (window.timerInterval) {
+    clearInterval(window.timerInterval);
+    window.timerInterval = null;
+  }
+  timerEl.textContent = '';
+
+  // Ensure myUsername & opponentName
+  if (!myUsername && data.winnerName && data.loserName) {
+    if (data.role === 'winner') {
+      myUsername = data.winnerName;
+      opponentName = data.loserName;
+    } else {
+      myUsername = data.loserName;
+      opponentName = data.winnerName;
+    }
+  } else if (!opponentName && data.winnerName && data.loserName) {
+    opponentName = (myUsername === data.winnerName) ? data.loserName : data.winnerName;
+  }
+
+  // Show game over container
+  const container = document.getElementById('gameOverContainer');
+  container.style.display = 'flex';
+  container.innerHTML = '';
+
+  const gameOverMsg = document.createElement('div');
+  gameOverMsg.style.fontSize = '1.5rem';
+  gameOverMsg.style.textAlign = 'center';
+  gameOverMsg.style.fontWeight = 'bold';
+  gameOverMsg.style.marginTop = '1rem';
+
+  if (data.message) {
+    gameOverMsg.textContent = data.message;
+  } else if (data.reason === 'opponent_left') {
+    const opponent = opponentName || 'Your opponent';
+    gameOverMsg.textContent = `${opponent} left the game.`;
+  } else {
+    gameOverMsg.textContent = 'Game Over!';
+  }
+
+  if (data.role === 'winner') {
+    gameOverMsg.style.color = 'green';
+  } else if (data.role === 'loser') {
+    gameOverMsg.style.color = 'darkred';
+  } else {
+    gameOverMsg.style.color = 'gray';
+  }
+
+  container.appendChild(gameOverMsg);
+
+  const resultsDiv = document.getElementById('gameOverResults');
+  if (resultsDiv) {
+    if (data.winnerName && data.loserName) {
+      resultsDiv.innerHTML = `
+        <p><strong>Winner:</strong> ${data.winnerName}</p>
+        <p><strong>Loser:</strong> ${data.loserName}</p>
+      `;
+    } else {
+      resultsDiv.innerHTML = '';
+    }
+  }
+
+  if (data.canRematch === false || data.reason === 'opponent_left') {
+    rematchBtn.style.display = 'none';
+  } else {
+    rematchBtn.style.display = 'block';
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
+  }
+
+  // Let server 'matchStats' handle scoreboard update
+  navigateTo('/gameover');
+});
+
+
+
+
+// 3. Turn Management
+socket.on('yourTurn', (data) => {
+  navigateTo('/play');
+
+  const turnSection = document.getElementById('turnSection');
+
+  turnSection.classList.add('your-turn');
+  turnSection.classList.remove('opponent-turn');
+
+  document.getElementById('guessControls').style.display = 'block';
+  guessInput.disabled = false;
+  submitGuessBtn.disabled = !guessInput.value.trim();
+
+  currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+  timerEl.textContent = data.timeLeft || 15;
+
+  turnSection.style.display = 'block';
+  messagesEl.style.display = 'block';
+
+  showMessage(data.message || "It's your turn to guess!", 'info');
+
+ const turnPromptEl = document.getElementById('turnPromptText');
+if (turnPromptEl) {
+  turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+}
+
+
+
+  // ✅ Highlight the current player in playersDisplay
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.add('active-turn');
+    playerOpponentEl.classList.remove('active-turn');
+  }
+});
+
+
+
+socket.on('opponentTurn', (data) => {
+  navigateTo('/play');
+
+  const turnSection = document.getElementById('turnSection');
+
+  turnSection.classList.remove('your-turn');
+  turnSection.classList.add('opponent-turn');
+
+  document.getElementById('guessControls').style.display = 'none';
+  guessInput.disabled = true;
+  submitGuessBtn.disabled = true;
+
+  currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
+  timerEl.textContent = '';
+
+  turnSection.style.display = 'block';
+  messagesEl.style.display = 'block';
+
+  showMessage(data.message || "Waiting for your opponent to guess...", 'info');
+
+  const turnPromptEl = document.getElementById('turnPromptText');
+if (turnPromptEl) {
+  turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+}
+
+
+
+  // ✅ Highlight the opponent in playersDisplay
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.remove('active-turn');
+    playerOpponentEl.classList.add('active-turn');
+  }
+});
+
+
+
+
+socket.on('message', (msg) => {
+  navigateTo('/play'); // Ensure user is on the gameplay page
+  showMessage(msg, 'error');
+});
+
+socket.on('turnEnded', (data) => {
+  navigateTo('/play');
+
+  if (Array.isArray(data.successfulGuesses)) {
+    successfulGuesses = markLeadoffInGuesses(data.successfulGuesses, leadoffPlayerName);
+    renderSuccessfulGuesses();
+  }
+
+  if (data.message) {
+    showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
+  }
+
+  updateTurn(data);
+});
+
+
+
+
+socket.on('timerTick', (data) => {
+  timerEl.textContent = data.timeLeft;
+});
+
+
+  // Autocomplete logic
+guessInput.addEventListener('input', function() {
+  const val = this.value.trim();
+  clearAutocomplete();
+  selectedPlayer = null;
+  submitGuessBtn.disabled = true;
+
+  if (!val) {
+    showAutocompleteSuggestions([]);
+    return;
+  }
+
+  if (fetchTimeout) clearTimeout(fetchTimeout);
+
+  fetchTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch(`/players?q=${encodeURIComponent(val)}`);
+      if (!res.ok) throw new Error('Network response not ok');
+
+      const results = await res.json();
+      if (results.length === 0) {
+        showAutocompleteSuggestions([]);
+        return;
+      }
+
+      // ✅ Create an array of actual HTML elements to pass to showAutocompleteSuggestions
+      const suggestions = results.map(player => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = player.player_name;
+
+        const yearsSpan = document.createElement('span');
+        yearsSpan.className = 'career-years';
+        yearsSpan.textContent = ` ${player.first_year || '?'}–${player.last_year || '?'}`;
+
+        yearsSpan.style.fontSize = '0.8em';
+        yearsSpan.style.color = 'gray';
+        yearsSpan.style.marginLeft = '5px';
+
+        wrapper.appendChild(nameSpan);
+        wrapper.appendChild(yearsSpan);
+
+        wrapper.addEventListener('click', () => {
+        guessInput.value = player.player_name;
+        selectedPlayer = player.player_name;
+        submitGuessBtn.disabled = false;
+        clearAutocomplete();
+      });
+
+        return wrapper;
+      });
+
+      showAutocompleteSuggestions(suggestions);
+
+    } catch (err) {
+      console.error('Autocomplete fetch error:', err);
+      showAutocompleteSuggestions([]);
+    }
+  }, 300);
+});
+
+
+
+
+
+  guessInput.addEventListener('change', () => {
+    if (guessInput.value !== selectedPlayer) {
+      selectedPlayer = null;
+      submitGuessBtn.disabled = true;
+    }
+  });
+
+  function submitGuess() {
+  const guess = guessInput.value.trim();
+  clearGuessError();
+
+  if (!guess) {
+    showGuessError('Enter a guess');
+    return;
+  }
+  if (guess !== selectedPlayer) {
+    showGuessError('Please select a player from the dropdown list.');
+    return;
+  }
+
+  socket.emit('playerGuess', { roomId, guess });
+  guessInput.value = '';
+  selectedPlayer = null;
+  submitGuessBtn.disabled = true;
+  clearAutocomplete();
+}
 
 
 function requestRematch() {
@@ -1248,8 +1608,41 @@ function requestRematch() {
   }
   rematchBtn.disabled = true;
   rematchBtn.textContent = 'Waiting for opponent...';
-  safeEmit('requestRematch', { roomId: myRoomId });
+  socket.emit('requestRematch', { roomId: myRoomId });
 }
+
+
+// When another player requests a rematch
+socket.on('rematchRequested', ({ username }) => {
+  showMessage(`${username} wants a rematch! Click your Rematch button to accept.`, 'info', true);
+
+ 
+});
+
+// When rematch actually starts
+socket.on('rematchStarted', () => {
+  resetGameUI();
+
+  // Clear any rematch prompt message
+  const rematchInfo = document.getElementById('rematch-info');
+  if (rematchInfo) rematchInfo.remove();
+
+  // Reset rematch button styles
+  rematchBtn.disabled = false;
+  rematchBtn.style.backgroundColor = ''; // Reset highlight
+  rematchBtn.textContent = 'Rematch';
+
+  // ✅ Re-join the same room to trigger new game start
+  if (myRoomId && myUsername) {
+    console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    socket.emit('getMatchStats');
+  } else {
+    console.error('[CLIENT] Missing roomId or username for rematch.');
+  }
+});
+
+
 
 
 function resetGameUI() {
@@ -1302,181 +1695,9 @@ function resetGameUI() {
   }
 }
 
-  function submitGuess() {
-  const guess = guessInput.value.trim();
-  clearGuessError();
-
-  if (!guess) {
-    showGuessError('Enter a guess');
-    return;
-  }
-  if (guess !== selectedPlayer) {
-    showGuessError('Please select a player from the dropdown list.');
-    return;
-  }
-
-  safeEmit('playerGuess', { roomId, guess });
-  guessInput.value = '';
-  selectedPlayer = null;
-  submitGuessBtn.disabled = true;
-  clearAutocomplete();
-}
-
-
-function onGuessInput(e) {
-  const query = e.target.value.trim();
-  if (!query) {
-    clearAutocomplete();
-    return;
-  }
-  const suggestions = getSuggestions(query);
-  showAutocompleteSuggestions(suggestions);
-}
 
 
 
-
-  // ✅ Sign In handler
-  async function signIn(e) {
-    e.preventDefault(); // 🛑 Stop default form submit
-
-    const email = document.getElementById('signin-email').value.trim();
-    const password = document.getElementById('signin-password').value.trim();
-
-    if (!email || !password) {
-      alert('Please fill in all fields.');
-      return;
-    }
-
-    console.log('[DEBUG] SignIn data =>', email);
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      console.error('SignIn error:', error.message);
-      alert(error.message);
-      return;
-    }
-
-    console.log('✅ Sign In successful:', data);
-    navigateTo('/home'); // 👈 Take them to home or wherever
-  }
-
-
-  // ✅ Sign Up handler
-async function signUp(e) {
-  e.preventDefault();
-
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value.trim();
-  const username = document.getElementById('signup-username').value.trim(); 
-
-  if (!email || !password || !username) {
-    alert('Please fill in all fields.');
-    return;
-  }
-
-  console.log('[DEBUG] SignUp data =>', email, username);
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        username: username  // ✅ store in user_metadata!
-      }
-    }
-  });
-
-  if (error) {
-    console.error('SignUp error:', error.message);
-    alert(error.message);
-    return;
-  }
-
-  console.log('✅ Sign Up successful:', data);
-
-  // Take them to verify page so they check their email
-  navigateTo('/verify');
-}
-
-
-function attachCopyInviteListener() {
-  const copyInviteBtn = document.getElementById('copyInviteBtn');
-  const copyToast = document.getElementById('copyToast');
-  const inviteInput = document.getElementById('inviteLink');
-
-  if (copyInviteBtn && copyToast && inviteInput) {
-    copyInviteBtn.onclick = () => {
-      navigator.clipboard.writeText(inviteInput.value)
-        .then(() => {
-          copyToast.style.display = 'block';
-          setTimeout(() => {
-            copyToast.style.display = 'none';
-          }, 2000);
-        })
-        .catch(err => {
-          alert('Failed to copy link. Please copy it manually.');
-          console.error('Clipboard copy failed:', err);
-        });
-    };
-    console.log('[DEBUG] copyInviteBtn listener attached');
-  } else {
-    console.warn('[WARN] Copy invite elements not found!');
-  }
-}
-
-
-function updateSplitScoreboard(stats, player1, player2) {
-  const p1NameEl = document.getElementById('player1Name');
-  const p2NameEl = document.getElementById('player2Name');
-
-  if (!p1NameEl || !p2NameEl) {
-    console.warn('[DEBUG] Scoreboard elements not found. Skipping updateSplitScoreboard.');
-    return; // Or: queue the update!
-  }
-
-  const p1Name = player1 || 'Player 1';
-  const p2Name = player2 || 'Player 2';
-
-  p1NameEl.textContent = p1Name;
-  p2NameEl.textContent = p2Name;
-
-  const safeStats = stats || {};
-  const player1Stats = safeStats[p1Name];
-  const player2Stats = safeStats[p2Name];
-  const p1Wins = (player1Stats && typeof player1Stats.wins === 'number') ? player1Stats.wins : 0;
-  const p2Wins = (player2Stats && typeof player2Stats.wins === 'number') ? player2Stats.wins : 0;
-
-  document.getElementById('player1Score').textContent = p1Wins;
-  document.getElementById('player2Score').textContent = p2Wins;
-}
-
-function waitForScoreboard() {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (
-        document.getElementById('player1Name') &&
-        document.getElementById('player1Score')
-      ) {
-        resolve();
-      } else {
-        requestAnimationFrame(check);
-      }
-    };
-    check();
-  });
-}
-
-function markLeadoffInGuesses(guesses, leadoffName) {
-  return guesses.map(g => ({
-    ...g,
-    isLeadoff: g.name === leadoffName
-  }));
-}
 
  function clearGuessError() {
   const container = document.getElementById('messageContainer');
@@ -1505,6 +1726,9 @@ function showMessage(message, type = 'info', persist = false) {
 
 
 
+
+
+
   function updateTurn(data) {
     currentPlayerNameEl.textContent = data.currentPlayerName || '???';
     timerEl.textContent = data.timeLeft || 15;
@@ -1512,31 +1736,28 @@ function showMessage(message, type = 'info', persist = false) {
 
 
 
-function clearAutocomplete() {
-  const autocompleteList = document.getElementById('autocomplete-list');
-  if (!autocompleteList) return;
+ function clearAutocomplete() {
   autocompleteList.innerHTML = '';
   autocompleteList.style.display = 'none';
 }
 
-function showAutocompleteSuggestions(suggestions) {
-  const autocompleteList = document.getElementById('autocomplete-list');
-  if (!autocompleteList) return;
 
-  autocompleteList.innerHTML = '';
+function showAutocompleteSuggestions(suggestions) {
+  const list = document.getElementById('autocomplete-list');
+  list.innerHTML = '';
 
   if (suggestions.length === 0) {
-    autocompleteList.style.display = 'none';
+    list.style.display = 'none';  // Hide when empty
     return;
   }
 
-  autocompleteList.style.display = 'block';
+  list.style.display = 'block'; // Show when populated
 
   suggestions.forEach(suggestionEl => {
-    autocompleteList.appendChild(suggestionEl);
+    // suggestionEl is an element, append it directly
+    list.appendChild(suggestionEl);
   });
 }
-
 
 
 function renderSuccessfulGuesses() {
@@ -1603,7 +1824,6 @@ function renderSuccessfulGuesses() {
   });
 }
 
-
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
 
@@ -1613,7 +1833,7 @@ function handleGoHome() {
 
   // ✅ Tell server if in an active game
   if (socket && socket.connected && gameStarted && !gameOver) {
-    safeEmit('leaveGame');
+    socket.emit('leaveGame');
   }
 
   // ✅ Always clear local game state
@@ -1629,6 +1849,7 @@ function handleGoHome() {
 
   navigateTo('/home');
 }
+
 
 
 async function handleAuthSuccess() {
@@ -1669,6 +1890,87 @@ async function handleAuthSuccess() {
 }
 
 
+
+//    const signupBtn = document.getElementById('signupBtn');
+//    const signinBtn = document.getElementById('signinBtn');
+
+//    if (signupBtn) {
+//       signupBtn.addEventListener('click', signUp);
+//       console.log('[DEBUG] signupBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signupBtn not found!');
+//     }
+
+//     if (signinBtn) {
+//       signinBtn.addEventListener('click', signIn);
+//       console.log('[DEBUG] signinBtn listener attached');
+//     } else {
+//       console.error('[ERROR] signinBtn not found!');
+//     }
+
+// async function signUp() {
+//   const email = document.getElementById('signup-email').value.trim();
+//   const password = document.getElementById('signup-password').value.trim();
+//   const username = document.getElementById('signup-username').value.trim();
+
+//   if (!email || !password || !username) {
+//     alert('Please fill in all fields.');
+//     return;
+//   }
+
+//   if (password.length < 6) {
+//     alert('Password must be at least 6 characters.');
+//     return;
+//   }
+
+//   console.log('[DEBUG] SignUp data =>', email, username);
+
+//   const { data, error } = await supabase.auth.signUp({
+//     email,
+//     password,
+//     options: {
+//       data: { username } // 🗝️ Saves to user_metadata
+//     }
+//   });
+
+//   if (error) {
+//     console.error('SignUp error:', error.message);
+//     return;
+//   }
+
+//   console.log('✅ Sign Up successful:', data);
+//   navigateTo('/verify'); // tell user to check email!
+// }
+
+
+
+// async function signIn() {
+//   const email = document.getElementById('signin-email').value.trim();
+//   const password = document.getElementById('signin-password').value.trim();
+
+//   if (!email || !password) {
+//     alert('Please enter both email and password.');
+//     return;
+//   }
+
+//   console.log('[DEBUG] SignIn data =>', email);
+
+//   const { data, error } = await supabase.auth.signInWithPassword({
+//     email,
+//     password
+//   });
+
+//   if (error) {
+//     console.error('SignIn error:', error.message);
+//     return;
+//   }
+
+//   console.log('✅ Sign In successful:', data);
+//   await handleAuthSuccess();
+// }
+
+
+
 async function signOut() {
   const { error } = await window.supabase.auth.signOut();
   if (error) {
@@ -1704,6 +2006,35 @@ async function updateNavUserState(session) {
     homeLink.style.display = 'inline-block'; // ✅ Show Home link
   }
 }
+
+
+
+// Listen for auth state changes and update nav accordingly
+if (window.supabase && window.supabase.auth) {
+  window.supabase.auth.onAuthStateChange((event, session) => {
+    updateNavUserState(session);
+  });
+}
+
+// Run once on load
+updateNavUserState();
+
+// Example: hook up sign out button
+document.getElementById('nav-signout-btn').addEventListener('click', async () => {
+  await window.supabase.auth.signOut();
+  updateNavUserState();
+  // Redirect to signup/signin screen (main app route)
+  navigateTo('/signup');
+});
+
+// Optional: hook up sign in button to your sign-in flow
+document.getElementById('nav-signin-btn').addEventListener('click', () => {
+  // redirect to your sign-in page
+  window.location.href = '/signin.html';
+});
+
+
+
 
 
 async function resetPassword() {
@@ -1761,14 +2092,18 @@ async function updatePassword() {
 }
 
 
+/**
+ * Navigate to a route in the SPA
+ * @param {string} path - The route path, e.g. '/confirmed'
+ * @param {object} options - Optional settings
+ *   options.skipPush - If true, skips updating the browser's address bar
+ */
+// navigateTo now uses requestAnimationFrame to wait for next paint
 
-// ============================================
-  // 5️⃣ Router/navigation helpers
-  // ============================================
+
 function navigateTo(path, options = {}) {
   return new Promise((resolve) => {
-    console.debug(`[navigateTo] Navigating to ${path}`);
-
+    // Track the intended route immediately
     currentRoute = path;
 
     if (!options.skipPush) {
@@ -1777,127 +2112,79 @@ function navigateTo(path, options = {}) {
 
     showRouteSection(path);
 
+    // Wrap updateUIForRoute with a guard
     if (currentRoute === path) {
-      console.debug(`[navigateTo] Updating UI for ${path}`);
       updateUIForRoute(path);
       attachRouteListeners(path);
     } else {
-      console.debug(`[navigateTo] Skipped updateUIForRoute — stale path`, path);
+      console.debug('[navigateTo] Skipped updateUIForRoute — stale path', path);
     }
 
-    requestAnimationFrame(resolve);
+    // Use rAF for next paint
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
 }
 
+
+
+
+
+// 1. Attach route-specific listeners
 function attachRouteListeners(route) {
-  console.debug(`[attachRouteListeners] Attaching listeners for ${route}`);
-
   switch (route) {
-    case '/signup': {
-      const signupBtn = document.getElementById('signupBtn');
-      const signinBtn = document.getElementById('signinBtn');
-      const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-
-      if (signupBtn) {
-        signupBtn.removeEventListener('click', signUp);
-        signupBtn.addEventListener('click', signUp);
-      }
-
-      if (signinBtn) {
-        signinBtn.removeEventListener('click', signIn);
-        signinBtn.addEventListener('click', signIn);
-      }
-
-      if (forgotPasswordLink) {
-        const goReset = (e) => {
-          e.preventDefault();
-          navigateTo('/reset');
-        };
-        forgotPasswordLink.removeEventListener('click', goReset);
-        forgotPasswordLink.addEventListener('click', goReset);
-      }
-
+    case '/signup':
+      document.getElementById('signupBtn')?.addEventListener('click', signUp);
+      document.getElementById('signinBtn')?.addEventListener('click', signIn);
+      document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('/reset');
+      });
       break;
-    }
 
-    case '/confirmed': {
-      const continueBtn = document.getElementById('confirmedContinueBtn');
-      if (continueBtn) {
-        continueBtn.removeEventListener('click', handleAuthSuccess);
-        continueBtn.addEventListener('click', handleAuthSuccess);
-      }
+    case '/confirmed':
+     document.getElementById('confirmedContinueBtn')?.addEventListener('click', () => {
+        handleAuthSuccess(); // your existing handler to continue into the app/game
+      });
+
+      // Also update nav user state here so nav reflects logged-in user on confirmed page
       updateNavUserState();
       break;
-    }
 
-    case '/reset': {
-      const resetBtn = document.getElementById('resetBtn');
-      if (resetBtn) {
-        resetBtn.removeEventListener('click', resetPassword);
-        resetBtn.addEventListener('click', resetPassword);
-      }
+    case '/reset':
+      document.getElementById('resetBtn')?.addEventListener('click', resetPassword);
       break;
-    }
 
-    case '/update-password': {
-      const updatePasswordBtn = document.getElementById('updatePasswordBtn');
-      if (updatePasswordBtn) {
-        updatePasswordBtn.removeEventListener('click', updatePassword);
-        updatePasswordBtn.addEventListener('click', updatePassword);
-      }
+    case '/update-password':
+      document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
       break;
-    }
 
-    case '/home': {
-      const privateGameBtn = document.getElementById('privateGameBtn');
-      const findGameBtn = document.getElementById('findGameBtn');
-
-      const handlePrivate = () => {
-        isLeavingGame = false;
+    case '/home':
+      document.getElementById('privateGameBtn')?.addEventListener('click', () => {
+        isLeavingGame = false;  // ✅ I want to join a new game now
         startPrivateGame();
-      };
-
-      const handleFind = () => {
-        isLeavingGame = false;
+      });
+      document.getElementById('findGameBtn')?.addEventListener('click', () => {
+        isLeavingGame = false;  // ✅ I want to find a public game now
         joinPublicGame();
-      };
-
-      if (privateGameBtn) {
-        privateGameBtn.removeEventListener('click', handlePrivate);
-        privateGameBtn.addEventListener('click', handlePrivate);
-      }
-
-      if (findGameBtn) {
-        findGameBtn.removeEventListener('click', handleFind);
-        findGameBtn.addEventListener('click', handleFind);
-      }
+      });
       break;
-    }
 
-    case '/play': {
-  guessInput = document.getElementById('guessInput');
-  submitGuessBtn = document.getElementById('submitGuessBtn');
-  rematchBtn = document.getElementById('rematchBtn');
-  messagesEl = document.getElementById('messages');
-  currentPlayerNameEl = document.getElementById('currentPlayerName');
-  timerEl = document.getElementById('timer');
+    case '/play':
+      // Setup listeners or UI related to the gameplay screen here
+      // For example, you might want to add listeners for guess submission buttons:
+      document.getElementById('submitGuessBtn')?.addEventListener('click', submitGuess);
+      document.getElementById('rematchBtn')?.addEventListener('click', requestRematch);
+      break;
 
-  if (submitGuessBtn) {
-    submitGuessBtn.removeEventListener('click', submitGuess);
-    submitGuessBtn.addEventListener('click', submitGuess);
-  }
-
-  if (rematchBtn) {
-    rematchBtn.removeEventListener('click', requestRematch);
-    rematchBtn.addEventListener('click', requestRematch);
-  }
-  break;
-}
-
+    // Add other route handlers here as needed
   }
 }
 
 
+
+// 2. Show/hide sections based on route
 function showRouteSection(path) {
   const allSections = document.querySelectorAll('section[data-route]');
   let matched = false;
@@ -1923,97 +2210,76 @@ function showRouteSection(path) {
 
 // 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
-  if (path !== currentRoute) {
+   if (path !== currentRoute) {
     console.debug('[updateUIForRoute] Skipped because stale:', path, 'Expected:', currentRoute);
     return;
   }
 
   console.debug('[updateUIForRoute] Handling:', path);
+ if (path === '/home') {
+  console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  if (path === '/home') {
-    console.log('[DEBUG] updateUIForRoute: Handling /home');
-
-    // ✅ Mark that you are intentionally leaving
-    if (socket && socket.connected && myRoomId) {
-      console.debug('[updateUIForRoute] Emitting leaveGame');
-      isLeavingGame = true;
-      safeEmit('leaveGame');
-    }
-
-    // 🧹 Clear local game state
-    gameStarted = false;
-    gameOver = true;
-    roomId = null;
-    myRoomId = null;
-    isPrivateGame = false;
-    selectedPlayer = null;
-    successfulGuesses = [];
-
-    // ✅ DO NOT reset isLeavingGame here!
-    // Let it stay true until you explicitly join or navigate away.
-
-    // Update welcome
-    const welcomeEl = document.getElementById('home-welcome');
-    if (welcomeEl && myUsername) {
-      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-    }
+  // ✅ Mark that you are intentionally leaving
+  if (socket && socket.connected) {
+    isLeavingGame = true;
+    socket.emit('leaveGame');
   }
 
-  if (path === '/waiting') {
-    if (isLeavingGame) {
-      console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
-      return;  // 🛑 Prevent accidental waiting room navigation
-    }
+  // 🧹 Clear local game state
+  gameStarted = false;
+  gameOver = true;
+  roomId = null;
+  myRoomId = null;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
 
-    // ✅ Use the shared statusDiv declared once near top
-    if (statusDiv) {
-      statusDiv.textContent = 'Waiting for an opponent...';
+  // ✅ DO NOT reset isLeavingGame here!
+  // Let it stay true until you explicitly join or navigate away.
+
+  // Update welcome
+  const welcomeEl = document.getElementById('home-welcome');
+  if (welcomeEl && myUsername) {
+    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+  }
+}
+
+
+
+if (path === '/waiting') {
+  if (isLeavingGame) {
+    console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
+    return;  // 🛑 Prevent accidental waiting room navigation
+  }
+
+  // ✅ Use the shared statusDiv declared once near top
+  if (statusDiv) {
+    statusDiv.textContent = 'Waiting for an opponent...';
+  } else {
+    console.warn('[WARN] statusDiv not found when trying to update!');
+  }
+
+  const codeEl = document.getElementById('displayRoomCode');
+  const inviteWrapper = document.getElementById('inviteLinkWrapper');
+  const inviteInput = document.getElementById('inviteLink');
+
+  if (codeEl && myRoomId) {
+    codeEl.textContent = myRoomId;
+  }
+
+  if (inviteWrapper && inviteInput) {
+    if (isPrivateGame && myRoomId) {
+      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
+      inviteInput.value = inviteUrl;
+      inviteWrapper.style.display = 'block';
+      inviteInput.focus();
+      inviteInput.select();
     } else {
-      console.warn('[WARN] statusDiv not found when trying to update!');
-    }
-
-    const codeEl = document.getElementById('displayRoomCode');
-    const inviteWrapper = document.getElementById('inviteLinkWrapper');
-    const inviteInput = document.getElementById('inviteLink');
-
-    if (codeEl && myRoomId) {
-      codeEl.textContent = myRoomId;
-    }
-
-    if (inviteWrapper && inviteInput) {
-      if (isPrivateGame && myRoomId) {
-        const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
-        inviteInput.value = inviteUrl;
-        inviteWrapper.style.display = 'block';
-        inviteInput.focus();
-        inviteInput.select();
-
-        // Attach copy invite button listener here
-        attachCopyInviteListener();
-      } else {
-        inviteInput.value = '';
-        inviteWrapper.style.display = 'none';
-      }
+      inviteInput.value = '';
+      inviteWrapper.style.display = 'none';
     }
   }
-
-  if (path === '/play') {
-    // Defensive guards to avoid errors if elements are missing
-    if (guessInput) guessInput.disabled = true;
-    if (submitGuessBtn) submitGuessBtn.disabled = true;
-    if (rematchBtn) {
-      rematchBtn.style.display = 'none';
-      rematchBtn.disabled = false;
-      rematchBtn.textContent = 'Rematch';
-    }
-    if (messagesEl) {
-      messagesEl.innerHTML = '';
-      messagesEl.style.display = 'block';
-    }
-    // For example, update the current player name and timer (you'll want to pass in 'data' or manage separately)
-    if (currentPlayerNameEl) currentPlayerNameEl.textContent = ''; // or set from data
-    if (timerEl) timerEl.textContent = '15'; // or set from data
-  }
+}
 
 
   // Guess container visibility
@@ -2034,10 +2300,8 @@ function updateUIForRoute(path) {
 }
 
 
+// 4. Main renderRoute function
 function renderRoute(path, addToHistory = true) {
-  console.debug('[renderRoute]', { path, addToHistory });
-
-  currentRoute = path; // ✅ important for stale guards
   showRouteSection(path);
   attachRouteListeners(path);
   updateUIForRoute(path);
@@ -2047,13 +2311,15 @@ function renderRoute(path, addToHistory = true) {
   }
 }
 
-window.addEventListener('popstate', () => {
-  const path = window.location.pathname;
-  console.debug('[popstate] Navigating to:', path);
-  renderRoute(path, false); // never push state when going back/forward
+
+// 5. Initial page load render
+document.addEventListener('DOMContentLoaded', () => {
+  renderRoute(window.location.pathname || '/signup', false);
 });
 
-document.getElementById('guessInput')?.addEventListener('focus', () => {
+
+document.getElementById('guessInput').addEventListener('focus', () => {
+  // Only apply if screen width is <= 480px (adjust as needed for "mobile")
   if (window.innerWidth <= 480) {
     const guessControls = document.getElementById('guessControls');
     const topOffset = guessControls.getBoundingClientRect().top + window.scrollY;
@@ -2066,142 +2332,65 @@ document.getElementById('guessInput')?.addEventListener('focus', () => {
   }
 });
 
-
-
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[DEBUG] DOMContentLoaded');
-
-  // Grab global statusDiv if needed
-  statusDiv = document.getElementById('statusDiv') || null;
-
-  const urlHash = window.location.hash;
-  const searchParams = new URLSearchParams(window.location.search);
-  const typeParam = searchParams.get('type');
-
-  const tabSignup = document.getElementById('tab-signup');
-  const tabSignin = document.getElementById('tab-signin');
-  const signupForm = document.getElementById('signupForm');
-  const signinForm = document.getElementById('signinForm');
-
-  if (tabSignup && tabSignin && signupForm && signinForm) {
-    tabSignup.addEventListener('click', (e) => {
-      e.preventDefault();
-      tabSignup.classList.add('active');
-      tabSignin.classList.remove('active');
-
-      signupForm.classList.add('active');
-      signupForm.classList.remove('hidden');
-
-      signinForm.classList.remove('active');
-      signinForm.classList.add('hidden');
-    });
-
-    tabSignin.addEventListener('click', (e) => {
-      e.preventDefault();
-      tabSignin.classList.add('active');
-      tabSignup.classList.remove('active');
-
-      signinForm.classList.add('active');
-      signinForm.classList.remove('hidden');
-
-      signupForm.classList.remove('active');
-      signupForm.classList.add('hidden');
-    });
-  } else {
-    console.error('[ERROR] Tabs or forms not found!');
-  }
-
-  let justConfirmed = false;
-
-  // ✅ Check for confirmation/recovery type
-  if (
-    (urlHash.includes('access_token') &&
-      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-  ) {
-    console.log('[DEBUG] Detected confirmation link.');
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (error) {
-        console.error('[ERROR] Email confirmation failed:', error.message);
-      } else {
-        console.log('[DEBUG] Email confirmed for:', user?.email);
-
-        if (user?.user_metadata?.username) {
-          myUsername = user.user_metadata.username;
-          console.log('[DEBUG] Username from user_metadata:', myUsername);
-        } else {
-          myUsername = user?.email?.split('@')[0] || null;
-          console.warn('[WARN] No username found in user_metadata. Fallback:', myUsername);
-        }
-
-        localStorage.setItem('username', myUsername);
-
-        const { data: { session } } = await supabase.auth.getSession();
-        await updateNavUserState(session);
-
-        justConfirmed = true;
-
-        // ✅ Take them to your confirmation page
-        navigateTo('/confirmed');
-        return;
-      }
-    } catch (e) {
-      console.error('[ERROR] Exception during email confirmation:', e);
-    }
-
-    return; // ✅ Exit early if confirmation flow handled
-  }
-
-  // ✅ The rest of your normal routing logic...
-  const { data } = await supabase.auth.getSession();
-  await updateNavUserState(data.session);
-
-  if (data.session?.user) {
-    myUsername = data.session.user.user_metadata?.username || data.session.user.email || null;
-  } else {
-    myUsername = localStorage.getItem('username') || null;
-  }
-
-  if (justConfirmed) {
-    navigateTo('/confirmed');
-    return;
-  }
-
-  if (!myUsername) {
-    navigateTo('/signup');
-  } else {
-    navigateTo('/home');
-  }
-
-  // --- NEW: Initialize gameplay elements and listeners when route is /play ---
-  if (currentRoute === '/play') {
-    guessInput = document.getElementById('guessInput');
-    submitGuessBtn = document.getElementById('submitGuessBtn');
-    rematchBtn = document.getElementById('rematchBtn');
-    timerEl = document.getElementById('timer');
-    messagesEl = document.getElementById('messages');
-    currentPlayerNameEl = document.getElementById('currentPlayerName');
-
-    if (guessInput) {
-      guessInput.removeEventListener('input', onGuessInput);
-      guessInput.addEventListener('input', onGuessInput);
-    }
-
-    if (submitGuessBtn) {
-      submitGuessBtn.removeEventListener('click', submitGuess);
-      submitGuessBtn.addEventListener('click', submitGuess);
-    }
-
-    if (rematchBtn) {
-      rematchBtn.removeEventListener('click', requestRematch);
-      rematchBtn.addEventListener('click', requestRematch);
-    }
-  }
+// Handle browser back/forward navigation
+window.addEventListener('popstate', () => {
+  const path = window.location.pathname;
+  console.debug('[popstate] Navigating to:', path);
+  currentRoute = path;
+  showRouteSection(path);
+  updateUIForRoute(path);
+  attachRouteListeners(path);
 });
 
 
+// Initial route on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
+  renderRoute(initialPath);
+});
+
+
+    // After all routing logic:
+    if (justConfirmed) {
+      if (typeParam === 'recovery' || urlHash.includes('type=recovery')) {
+        navigateTo('/update-password');
+        return;
+      } else {
+        navigateTo('/confirmed');
+        return;
+      }
+    }
+  }); // End of DOMContentLoaded
+
+  // Tab switching logic for auth forms
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabSignup = document.getElementById('tab-signup');
+      const tabSignin = document.getElementById('tab-signin');
+      const signupForm = document.getElementById('signupForm');
+      const signinForm = document.getElementById('signinForm');
+      tabSignup.addEventListener('click', function() {
+        tabSignup.classList.add('active');
+        tabSignin.classList.remove('active');
+        signupForm.classList.add('active');
+        signinForm.classList.remove('active');
+      });
+      tabSignin.addEventListener('click', function() {
+        tabSignin.classList.add('active');
+        tabSignup.classList.remove('active');
+        signinForm.classList.add('active');
+        signupForm.classList.remove('active');
+      });
+    });
+
+    // Attach signup handler to the form submit event instead of button click
+   const signupForm = document.getElementById('signupForm');
+   if (signupForm) {
+     signupForm.addEventListener('submit', function(e) {
+       e.preventDefault();
+       signUp();
+     });
+   }
+   // Remove the old signupBtn click handler if present
 </script>
 </body>
 </html>
