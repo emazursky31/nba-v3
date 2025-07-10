@@ -787,78 +787,89 @@ let currentPlayerNameEl;
 
 
 
-    socket.on('gameStarted', async (data) => {
-      if (isLeavingGame) {
-        console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
-        return;
-      }
+socket.on('gameStarted', async (data) => {
+  if (isLeavingGame) {
+    console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
+    return;
+  }
 
-      console.log('[CLIENT] Received gameStarted event:', data);
+  console.log('[CLIENT] Received gameStarted event:', data);
 
-      gameStarted = true;
-      gameOver = false;
+  gameStarted = true;
+  gameOver = false;
 
-      leadoffPlayerName = data.leadoffPlayer || null;
+  leadoffPlayerName = data.leadoffPlayer || null;
 
-      if (window.timerInterval) {
-        clearInterval(window.timerInterval);
-        window.timerInterval = null;
-        console.warn('[CLIENT] Cleared leftover timer before starting new one.');
-      }
+  if (window.timerInterval) {
+    clearInterval(window.timerInterval);
+    window.timerInterval = null;
+    console.warn('[CLIENT] Cleared leftover timer before starting new one.');
+  }
 
-      guessInput.disabled = true;
-      submitGuessBtn.disabled = true;
-      guessInput.value = '';
-      clearGuessError();
-      clearAutocomplete();
+  if (guessInput) {
+    guessInput.disabled = true;
+    guessInput.value = '';
+  }
 
-      rematchBtn.style.display = 'none';
-      rematchBtn.disabled = false;
-      rematchBtn.textContent = 'Rematch';
+  if (submitGuessBtn) submitGuessBtn.disabled = true;
 
-      messagesEl.innerHTML = '';
-      messagesEl.style.display = 'block';
+  clearGuessError();
+  clearAutocomplete();
 
-      successfulGuesses = [];
-      if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
-        leadoffPlayerName = data.leadoffPlayer;
-        successfulGuesses.push({
-          guesser: 'Leadoff',
-          name: leadoffPlayerName,
-          isLeadoff: true
-        });
-      }
+  if (rematchBtn) {
+    rematchBtn.style.display = 'none';
+    rematchBtn.disabled = false;
+    rematchBtn.textContent = 'Rematch';
+  }
 
-      console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
-      renderSuccessfulGuesses();
+  if (messagesEl) {
+    messagesEl.innerHTML = '';
+    messagesEl.style.display = 'block';
+  }
 
-      currentPlayerNameEl.textContent = data.currentPlayerName;
-
-      const playerYouEl = document.getElementById('playerYou');
-      const playerOpponentEl = document.getElementById('playerOpponent');
-      if (playerOpponentEl && data.opponentName) {
-        playerOpponentEl.textContent = data.opponentName;
-        opponentName = data.opponentName;
-      }
-      if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
-
-      const isYourTurn = data.currentPlayerName === myUsername;
-      if (playerYouEl && playerOpponentEl) {
-        playerYouEl.classList.toggle('active-turn', isYourTurn);
-        playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
-      }
-
-      timerEl.textContent = data.timeLeft || 15;
-      console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
-
-      // ✅ ✅ ✅ NEW: Navigate to /play FIRST and wait!
-      console.log('[DEBUG] Navigating to /play...');
-      await navigateTo('/play');
-      console.debug('[DEBUG] Waiting for scoreboard readiness...');
-      await waitForScoreboard();
-      safeEmit('getMatchStats');
-
+  successfulGuesses = [];
+  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
+    leadoffPlayerName = data.leadoffPlayer;
+    successfulGuesses.push({
+      guesser: 'Leadoff',
+      name: leadoffPlayerName,
+      isLeadoff: true
     });
+  }
+
+  console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
+  renderSuccessfulGuesses();
+
+  if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName;
+
+  // These aren't global yet — so query them here with defensive checks
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+
+  if (playerOpponentEl && data.opponentName) {
+    playerOpponentEl.textContent = data.opponentName;
+    opponentName = data.opponentName;
+  }
+  if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
+
+  const isYourTurn = data.currentPlayerName === myUsername;
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.toggle('active-turn', isYourTurn);
+    playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
+  }
+
+  if (timerEl) timerEl.textContent = data.timeLeft || 15;
+  console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
+
+  // ✅ Navigate to /play FIRST and wait for UI to be ready
+  console.log('[DEBUG] Navigating to /play...');
+  await navigateTo('/play');
+  console.debug('[DEBUG] Waiting for scoreboard readiness...');
+  await waitForScoreboard();
+
+  safeEmit('getMatchStats');
+});
+
 
 
     socket.on('matchStats', (stats) => {
@@ -960,19 +971,27 @@ let currentPlayerNameEl;
       navigateTo('/play');
 
       const turnSection = document.getElementById('turnSection');
+      if (!turnSection) {
+        console.warn('[WARN] turnSection not found');
+        return;
+      }
 
       turnSection.classList.add('your-turn');
       turnSection.classList.remove('opponent-turn');
-
-      document.getElementById('guessControls').style.display = 'block';
-      guessInput.disabled = false;
-      submitGuessBtn.disabled = !guessInput.value.trim();
-
-      currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
-      timerEl.textContent = data.timeLeft || 15;
-
       turnSection.style.display = 'block';
-      messagesEl.style.display = 'block';
+
+      const guessControls = document.getElementById('guessControls');
+      if (guessControls) {
+        guessControls.style.display = 'block';
+      }
+
+      if (guessInput) guessInput.disabled = false;
+      if (submitGuessBtn) submitGuessBtn.disabled = !(guessInput?.value.trim());
+
+      if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+      if (timerEl) timerEl.textContent = data.timeLeft || 15;
+
+      if (messagesEl) messagesEl.style.display = 'block';
 
       showMessage(data.message || "It's your turn to guess!", 'info');
 
@@ -981,9 +1000,7 @@ let currentPlayerNameEl;
         turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
       }
 
-
-
-      // ✅ Highlight the current player in playersDisplay
+      // Highlight current player
       const playerYouEl = document.getElementById('playerYou');
       const playerOpponentEl = document.getElementById('playerOpponent');
 
@@ -993,24 +1010,31 @@ let currentPlayerNameEl;
       }
     });
 
-
     socket.on('opponentTurn', (data) => {
       navigateTo('/play');
 
       const turnSection = document.getElementById('turnSection');
+      if (!turnSection) {
+        console.warn('[WARN] turnSection not found');
+        return;
+      }
 
       turnSection.classList.remove('your-turn');
       turnSection.classList.add('opponent-turn');
-
-      document.getElementById('guessControls').style.display = 'none';
-      guessInput.disabled = true;
-      submitGuessBtn.disabled = true;
-
-      currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
-      timerEl.textContent = '';
-
       turnSection.style.display = 'block';
-      messagesEl.style.display = 'block';
+
+      const guessControls = document.getElementById('guessControls');
+      if (guessControls) {
+        guessControls.style.display = 'none';
+      }
+
+      if (guessInput) guessInput.disabled = true;
+      if (submitGuessBtn) submitGuessBtn.disabled = true;
+
+      if (currentPlayerNameEl) currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
+      if (timerEl) timerEl.textContent = '';
+
+      if (messagesEl) messagesEl.style.display = 'block';
 
       showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 
@@ -1019,8 +1043,7 @@ let currentPlayerNameEl;
         turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
       }
 
-
-      // ✅ Highlight the opponent in playersDisplay
+      // Highlight opponent player
       const playerYouEl = document.getElementById('playerYou');
       const playerOpponentEl = document.getElementById('playerOpponent');
 
@@ -1029,6 +1052,7 @@ let currentPlayerNameEl;
         playerOpponentEl.classList.add('active-turn');
       }
     });
+
 
 
     socket.on('message', (msg) => {
@@ -1838,20 +1862,25 @@ function attachRouteListeners(route) {
     }
 
     case '/play': {
-      const submitGuessBtn = document.getElementById('submitGuessBtn');
-      const rematchBtn = document.getElementById('rematchBtn');
+  guessInput = document.getElementById('guessInput');
+  submitGuessBtn = document.getElementById('submitGuessBtn');
+  rematchBtn = document.getElementById('rematchBtn');
+  messagesEl = document.getElementById('messages');
+  currentPlayerNameEl = document.getElementById('currentPlayerName');
+  timerEl = document.getElementById('timer');
 
-      if (submitGuessBtn) {
-        submitGuessBtn.removeEventListener('click', submitGuess);
-        submitGuessBtn.addEventListener('click', submitGuess);
-      }
+  if (submitGuessBtn) {
+    submitGuessBtn.removeEventListener('click', submitGuess);
+    submitGuessBtn.addEventListener('click', submitGuess);
+  }
 
-      if (rematchBtn) {
-        rematchBtn.removeEventListener('click', requestRematch);
-        rematchBtn.addEventListener('click', requestRematch);
-      }
-      break;
-    }
+  if (rematchBtn) {
+    rematchBtn.removeEventListener('click', requestRematch);
+    rematchBtn.addEventListener('click', requestRematch);
+  }
+  break;
+}
+
   }
 }
 
@@ -1954,6 +1983,25 @@ function updateUIForRoute(path) {
       }
     }
   }
+
+  if (path === '/play') {
+    // Defensive guards to avoid errors if elements are missing
+    if (guessInput) guessInput.disabled = true;
+    if (submitGuessBtn) submitGuessBtn.disabled = true;
+    if (rematchBtn) {
+      rematchBtn.style.display = 'none';
+      rematchBtn.disabled = false;
+      rematchBtn.textContent = 'Rematch';
+    }
+    if (messagesEl) {
+      messagesEl.innerHTML = '';
+      messagesEl.style.display = 'block';
+    }
+    // For example, update the current player name and timer (you'll want to pass in 'data' or manage separately)
+    if (currentPlayerNameEl) currentPlayerNameEl.textContent = ''; // or set from data
+    if (timerEl) timerEl.textContent = '15'; // or set from data
+  }
+
 
   // Guess container visibility
   const guessContainer = document.getElementById('successful-guesses-container');
