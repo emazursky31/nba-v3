@@ -1502,28 +1502,31 @@ function showMessage(message, type = 'info', persist = false) {
 
 
 
- function clearAutocomplete() {
+function clearAutocomplete() {
+  const autocompleteList = document.getElementById('autocomplete-list');
+  if (!autocompleteList) return;
   autocompleteList.innerHTML = '';
   autocompleteList.style.display = 'none';
 }
 
-
 function showAutocompleteSuggestions(suggestions) {
-  const list = document.getElementById('autocomplete-list');
-  list.innerHTML = '';
+  const autocompleteList = document.getElementById('autocomplete-list');
+  if (!autocompleteList) return;
+
+  autocompleteList.innerHTML = '';
 
   if (suggestions.length === 0) {
-    list.style.display = 'none';  // Hide when empty
+    autocompleteList.style.display = 'none';
     return;
   }
 
-  list.style.display = 'block'; // Show when populated
+  autocompleteList.style.display = 'block';
 
   suggestions.forEach(suggestionEl => {
-    // suggestionEl is an element, append it directly
-    list.appendChild(suggestionEl);
+    autocompleteList.appendChild(suggestionEl);
   });
 }
+
 
 
 function renderSuccessfulGuesses() {
