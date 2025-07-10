@@ -996,6 +996,16 @@ function updateSplitScoreboard(stats, player1, player2) {
   document.getElementById('player2Score').textContent = p2Wins;
 }
 
+const joinBtn = document.getElementById('joinPublicGameBtn');
+  if (joinBtn) {
+    joinBtn.addEventListener('click', () => {
+      joinPublicGame();
+    });
+    console.log('[DEBUG] joinPublicGame button listener attached');
+  } else {
+    console.warn('[WARN] joinPublicGameBtn not found');
+  }
+
 function waitForScoreboard() {
   return new Promise((resolve) => {
     const check = () => {
