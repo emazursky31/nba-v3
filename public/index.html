@@ -2369,6 +2369,7 @@ if (path === '/waiting') {
 
 // 4. Main renderRoute function
 function renderRoute(path, addToHistory = true) {
+  currentRoute = path;
   showRouteSection(path);
   attachRouteListeners(path);
   updateUIForRoute(path);
