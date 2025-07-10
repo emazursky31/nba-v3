@@ -1323,6 +1323,16 @@ function resetGameUI() {
 }
 
 
+function onGuessInput(e) {
+  const query = e.target.value.trim();
+  if (!query) {
+    clearAutocomplete();
+    return;
+  }
+  const suggestions = getSuggestions(query);
+  showAutocompleteSuggestions(suggestions);
+}
+
 
 
 
@@ -2164,10 +2174,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     navigateTo('/home');
   }
+
+  // --- NEW: Initialize gameplay elements and listeners when route is /play ---
+  if (currentRoute === '/play') {
+    guessInput = document.getElementById('guessInput');
+    submitGuessBtn = document.getElementById('submitGuessBtn');
+    rematchBtn = document.getElementById('rematchBtn');
+    timerEl = document.getElementById('timer');
+    messagesEl = document.getElementById('messages');
+    currentPlayerNameEl = document.getElementById('currentPlayerName');
+
+    if (guessInput) {
+      guessInput.removeEventListener('input', onGuessInput);
+      guessInput.addEventListener('input', onGuessInput);
+    }
+
+    if (submitGuessBtn) {
+      submitGuessBtn.removeEventListener('click', submitGuess);
+      submitGuessBtn.addEventListener('click', submitGuess);
+    }
+
+    if (rematchBtn) {
+      rematchBtn.removeEventListener('click', requestRematch);
+      rematchBtn.addEventListener('click', requestRematch);
+    }
+  }
 });
-
-
-
 
 
 </script>
