@@ -1050,6 +1050,8 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 
 
 // --- Important: initSocket ---
+let listenersAttached = false;
+
 function initSocket() {
   if (!socket) {
     console.error('[initSocket] socket is not initialized!');
@@ -1443,7 +1445,7 @@ socket.on('rematchStarted', () => {
 
 
 
-  // ✅ Put *all* other socket.on(...) handlers here
+ listenersAttached = true;
 }
 // --- END Important: initSocket ---
 
