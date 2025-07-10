@@ -728,10 +728,13 @@
   // ============================================
 
   function initSocket() {
-    if (socket && socket.connected) {
-      console.log('[initSocket] Socket already connected');
-      return;
-    }
+     if (socket && socket.connected) {
+    console.log('[initSocket] Socket already connected');
+    return;
+  }
+  if (socket) {
+    console.log('[initSocket] Socket exists but disconnected — reconnecting');
+  }
 
     socket = io(); 
 
@@ -1116,6 +1119,7 @@ function flushEmitQueue() {
     socket.emit(event, data);   // ✅ direct emit
   }
 }
+
 
 
 
