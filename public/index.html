@@ -1130,6 +1130,19 @@ async function joinPublicGame() {
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
 
+  // Always fetch latest username from session/localStorage before joining
+  if (!myUsername) {
+    const { data, error } = await supabase.auth.getSession();
+    if (data && data.session && data.session.user) {
+      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+      localStorage.setItem('username', myUsername);
+      console.log('[joinPublicGame] Refreshed myUsername from session:', myUsername);
+    } else {
+      myUsername = localStorage.getItem('username') || null;
+      console.log('[joinPublicGame] Fallback myUsername from localStorage:', myUsername);
+    }
+  }
+
   if (!myUsername) {
     alert('Missing username');
     return;
@@ -2188,8 +2201,9 @@ function attachRouteListeners(route) {
       break;
 
     case '/confirmed':
-     document.getElementById('confirmedContinueBtn')?.addEventListener('click', () => {
-        handleAuthSuccess(); // your existing handler to continue into the app/game
+     document.getElementById('confirmedContinueBtn')?.addEventListener('click', async () => {
+        // Always fetch and set username before continuing
+        await handleAuthSuccess();
       });
 
       // Also update nav user state here so nav reflects logged-in user on confirmed page
