@@ -2271,16 +2271,14 @@ function updateUIForRoute(path) {
   }
 
   console.debug('[updateUIForRoute] Handling:', path);
- if (path === '/home') {
+if (path === '/home') {
   console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  // ✅ Mark that you are intentionally leaving
+  // 🧹 Clear game state
   if (socket && socket.connected) {
     isLeavingGame = true;
     socket.emit('leaveGame');
   }
-
-  // 🧹 Clear local game state
   gameStarted = false;
   gameOver = true;
   roomId = null;
@@ -2289,13 +2287,27 @@ function updateUIForRoute(path) {
   selectedPlayer = null;
   successfulGuesses = [];
 
-  // ✅ DO NOT reset isLeavingGame here!
-  // Let it stay true until you explicitly join or navigate away.
-
-  // Update welcome
   const welcomeEl = document.getElementById('home-welcome');
   if (welcomeEl && myUsername) {
     welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+  }
+
+  // ✅ Attach Join Public Game button
+  const joinBtn = document.getElementById('joinPublicGameBtn');
+  if (joinBtn) {
+    joinBtn.onclick = joinPublicGame;
+    console.log('[DEBUG] joinPublicGame button listener attached');
+  } else {
+    console.warn('[WARN] joinPublicGameBtn not found');
+  }
+
+  // ✅ Attach Start Private Game button (if you have one)
+  const privateBtn = document.getElementById('startPrivateGameBtn');
+  if (privateBtn) {
+    privateBtn.onclick = startPrivateGame;
+    console.log('[DEBUG] startPrivateGame button listener attached');
+  } else {
+    console.warn('[WARN] startPrivateGameBtn not found');
   }
 }
 
