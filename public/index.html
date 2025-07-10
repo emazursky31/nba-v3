@@ -2217,14 +2217,15 @@ function attachRouteListeners(route) {
 
     case '/home':
       document.getElementById('privateGameBtn')?.addEventListener('click', () => {
-        isLeavingGame = false;  // ✅ I want to join a new game now
+        isLeavingGame = false;
         startPrivateGame();
       });
       document.getElementById('findGameBtn')?.addEventListener('click', () => {
-        isLeavingGame = false;  // ✅ I want to find a public game now
+        isLeavingGame = false;
         joinPublicGame();
       });
       break;
+
 
     case '/play':
       // Setup listeners or UI related to the gameplay screen here
@@ -2292,23 +2293,22 @@ if (path === '/home') {
     welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
   }
 
-  // ✅ Attach Join Public Game button
-  const joinBtn = document.getElementById('joinPublicGameBtn');
+  const joinBtn = document.getElementById('findGameBtn');
   if (joinBtn) {
     joinBtn.onclick = joinPublicGame;
-    console.log('[DEBUG] joinPublicGame button listener attached');
+    console.log('[DEBUG] findGameBtn button listener attached');
   } else {
-    console.warn('[WARN] joinPublicGameBtn not found');
+    console.warn('[WARN] findGameBtn not found');
   }
 
-  // ✅ Attach Start Private Game button (if you have one)
-  const privateBtn = document.getElementById('startPrivateGameBtn');
+  const privateBtn = document.getElementById('privateGameBtn');
   if (privateBtn) {
     privateBtn.onclick = startPrivateGame;
-    console.log('[DEBUG] startPrivateGame button listener attached');
+    console.log('[DEBUG] privateGameBtn button listener attached');
   } else {
-    console.warn('[WARN] startPrivateGameBtn not found');
+    console.warn('[WARN] privateGameBtn not found');
   }
+
 }
 
 
