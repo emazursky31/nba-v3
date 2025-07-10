@@ -1048,192 +1048,32 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 //   handleUsernameEntry();
 // }
 
-function startPrivateGame() {
-  console.log('[DEBUG] startPrivateGame called');
 
-  if (isLeavingGame) {
-    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
-    return; // ✅ Do NOT start private game while intentionally leaving
-  }
-
-  if (!myUsername) {
-    alert('Missing username');
-    return;
-  }
-
-  if (gameStarted && !gameOver) {
-    alert('Finish your current game first.');
-    return;
-  }
-
-  isPrivateGame = true;
-  isLeavingGame = false; // ✅ You’re intentionally starting a new match
-
-  // ✅ Generate new room and clear stale room data
-  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-  roomId = generatedRoomId;
-  myRoomId = generatedRoomId;
-
-  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-
-  statusDiv.textContent = `Started private room: ${myRoomId}`;
-  document.getElementById('displayRoomCode').textContent = myRoomId;
-
-  inviteLinkContainer.innerHTML = `
-    Share this link to invite a friend:<br>
-    <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-      ${window.location.origin}?room=${myRoomId}
-    </a>
-  `;
-
-  navigateTo('/waiting');
-}
-
-
-async function joinPublicGame() {
-  console.log('[DEBUG] joinPublicGame called');
-
-  isLeavingGame = false;
-  localStorage.removeItem('isLeavingGame');
-
-  if (!myUsername) {
-    alert('Missing username');
-    return;
-  }
-
-  if (gameStarted && !gameOver) {
-    alert('Finish your current game first.');
-    return;
-  }
-
-  myRoomId = null;
-  roomId = null;
-  isPrivateGame = false;
-
-  selectedPlayer = null;
-  successfulGuesses = [];
-  gameOver = false;
-
-  // ✅ Ensure socket is initialized
+// --- Important: initSocket ---
+function initSocket() {
   if (!socket) {
-    console.log('[joinPublicGame] Socket is null — initializing');
-    initSocket();
-  }
-
-  console.log('[DEBUG] Navigating to /waiting...');
-  await navigateTo('/waiting');
-
-  console.log('[DEBUG] Using safeEmit to find match:', myUsername);
-  safeEmit('findMatch', myUsername);
-}
-
-
-
-
-
-
-socket.on('connect', () => {
-  console.log('[safeEmit] Socket connected — flushing emitQueue');
-  flushEmitQueue();
-});
-
-
-socket.on('disconnect', (reason) => {
-  console.log('[DEBUG] Socket disconnected:', reason);
-  socketConnected = false;
-});
-
-function safeEmit(event, data) {
-  if (!socket) {
-    console.warn(`[safeEmit] Socket is null — initializing socket`);
-    initSocket();  // Or however you handle (re)connecting
-  }
-
-  emitQueue.push({ event, data });
-
-  if (socket && socket.connected) {
-    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
-    flushEmitQueue();
-  } else {
-    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
-  }
-}
-
-function flushEmitQueue() {
-  if (!socket) {
-    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+    console.error('[initSocket] socket is not initialized!');
     return;
   }
 
-  while (socket.connected && emitQueue.length > 0) {
-    const { event, data } = emitQueue.shift();
-    console.log(`[safeEmit] Flushing queued "${event}"`);
-    socket.emit(event, data);
-  }
-}
-
-
-
-socket.on('playersUpdate', (count) => {
-  console.log('[DEBUG] playersUpdate received:', count);
-
-  if (isLeavingGame) {
-    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+  if (socket.connected) {
+    console.log('[initSocket] Socket already connected — listeners should already be attached');
     return;
   }
 
-  const statusDiv = document.getElementById('statusDiv');
-  const rematchBtn = document.getElementById('rematchBtn');
+  // Attach all your listeners here:
+  socket.on('connect', () => {
+    console.log('[initSocket] Socket connected!');
+    flushEmitQueue?.();
+  });
 
-  if (statusDiv) {
-    statusDiv.textContent = `Players in room: ${count}`;
-  } else {
-    console.warn('statusDiv not found in DOM');
-  }
-
-  if (rematchBtn) {
-    if (count < 2) {
-      rematchBtn.style.display = 'none';
-      navigateTo('/waiting');
-    } else {
-      navigateTo('/play');
-    }
-  } else {
-    console.warn('rematchBtn not found in DOM');
-  }
-});
+  socket.on('connect_error', (err) => {
+    console.error('[initSocket] Connection error:', err);
+  });
 
 
 
-
-
-socket.on('matched', ({ roomId, opponent }) => {
-  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-    console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
-    return;
-  }
-
-  if (gameStarted && !gameOver) return;
-
-  // ✅ Once matched, clear stale flags
-  isLeavingGame = false;
-  localStorage.removeItem('isLeavingGame');
-
-  myRoomId = roomId;
-  opponentName = opponent;
-
-  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
-
-  navigateTo('/waiting');
-  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-});
-
-
-
-
-
-// 2. Game Lifecycle
-socket.on('gameStarted', async (data) => {
+ socket.on('gameStarted', async (data) => {
   if (isLeavingGame) {
     console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
     return;
@@ -1307,12 +1147,75 @@ socket.on('gameStarted', async (data) => {
 });
 
 
+  socket.on('turnEnded', (data) => {
+    console.log('[initSocket] turnEnded:', data);
+    // handle turn ended
+  });
 
+  socket.on('disconnect', (reason) => {
+  console.log('[DEBUG] Socket disconnected:', reason);
+  socketConnected = false;
+});
+
+socket.on('playersUpdate', (count) => {
+  console.log('[DEBUG] playersUpdate received:', count);
+
+  if (isLeavingGame) {
+    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+    return;
+  }
+
+  const statusDiv = document.getElementById('statusDiv');
+  const rematchBtn = document.getElementById('rematchBtn');
+
+  if (statusDiv) {
+    statusDiv.textContent = `Players in room: ${count}`;
+  } else {
+    console.warn('statusDiv not found in DOM');
+  }
+
+  if (rematchBtn) {
+    if (count < 2) {
+      rematchBtn.style.display = 'none';
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/play');
+    }
+  } else {
+    console.warn('rematchBtn not found in DOM');
+  }
+});
+
+
+
+socket.on('matched', ({ roomId, opponent }) => {
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+    console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
+    return;
+  }
+
+  if (gameStarted && !gameOver) return;
+
+  // ✅ Once matched, clear stale flags
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
+
+  myRoomId = roomId;
+  opponentName = opponent;
+
+  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+
+  navigateTo('/waiting');
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+});
 
 socket.on('matchStats', (stats) => {
   console.log('[CLIENT] Updated matchStats:', stats);
   updateSplitScoreboard(stats, myUsername, opponentName);
 });
+
+
+
 
 
 
@@ -1406,9 +1309,6 @@ socket.on('gameOver', (data) => {
 });
 
 
-
-
-// 3. Turn Management
 socket.on('yourTurn', (data) => {
   navigateTo('/play');
 
@@ -1445,7 +1345,6 @@ if (turnPromptEl) {
     playerOpponentEl.classList.remove('active-turn');
   }
 });
-
 
 
 socket.on('opponentTurn', (data) => {
@@ -1485,9 +1384,6 @@ if (turnPromptEl) {
   }
 });
 
-
-
-
 socket.on('message', (msg) => {
   navigateTo('/play'); // Ensure user is on the gameplay page
   showMessage(msg, 'error');
@@ -1514,6 +1410,184 @@ socket.on('turnEnded', (data) => {
 socket.on('timerTick', (data) => {
   timerEl.textContent = data.timeLeft;
 });
+
+// When another player requests a rematch
+socket.on('rematchRequested', ({ username }) => {
+  showMessage(`${username} wants a rematch! Click your Rematch button to accept.`, 'info', true);
+
+ 
+});
+
+// When rematch actually starts
+socket.on('rematchStarted', () => {
+  resetGameUI();
+
+  // Clear any rematch prompt message
+  const rematchInfo = document.getElementById('rematch-info');
+  if (rematchInfo) rematchInfo.remove();
+
+  // Reset rematch button styles
+  rematchBtn.disabled = false;
+  rematchBtn.style.backgroundColor = ''; // Reset highlight
+  rematchBtn.textContent = 'Rematch';
+
+  // ✅ Re-join the same room to trigger new game start
+  if (myRoomId && myUsername) {
+    console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    socket.emit('getMatchStats');
+  } else {
+    console.error('[CLIENT] Missing roomId or username for rematch.');
+  }
+});
+
+
+
+  // ✅ Put *all* other socket.on(...) handlers here
+}
+// --- END Important: initSocket ---
+
+
+async function joinPublicGame() {
+  console.log('[DEBUG] joinPublicGame called');
+  
+
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
+
+  if (!myUsername) {
+    alert('Missing username');
+    return;
+  }
+
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game first.');
+    return;
+  }
+
+  myRoomId = null;
+  roomId = null;
+  isPrivateGame = false;
+
+  selectedPlayer = null;
+  successfulGuesses = [];
+  gameOver = false;
+
+  // ✅ Ensure socket is initialized
+ console.log('initSocket is:', typeof initSocket);
+  if (!socket || !socket.connected) {
+    if (typeof initSocket === 'function') {
+      initSocket();
+    } else {
+      console.error('initSocket() is not defined!');
+      return;
+    }
+  }
+
+  console.log('[DEBUG] Navigating to /waiting...');
+  await navigateTo('/waiting');
+
+  console.log('[DEBUG] Using safeEmit to find match:', myUsername);
+  safeEmit('findMatch', myUsername);
+}
+
+
+function startPrivateGame() {
+  console.log('[DEBUG] startPrivateGame called');
+
+  if (isLeavingGame) {
+    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
+    return; // ✅ Do NOT start private game while intentionally leaving
+  }
+
+  if (!myUsername) {
+    alert('Missing username');
+    return;
+  }
+
+  if (gameStarted && !gameOver) {
+    alert('Finish your current game first.');
+    return;
+  }
+
+  // ✅ Ensure socket is initialized
+  console.log('[startPrivateGame] Checking socket/initSocket...');
+  if (!socket || !socket.connected) {
+    if (typeof initSocket === 'function') {
+      initSocket();
+    } else {
+      console.error('[startPrivateGame] initSocket() is not defined!');
+      return;
+    }
+  }
+
+  isPrivateGame = true;
+  isLeavingGame = false; // ✅ You’re intentionally starting a new match
+
+  // ✅ Generate new room and clear stale room data
+  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+  roomId = generatedRoomId;
+  myRoomId = generatedRoomId;
+
+  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+
+  if (statusDiv) {
+    statusDiv.textContent = `Started private room: ${myRoomId}`;
+  } else {
+    console.warn('[startPrivateGame] statusDiv not found');
+  }
+
+  const displayRoomCode = document.getElementById('displayRoomCode');
+  if (displayRoomCode) {
+    displayRoomCode.textContent = myRoomId;
+  }
+
+  if (inviteLinkContainer) {
+    inviteLinkContainer.innerHTML = `
+      Share this link to invite a friend:<br>
+      <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+        ${window.location.origin}?room=${myRoomId}
+      </a>
+    `;
+  } else {
+    console.warn('[startPrivateGame] inviteLinkContainer not found');
+  }
+
+  navigateTo('/waiting');
+}
+
+
+function safeEmit(event, data) {
+  if (!socket) {
+    console.warn(`[safeEmit] Socket is null — initializing socket`);
+    initSocket();  // Or however you handle (re)connecting
+  }
+
+  emitQueue.push({ event, data });
+
+  if (socket && socket.connected) {
+    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
+    flushEmitQueue();
+  } else {
+    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
+  }
+}
+
+function flushEmitQueue() {
+  if (!socket) {
+    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
+    return;
+  }
+
+  while (socket.connected && emitQueue.length > 0) {
+    const { event, data } = emitQueue.shift();
+    console.log(`[safeEmit] Flushing queued "${event}"`);
+    socket.emit(event, data);
+  }
+}
+
+
+
 
 
   // Autocomplete logic
@@ -1622,35 +1696,6 @@ function requestRematch() {
 }
 
 
-// When another player requests a rematch
-socket.on('rematchRequested', ({ username }) => {
-  showMessage(`${username} wants a rematch! Click your Rematch button to accept.`, 'info', true);
-
- 
-});
-
-// When rematch actually starts
-socket.on('rematchStarted', () => {
-  resetGameUI();
-
-  // Clear any rematch prompt message
-  const rematchInfo = document.getElementById('rematch-info');
-  if (rematchInfo) rematchInfo.remove();
-
-  // Reset rematch button styles
-  rematchBtn.disabled = false;
-  rematchBtn.style.backgroundColor = ''; // Reset highlight
-  rematchBtn.textContent = 'Rematch';
-
-  // ✅ Re-join the same room to trigger new game start
-  if (myRoomId && myUsername) {
-    console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-    socket.emit('getMatchStats');
-  } else {
-    console.error('[CLIENT] Missing roomId or username for rematch.');
-  }
-});
 
 
 
