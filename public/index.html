@@ -2187,7 +2187,7 @@ socket.on('rematchStarted', () => {
       // Initialize all event listeners
   setupAutocompleteListeners();
   setupFormListeners();
-  setupSocketHandlers();
+  setupAuthTabs();
   initializeAuthStateListener();
   updateNavUserState();
   // ✅ Setup global navigation listeners (including home link)
@@ -2243,6 +2243,7 @@ socket.on('rematchStarted', () => {
 
     // --- 2️⃣ Connect socket early ---
     socket = io();
+    setupSocketHandlers();
   
 
     // --- 3️⃣ Get current Supabase session ---
