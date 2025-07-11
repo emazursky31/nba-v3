@@ -720,6 +720,18 @@
   let socketConnected = false;
   let emitQueue = [];
 
+  // DOM element references (assigned in DOMContentLoaded)
+let guessInput = null;
+let submitGuessBtn = null;
+let rematchBtn = null;
+let messagesEl = null;
+let currentPlayerNameEl = null;
+let timerEl = null;
+let autocompleteList = null;
+let waitingRoom = null;
+let gameArea = null;
+let inviteLinkContainer = null;
+
 
 
 
@@ -1184,7 +1196,9 @@ function resetGameUI() {
 }
 
 
-
+function showGuessError(message) {
+  showMessage(message, 'error');
+}
 
 
  function clearGuessError() {
@@ -2193,6 +2207,19 @@ socket.on('rematchStarted', () => {
   // ✅ Setup global navigation listeners (including home link)
   setupGlobalNavListeners();
 
+  // Cache DOM element references
+statusDiv = document.getElementById('status');
+guessInput = document.getElementById('guessInput');
+submitGuessBtn = document.getElementById('submitGuessBtn');
+rematchBtn = document.getElementById('rematchBtn');
+messagesEl = document.getElementById('messageContainer');
+currentPlayerNameEl = document.getElementById('currentPlayerName');
+timerEl = document.getElementById('timer');
+autocompleteList = document.getElementById('autocomplete-list');
+waitingRoom = document.getElementById('waitingRoom');
+gameArea = document.getElementById('gameArea');
+inviteLinkContainer = document.getElementById('inviteLinkContainer');
+
   
 
 
@@ -2237,7 +2264,10 @@ socket.on('rematchStarted', () => {
      } catch (e) {
        console.error('[ERROR] Exception during email confirmation:', e);
      }
-
+      if (!socket) {
+        socket = io();
+        setupSocketHandlers();
+      }
      return;
    }
 
