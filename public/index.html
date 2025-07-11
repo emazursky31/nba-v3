@@ -924,34 +924,6 @@
     const rematchBtn = document.getElementById('rematchBtn');
 
 
-// submitUsernameBtn.onclick = async () => {
-//   const entered = usernameInput.value.trim();
-//   if (!entered) return alert('Please enter a username.');
-
-//   const { data: { user } } = await supabase.auth.getUser();
-//   if (!user) {
-//     alert('No authenticated user!');
-//     return;
-//   }
-
-//   const { error } = await supabase.from('profiles').upsert([
-//     { id: user.id, username: entered }
-//   ]);
-//   if (error) {
-//     alert('Failed to save username: ' + error.message);
-//     return;
-//   }
-
-//   myUsername = entered;
-//   localStorage.setItem('username', myUsername);
-
-//   if (myRoomId) {
-//     socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-//     navigateTo('/waiting');
-//   } else {
-//     navigateTo('/mode');
-//   }
-// };
 
 
 const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -974,34 +946,26 @@ copyInviteBtn.onclick = () => {
     });
 };
 
-function safeEmit(event, data) {
-  if (!socket) {
-    console.warn(`[safeEmit] Socket is null — initializing socket`);
-    initSocket();  // Or however you handle (re)connecting
-  }
-
-  emitQueue.push({ event, data });
-
-  if (socket && socket.connected) {
-    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
-    flushEmitQueue();
-  } else {
-    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
-  }
-}
-
-window.flushEmitQueue = function() {
+function flushEmitQueue() {
   if (!socket) {
     console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
     return;
   }
-
   while (socket.connected && emitQueue.length > 0) {
     const { event, data } = emitQueue.shift();
     console.log(`[safeEmit] Flushing queued "${event}"`);
     socket.emit(event, data);
   }
-};
+}
+
+function safeEmit(event, data) {
+  if (!socket || !socket.connected) {
+    console.warn(`[safeEmit] Socket is not connected — event "${event}" queued`);
+    emitQueue.push({ event, data });
+    return;
+  }
+  socket.emit(event, data);
+}
 
 
 
@@ -1960,34 +1924,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('rematchBtn not found in DOM');
     }
   });
-socket.on('playersUpdate', (count) => {
-  console.log('[DEBUG] playersUpdate received:', count);
-
-  if (isLeavingGame) {
-    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
-    return;
-  }
-
-  const statusDiv = document.getElementById('statusDiv');
-  const rematchBtn = document.getElementById('rematchBtn');
-
-  if (statusDiv) {
-    statusDiv.textContent = `Players in room: ${count}`;
-  } else {
-    console.warn('statusDiv not found in DOM');
-  }
-
-  if (rematchBtn) {
-    if (count < 2) {
-      rematchBtn.style.display = 'none';
-      navigateTo('/waiting');
-    } else {
-      navigateTo('/play');
-    }
-  } else {
-    console.warn('rematchBtn not found in DOM');
-  }
-});
 
 
 
@@ -2331,6 +2267,8 @@ socket.on('rematchStarted', () => {
 
 
 }
+
+initSocket();
 
   // Tab switching logic for auth forms
     document.addEventListener('DOMContentLoaded', function() {
