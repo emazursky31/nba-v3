@@ -697,38 +697,34 @@
 </div>
 
 
+
 <script>
-
-    // Core state
-    let roomId = null;
-    let myRoomId = null;
-    let selectedPlayer = null;
-    let fetchTimeout = null;
-    let gameStarted = false;
-    let gameOver = false;
-    let leadoffPlayerName = null;
-    let myUsername = null;
-    let opponentName = null;
-    let successfulGuesses = [];
-    let isPrivateGame = false;
-    let socket = null;
-    let isLeavingGame = false;
-    // ✅ Global route tracker
-    let currentRoute = '';
-    let statusDiv = null;
-    let socketConnected = false;
-    let emitQueue = [];
-
-  
+// 1. Global variables and state (outside DOMContentLoaded)
+// Core state
+  let roomId = null;
+  let myRoomId = null;
+  let selectedPlayer = null;
+  let fetchTimeout = null;
+  let gameStarted = false;
+  let gameOver = false;
+  let leadoffPlayerName = null;
+  let myUsername = null;
+  let opponentName = null;
+  let successfulGuesses = [];
+  let isPrivateGame = false;
+  let socket = null;
+  let isLeavingGame = false;
+// ✅ Global route tracker
+  let currentRoute = '';
+  let statusDiv = null;
+  let socketConnected = false;
+  let emitQueue = [];
 
 
 
- document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[DEBUG] DOMContentLoaded');
 
-    let justConfirmed = false;
-
-    // ✅ Sign Up handler
+// 2. Function definitions (outside DOMContentLoaded)
+ // ✅ Sign Up handler
   async function signUp(e) {
     e.preventDefault(); // 🛑 Stop default form submit
 
@@ -794,181 +790,6 @@
     navigateTo('/home'); // 👈 Take them to home or wherever
   }
 
-  // ✅ Attach listeners to forms
-  const signupForm = document.getElementById('signupForm');
-  if (signupForm) {
-    signupForm.addEventListener('submit', signUp);
-    console.log('[DEBUG] signupForm listener attached');
-  } else {
-    console.error('[ERROR] signupForm not found!');
-  }
-
-  const signinForm = document.getElementById('signinForm');
-  if (signinForm) {
-    signinForm.addEventListener('submit', signIn);
-    console.log('[DEBUG] signinForm listener attached');
-  } else {
-    console.error('[ERROR] signinForm not found!');
-  }
-
-    // ✅ Listen for auth state changes too — always keep nav fresh
-    supabase.auth.onAuthStateChange((_event, session) => {
-      updateNavUserState(session);
-    });
-
-    // --- 1️⃣ Email confirmation or recovery flow ---
-    const urlHash = window.location.hash;
-    const searchParams = new URLSearchParams(window.location.search);
-    const typeParam = searchParams.get('type');
-
-    console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
-
-    if (
-     (urlHash.includes('access_token') &&
-       (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-     || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-   ) {
-     console.log('[DEBUG] Found email confirmation or recovery in URL');
-     try {
-       const { data: { user }, error } = await supabase.auth.getUser();
-       if (error) {
-         console.error('[ERROR] Email confirmation failed:', error.message);
-       } else {
-         console.log('[DEBUG] Email confirmed for:', user?.email);
-
-         // Update username here (but don't update nav yet)
-         myUsername = user.user_metadata?.username || user.email;
-         localStorage.setItem('username', myUsername);
-
-         // Get fresh session (optional)
-         const { data: { session } } = await supabase.auth.getSession();
-
-         // Navigate first
-         await navigateTo('/confirmed');
-
-         // Then update nav *after* navigation completes
-         await updateNavUserState(session);
-       }
-     } catch (e) {
-       console.error('[ERROR] Exception during email confirmation:', e);
-     }
-
-     return;
-   }
-
-    // --- 2️⃣ Connect socket early ---
-    socket = io();
-  
-
-    // --- 3️⃣ Get current Supabase session ---
-    const { data } = await supabase.auth.getSession();
-    await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
-
-    if (data.session?.user) {
-      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-    } else {
-      myUsername = localStorage.getItem('username') || null;
-    }
-
-    // --- 4️⃣ Load room info ---
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
-    if (roomFromUrl) {
-      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-      myRoomId = roomFromUrl;
-      roomId = roomFromUrl;
-      isPrivateGame = true;
-      localStorage.setItem('privateRoomId', roomFromUrl);
-    } else {
-      const savedRoom = localStorage.getItem('privateRoomId');
-      if (savedRoom) {
-        console.log('[DEBUG] Found saved private room:', savedRoom);
-        myRoomId = savedRoom;
-        roomId = savedRoom;
-        isPrivateGame = true;
-      }
-    }
-
-    console.log('[DEBUG] Final state before routing:', {
-      myUsername,
-      myRoomId,
-      isPrivateGame,
-      isLeavingGame,
-    });
-
-    // --- 5️⃣ Determine initial route ---
-    if (!myUsername) {
-      navigateTo('/signup');
-    } else if (isLeavingGame) {
-      console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-      navigateTo('/home');
-    } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-      navigateTo('/waiting');
-    } else {
-      navigateTo('/home');
-    }
-
-    // ✅ Elements you actually use…
-    const privateGameBtn = document.getElementById('privateGameBtn');
-    const findGameBtn = document.getElementById('findGameBtn');
-    const inviteLinkContainer = document.getElementById('inviteLinkContainer');
-    const waitingRoom = document.getElementById('waitingRoom');
-    const gameArea = document.getElementById('gameArea');
-    const currentPlayerNameEl = document.getElementById('currentPlayerName');
-    const timerEl = document.getElementById('timer');
-    const guessInput = document.getElementById('guessInput');
-    const submitGuessBtn = document.getElementById('submitGuessBtn');
-    const messagesEl = document.getElementById('messageContainer');
-    const autocompleteList = document.getElementById('autocomplete-list');
-    const rematchBtn = document.getElementById('rematchBtn');
-
-
-
-
-const copyInviteBtn = document.getElementById('copyInviteBtn');
-const copyToast = document.getElementById('copyToast');
-const inviteInput = document.getElementById('inviteLink');
-
-copyInviteBtn.onclick = () => {
-  navigator.clipboard.writeText(inviteInput.value)
-    .then(() => {
-      copyToast.style.display = 'block';
-
-      // Hide toast after 2 seconds
-      setTimeout(() => {
-        copyToast.style.display = 'none';
-      }, 2000);
-    })
-    .catch(err => {
-      alert('Failed to copy link. Please copy it manually.');
-      console.error('Clipboard copy failed:', err);
-    });
-};
-
-function flushEmitQueue() {
-  if (!socket) {
-    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
-    return;
-  }
-  while (socket.connected && emitQueue.length > 0) {
-    const { event, data } = emitQueue.shift();
-    console.log(`[safeEmit] Flushing queued "${event}"`);
-    socket.emit(event, data);
-  }
-}
-
-function safeEmit(event, data) {
-  if (!socket || !socket.connected) {
-    console.warn(`[safeEmit] Socket is not connected — event "${event}" queued`);
-    emitQueue.push({ event, data });
-    return;
-  }
-  socket.emit(event, data);
-}
-
-
-
 
 function updateSplitScoreboard(stats, player1, player2) {
   const p1NameEl = document.getElementById('player1Name');
@@ -995,6 +816,8 @@ function updateSplitScoreboard(stats, player1, player2) {
   document.getElementById('player2Score').textContent = p2Wins;
 }
 
+
+
 function waitForScoreboard() {
   return new Promise((resolve) => {
     const check = () => {
@@ -1012,16 +835,6 @@ function waitForScoreboard() {
 }
 
 
-document.getElementById('nav-home-link')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  isLeavingGame = true;
-  if (socket && socket.connected) {
-    socket.emit('leaveGame');
-  }
-  navigateTo('/home');
-});
-
-
 
 function markLeadoffInGuesses(guesses, leadoffName) {
   return guesses.map(g => ({
@@ -1031,11 +844,6 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 }
 
 
-
-
-//     if (!roomFromUrl) {
-//   handleUsernameEntry();
-// }
 
 function startPrivateGame() {
   console.log('[DEBUG] startPrivateGame called');
@@ -1068,6 +876,8 @@ function startPrivateGame() {
   statusDiv.textContent = `Started private room: ${myRoomId}`;
   document.getElementById('displayRoomCode').textContent = myRoomId;
 
+  setupCopyInviteListeners();
+
   inviteLinkContainer.innerHTML = `
     Share this link to invite a friend:<br>
     <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
@@ -1084,19 +894,6 @@ async function joinPublicGame() {
 
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
-
-  // Always fetch latest username from session/localStorage before joining
-  if (!myUsername) {
-    const { data, error } = await supabase.auth.getSession();
-    if (data && data.session && data.session.user) {
-      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-      localStorage.setItem('username', myUsername);
-      console.log('[joinPublicGame] Refreshed myUsername from session:', myUsername);
-    } else {
-      myUsername = localStorage.getItem('username') || null;
-      console.log('[joinPublicGame] Fallback myUsername from localStorage:', myUsername);
-    }
-  }
 
   if (!myUsername) {
     alert('Missing username');
@@ -1116,10 +913,10 @@ async function joinPublicGame() {
   successfulGuesses = [];
   gameOver = false;
 
-  // ✅ Ensure socket is initialized
-  if (!socket || !socket.connected) {
-  console.log('[joinPublicGame] Socket is null or disconnected — initializing');
-  initSocket();
+// ✅ Ensure socket is connected (don't re-initialize)
+if (!socket || !socket.connected) {
+  console.log('[joinPublicGame] Socket not ready, waiting for connection...');
+  // Socket should already be initialized in DOMContentLoaded
 }
 
   console.log('[DEBUG] Navigating to /waiting...');
@@ -1131,84 +928,178 @@ async function joinPublicGame() {
 
 
 
+  function safeEmit(event, data) {
+    if (!socket) {
+      console.warn(`[safeEmit] Socket is null — this shouldn't happen after DOMContentLoaded`);
+      return; // Don't emit if socket isn't ready
+    }
 
+  emitQueue.push({ event, data });
 
+  if (socket && socket.connected) {
+    console.log(`[safeEmit] Socket connected — emitting "${event}" immediately`);
+    flushEmitQueue();
+  } else {
+    console.log(`[safeEmit] Socket not connected — queued "${event}"`);
+  }
+}
 
-
-
-  // Autocomplete logic
-guessInput.addEventListener('input', function() {
-  const val = this.value.trim();
-  clearAutocomplete();
-  selectedPlayer = null;
-  submitGuessBtn.disabled = true;
-
-  if (!val) {
-    showAutocompleteSuggestions([]);
+function flushEmitQueue() {
+  if (!socket) {
+    console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
     return;
   }
 
-  if (fetchTimeout) clearTimeout(fetchTimeout);
+  while (socket.connected && emitQueue.length > 0) {
+    const { event, data } = emitQueue.shift();
+    console.log(`[safeEmit] Flushing queued "${event}"`);
+    socket.emit(event, data);
+  }
+}
 
-  fetchTimeout = setTimeout(async () => {
-    try {
-      const res = await fetch(`/players?q=${encodeURIComponent(val)}`);
-      if (!res.ok) throw new Error('Network response not ok');
 
-      const results = await res.json();
-      if (results.length === 0) {
-        showAutocompleteSuggestions([]);
-        return;
+function attachRouteListeners(route) {
+  switch (route) {
+    case '/signup':
+      // Setup auth tab switching
+      setupAuthTabs();
+      // Only non-form button listeners (forms handled by setupFormListeners)
+      const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+      if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigateTo('/reset');
+        });
       }
+      break;
 
-      // ✅ Create an array of actual HTML elements to pass to showAutocompleteSuggestions
-      const suggestions = results.map(player => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'autocomplete-item';
+    case '/confirmed':
+      const confirmedContinueBtn = document.getElementById('confirmedContinueBtn');
+      if (confirmedContinueBtn) {
+        confirmedContinueBtn.addEventListener('click', () => {
+          handleAuthSuccess();
+        });
+      }
+      // Update nav state for confirmed page
+      updateNavUserState();
+      break;
 
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = player.player_name;
+    case '/home':
+      const privateGameBtn = document.getElementById('privateGameBtn');
+      const findGameBtn = document.getElementById('findGameBtn');
+      
+      if (privateGameBtn) {
+        privateGameBtn.addEventListener('click', () => {
+          isLeavingGame = false;
+          startPrivateGame();
+        });
+      }
+      
+      if (findGameBtn) {
+        findGameBtn.addEventListener('click', () => {
+          isLeavingGame = false;
+          joinPublicGame();
+        });
+      }
+      break;
 
-        const yearsSpan = document.createElement('span');
-        yearsSpan.className = 'career-years';
-        yearsSpan.textContent = ` ${player.first_year || '?'}–${player.last_year || '?'}`;
+    case '/play':
+      // Game-specific listeners
+      const submitGuessBtn = document.getElementById('submitGuessBtn');
+      const rematchBtn = document.getElementById('rematchBtn');
+      
+      if (submitGuessBtn) {
+        submitGuessBtn.addEventListener('click', submitGuess);
+      }
+      
+      if (rematchBtn) {
+        rematchBtn.addEventListener('click', requestRematch);
+      }
+      
+      // Setup autocomplete for gameplay
+      setupAutocompleteListeners();
+      setupMobileInputFocus();
+      break;
 
-        yearsSpan.style.fontSize = '0.8em';
-        yearsSpan.style.color = 'gray';
-        yearsSpan.style.marginLeft = '5px';
+    case '/waiting':
+    case '/private-game':
+      // Setup copy invite functionality
+      setupCopyInviteListeners();
+      break;
 
-        wrapper.appendChild(nameSpan);
-        wrapper.appendChild(yearsSpan);
+    // Add other route handlers as needed
+  }
+}
 
-        wrapper.addEventListener('click', () => {
-        guessInput.value = player.player_name;
-        selectedPlayer = player.player_name;
-        submitGuessBtn.disabled = false;
-        clearAutocomplete();
-      });
+function navigateTo(path, options = {}) {
+  return new Promise((resolve) => {
+    // Track the intended route immediately
+    currentRoute = path;
 
-        return wrapper;
-      });
-
-      showAutocompleteSuggestions(suggestions);
-
-    } catch (err) {
-      console.error('Autocomplete fetch error:', err);
-      showAutocompleteSuggestions([]);
+    if (!options.skipPush) {
+      history.pushState({}, '', path);
     }
-  }, 300);
-});
 
+    showRouteSection(path);
 
-
-
-
-  guessInput.addEventListener('change', () => {
-    if (guessInput.value !== selectedPlayer) {
-      selectedPlayer = null;
-      submitGuessBtn.disabled = true;
+    // Wrap updateUIForRoute with a guard
+    if (currentRoute === path) {
+      updateUIForRoute(path);
+      attachRouteListeners(path);
+    } else {
+      console.debug('[navigateTo] Skipped updateUIForRoute — stale path', path);
     }
+
+    // Use rAF for next paint
+    requestAnimationFrame(() => {
+      resolve();
+    });
   });
+}
+
+function setupMobileInputFocus() {
+  const guessInput = document.getElementById('guessInput');
+  if (guessInput) {
+    guessInput.addEventListener('focus', () => {
+      // Only apply if screen width is <= 480px (mobile)
+      if (window.innerWidth <= 480) {
+        const guessControls = document.getElementById('guessControls');
+        const topOffset = guessControls.getBoundingClientRect().top + window.scrollY;
+        const padding = parseFloat(getComputedStyle(document.body).paddingTop) || 16;
+
+        window.scrollTo({
+          top: topOffset - padding,
+          behavior: 'smooth'
+        });
+      }
+    });
+  }
+}
+
+function setupAuthTabs() {
+  const tabSignup = document.getElementById('tab-signup');
+  const tabSignin = document.getElementById('tab-signin');
+  const signupForm = document.getElementById('signupForm');
+  const signinForm = document.getElementById('signinForm');
+  
+  if (tabSignup && tabSignin && signupForm && signinForm) {
+    tabSignup.addEventListener('click', function() {
+      tabSignup.classList.add('active');
+      tabSignin.classList.remove('active');
+      signupForm.classList.add('active');
+      signinForm.classList.remove('active');
+    });
+    
+    tabSignin.addEventListener('click', function() {
+      tabSignin.classList.add('active');
+      tabSignup.classList.remove('active');
+      signinForm.classList.add('active');
+      signupForm.classList.remove('active');
+    });
+  }
+}
+
+
 
   function submitGuess() {
   const guess = guessInput.value.trim();
@@ -1240,10 +1131,6 @@ function requestRematch() {
   rematchBtn.textContent = 'Waiting for opponent...';
   socket.emit('requestRematch', { roomId: myRoomId });
 }
-
-
-
-
 
 
 function resetGameUI() {
@@ -1301,32 +1188,29 @@ function resetGameUI() {
 
 
  function clearGuessError() {
-  const container = document.getElementById('messageContainer');
-  container.innerHTML = '';
-}
-
-function showMessage(message, type = 'info', persist = false) {
-  const container = document.getElementById('messageContainer');
-  container.innerHTML = '';
-
-  const div = document.createElement('div');
-  div.textContent = message;
-  div.classList.add('message');
-
-  if (type === 'error') div.classList.add('error');
-
-  container.appendChild(div);
-
-  if (!persist) {
-    setTimeout(() => {
-      div.classList.add('fade-out');
-      setTimeout(() => container.innerHTML = '', 1000);
-    }, 3000);
+    const container = document.getElementById('messageContainer');
+    container.innerHTML = '';
   }
-}
 
+  function showMessage(message, type = 'info', persist = false) {
+    const container = document.getElementById('messageContainer');
+    container.innerHTML = '';
 
+    const div = document.createElement('div');
+    div.textContent = message;
+    div.classList.add('message');
 
+    if (type === 'error') div.classList.add('error');
+
+    container.appendChild(div);
+
+    if (!persist) {
+      setTimeout(() => {
+        div.classList.add('fade-out');
+        setTimeout(() => container.innerHTML = '', 1000);
+      }, 3000);
+    }
+  }
 
 
 
@@ -1337,10 +1221,10 @@ function showMessage(message, type = 'info', persist = false) {
 
 
 
- function clearAutocomplete() {
-  autocompleteList.innerHTML = '';
-  autocompleteList.style.display = 'none';
-}
+  function clearAutocomplete() {
+    autocompleteList.innerHTML = '';
+    autocompleteList.style.display = 'none';
+  }
 
 
 function showAutocompleteSuggestions(suggestions) {
@@ -1425,290 +1309,39 @@ function renderSuccessfulGuesses() {
   });
 }
 
-function handleGoHome() {
-  console.debug('[CLIENT] handleGoHome called');
-
-  // ✅ Mark that you’re intentionally leaving — and persist it!
-  isLeavingGame = true;
-  localStorage.setItem('isLeavingGame', 'true');
-
-  // ✅ Tell server if in an active game
-  if (socket && socket.connected && gameStarted && !gameOver) {
-    socket.emit('leaveGame');
-  }
-
-  // ✅ Always clear local game state
-  myRoomId = null;
-  roomId = null;
-  isPrivateGame = false;
-  gameStarted = false;
-  gameOver = true;
-  selectedPlayer = null;
-  successfulGuesses = [];
-
-  localStorage.removeItem('privateRoomId');
-
-  navigateTo('/home');
-}
-
-
-
-async function handleAuthSuccess() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    console.error('No user signed in');
-    navigateTo('/signup');
-    return;
-  }
-
-  const username = user.user_metadata?.username || null;
-
-  if (!username) {
-    console.error('No username found in user_metadata!');
-    navigateTo('/signup');
-    return;
-  }
-
-  // Try updating profiles row, but don’t block navigation if it fails
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ username })
-    .eq('id', user.id);
-
-  if (updateError) {
-    console.warn('Warning: Error updating profile:', updateError.message);
-  } else {
-    console.log('✅ Username saved to profiles:', username);
-  }
-
-  myUsername = username;
-  localStorage.setItem('username', myUsername);
-
-  // Clear URL hash to remove confirmation tokens
-  history.replaceState(null, '', window.location.pathname);
-
-  navigateTo('/home');
-}
-
-
-
-
-
-async function signOut() {
-  const { error } = await window.supabase.auth.signOut();
-  if (error) {
-    alert('Sign out error: ' + error.message);
-    return;
-  }
-  alert('Signed out!');
-  showUser();
-}
-
-
-async function updateNavUserState(session) {
-  const usernameDiv = document.getElementById('nav-username');
-  const signinBtn = document.getElementById('nav-signin-btn');
-  const signoutBtn = document.getElementById('nav-signout-btn');
-  const homeLink = document.getElementById('nav-home-link'); // ✅ Add this
-
-  if (!usernameDiv || !signinBtn || !signoutBtn || !homeLink) return;
-
-  if (!session || !session.user) {
-    // Not logged in
-    usernameDiv.style.display = 'none';
-    signinBtn.style.display = 'inline-block';
-    signoutBtn.style.display = 'none';
-    homeLink.style.display = 'none'; // ✅ Hide Home link
-  } else {
-    // Logged in
-    const user = session.user;
-    usernameDiv.textContent = `Hello, ${user.user_metadata?.username || user.email}`;
-    usernameDiv.style.display = 'inline-block';
-    signinBtn.style.display = 'none';
-    signoutBtn.style.display = 'inline-block';
-    homeLink.style.display = 'inline-block'; // ✅ Show Home link
-  }
-}
-
-
-
-// Listen for auth state changes and update nav accordingly
-if (window.supabase && window.supabase.auth) {
-  window.supabase.auth.onAuthStateChange((event, session) => {
-    updateNavUserState(session);
-  });
-}
-
-// Run once on load
-updateNavUserState();
-
-// Example: hook up sign out button
-document.getElementById('nav-signout-btn').addEventListener('click', async () => {
-  await window.supabase.auth.signOut();
-  updateNavUserState();
-  // Redirect to signup/signin screen (main app route)
-  navigateTo('/signup');
-});
-
-// Optional: hook up sign in button to your sign-in flow
-document.getElementById('nav-signin-btn').addEventListener('click', () => {
-  // redirect to your sign-in page
-  window.location.href = '/signin.html';
-});
-
-
-
-
-
-async function resetPassword() {
-  const emailInput = document.getElementById('reset-email');
-  const email = emailInput.value.trim();
-
-  if (!email) {
-    alert('Please enter your email address.');
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`
+function setupGlobalNavListeners() {
+  // Home navigation with game leave logic
+  const navHomeLink = document.getElementById('nav-home-link');
+  if (navHomeLink) {
+    navHomeLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLeavingGame = true;
+      if (socket && socket.connected) {
+        socket.emit('leaveGame');
+      }
+      navigateTo('/home');
     });
-
-    if (error) {
-      console.error('[ERROR] Supabase reset error:', error.message);
-      alert('Error sending reset email: ' + error.message);
-      return;
-    }
-
-    console.log('[INFO] Password reset email sent:', data);
-    navigateTo('/reset-confirmed'); // Switch to your "Check your email" screen!
-  } catch (err) {
-    console.error('[ERROR] Unexpected:', err);
-    alert('An unexpected error occurred.');
-  }
-}
-
-async function updatePassword() {
-  const newPasswordInput = document.getElementById('new-password');
-  const newPassword = newPasswordInput.value.trim();
-
-  if (!newPassword) {
-    alert('Please enter a new password.');
-    return;
   }
 
-  const { data, error } = await supabase.auth.updateUser({
-    password: newPassword
-  });
-
-  if (error) {
-    console.error('[ERROR] Failed to update password:', error.message);
-    alert('Error updating password: ' + error.message);
-    return;
-  }
-
-  console.log('[INFO] Password updated:', data);
-
-  // ✅ Redirect the user back to sign in, or show success
-  alert('Password updated successfully! Please sign in with your new password.');
-  navigateTo('/signup');
-}
-
-
-/**
- * Navigate to a route in the SPA
- * @param {string} path - The route path, e.g. '/confirmed'
- * @param {object} options - Optional settings
- *   options.skipPush - If true, skips updating the browser's address bar
- */
-// navigateTo now uses requestAnimationFrame to wait for next paint
-
-
-function navigateTo(path, options = {}) {
-  return new Promise((resolve) => {
-    // Track the intended route immediately
-    currentRoute = path;
-
-    if (!options.skipPush) {
-      history.pushState({}, '', path);
-    }
-
-    showRouteSection(path);
-
-    // Wrap updateUIForRoute with a guard
-    if (currentRoute === path) {
-      updateUIForRoute(path);
-      attachRouteListeners(path);
-    } else {
-      console.debug('[navigateTo] Skipped updateUIForRoute — stale path', path);
-    }
-
-    // Use rAF for next paint
-    requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-}
-
-
-
-
-
-// 1. Attach route-specific listeners
-function attachRouteListeners(route) {
-  switch (route) {
-    case '/signup':
-      document.getElementById('signupBtn')?.addEventListener('click', signUp);
-      document.getElementById('signinBtn')?.addEventListener('click', signIn);
-      document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigateTo('/reset');
-      });
-      break;
-
-    case '/confirmed':
-     document.getElementById('confirmedContinueBtn')?.addEventListener('click', async () => {
-        // Always fetch and set username before continuing
-        await handleAuthSuccess();
-      });
-
-      // Also update nav user state here so nav reflects logged-in user on confirmed page
+  // Sign out button
+  const navSignoutBtn = document.getElementById('nav-signout-btn');
+  if (navSignoutBtn) {
+    navSignoutBtn.addEventListener('click', async () => {
+      await window.supabase.auth.signOut();
       updateNavUserState();
-      break;
+      navigateTo('/signup');
+    });
+  }
 
-    case '/reset':
-      document.getElementById('resetBtn')?.addEventListener('click', resetPassword);
-      break;
-
-    case '/update-password':
-      document.getElementById('updatePasswordBtn')?.addEventListener('click', updatePassword);
-      break;
-
-    case '/home':
-      document.getElementById('privateGameBtn')?.addEventListener('click', () => {
-        isLeavingGame = false;  // ✅ I want to join a new game now
-        startPrivateGame();
-      });
-      document.getElementById('findGameBtn')?.addEventListener('click', () => {
-        isLeavingGame = false;  // ✅ I want to find a public game now
-        joinPublicGame();
-      });
-      break;
-
-    case '/play':
-      // Setup listeners or UI related to the gameplay screen here
-      // For example, you might want to add listeners for guess submission buttons:
-      document.getElementById('submitGuessBtn')?.addEventListener('click', submitGuess);
-      document.getElementById('rematchBtn')?.addEventListener('click', requestRematch);
-      break;
-
-    // Add other route handlers here as needed
+  // Sign in button
+  const navSigninBtn = document.getElementById('nav-signin-btn');
+  if (navSigninBtn) {
+    navSigninBtn.addEventListener('click', () => {
+      window.location.href = '/signin.html';
+    });
   }
 }
 
-
-
-// 2. Show/hide sections based on route
 function showRouteSection(path) {
   const allSections = document.querySelectorAll('section[data-route]');
   let matched = false;
@@ -1732,7 +1365,6 @@ function showRouteSection(path) {
   }
 }
 
-// 3. Update UI elements specific to certain routes
 function updateUIForRoute(path) {
    if (path !== currentRoute) {
     console.debug('[updateUIForRoute] Skipped because stale:', path, 'Expected:', currentRoute);
@@ -1824,106 +1456,376 @@ if (path === '/waiting') {
 }
 
 
-// 4. Main renderRoute function
-function renderRoute(path, addToHistory = true) {
-  showRouteSection(path);
-  attachRouteListeners(path);
-  updateUIForRoute(path);
 
-  if (addToHistory && window.location.pathname !== path) {
-    window.history.pushState({}, '', path);
+function setupFormListeners() {
+  // Signup form
+  const signupForm = document.getElementById('signupForm');
+  if (signupForm) {
+    signupForm.addEventListener('submit', signUp);
+    console.log('[DEBUG] signupForm listener attached');
+  } else {
+    console.warn('[WARN] signupForm not found - may not be on signup route');
+  }
+
+  // Signin form
+  const signinForm = document.getElementById('signinForm');
+  if (signinForm) {
+    signinForm.addEventListener('submit', signIn);
+    console.log('[DEBUG] signinForm listener attached');
+  } else {
+    console.warn('[WARN] signinForm not found - may not be on signin route');
+  }
+
+  // Reset password form
+  const resetForm = document.getElementById('resetForm');
+  if (resetForm) {
+    resetForm.addEventListener('submit', resetPassword);
+    console.log('[DEBUG] resetForm listener attached');
+  } else {
+    console.warn('[WARN] resetForm not found - may not be on reset route');
+  }
+
+  // Update password form
+  const updatePasswordForm = document.getElementById('updatePasswordForm');
+  if (updatePasswordForm) {
+    updatePasswordForm.addEventListener('submit', updatePassword);
+    console.log('[DEBUG] updatePasswordForm listener attached');
+  } else {
+    console.warn('[WARN] updatePasswordForm not found - may not be on update-password route');
+  }
+
+  // Username form (if you have one for setting username)
+  const usernameForm = document.getElementById('usernameForm');
+  if (usernameForm) {
+    usernameForm.addEventListener('submit', setUsername);
+    console.log('[DEBUG] usernameForm listener attached');
+  } else {
+    console.warn('[WARN] usernameForm not found - may not be on username route');
   }
 }
 
 
-// 5. Initial page load render
-document.addEventListener('DOMContentLoaded', () => {
-  renderRoute(window.location.pathname || '/signup', false);
-});
+
+function handleGoHome() {
+  console.debug('[CLIENT] handleGoHome called');
+
+  // ✅ Mark that you’re intentionally leaving — and persist it!
+  isLeavingGame = true;
+  localStorage.setItem('isLeavingGame', 'true');
+
+  // ✅ Tell server if in an active game
+  if (socket && socket.connected && gameStarted && !gameOver) {
+    socket.emit('leaveGame');
+  }
+
+  // ✅ Always clear local game state
+  myRoomId = null;
+  roomId = null;
+  isPrivateGame = false;
+  gameStarted = false;
+  gameOver = true;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  localStorage.removeItem('privateRoomId');
+
+  navigateTo('/home');
+}
+
+function setupCopyInviteListeners() {
+  const copyInviteBtn = document.getElementById('copyInviteBtn');
+  const copyToast = document.getElementById('copyToast');
+  const inviteInput = document.getElementById('inviteLink');
+
+  if (!copyInviteBtn || !copyToast || !inviteInput) {
+    // Elements don't exist on this route, skip setup
+    return;
+  }
+
+  copyInviteBtn.onclick = () => {
+    navigator.clipboard.writeText(inviteInput.value)
+      .then(() => {
+        copyToast.style.display = 'block';
+
+        // Hide toast after 2 seconds
+        setTimeout(() => {
+          copyToast.style.display = 'none';
+        }, 2000);
+      })
+      .catch(err => {
+        alert('Failed to copy link. Please copy it manually.');
+        console.error('Clipboard copy failed:', err);
+      });
+  };
+}
 
 
-document.getElementById('guessInput').addEventListener('focus', () => {
-  // Only apply if screen width is <= 480px (adjust as needed for "mobile")
-  if (window.innerWidth <= 480) {
-    const guessControls = document.getElementById('guessControls');
-    const topOffset = guessControls.getBoundingClientRect().top + window.scrollY;
-    const padding = parseFloat(getComputedStyle(document.body).paddingTop) || 16;
 
-    window.scrollTo({
-      top: topOffset - padding,
-      behavior: 'smooth'
+async function handleAuthSuccess() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    console.error('No user signed in');
+    navigateTo('/signup');
+    return;
+  }
+
+  const username = user.user_metadata?.username || null;
+
+  if (!username) {
+    console.error('No username found in user_metadata!');
+    navigateTo('/signup');
+    return;
+  }
+
+  // Try updating profiles row, but don’t block navigation if it fails
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({ username })
+    .eq('id', user.id);
+
+  if (updateError) {
+    console.warn('Warning: Error updating profile:', updateError.message);
+  } else {
+    console.log('✅ Username saved to profiles:', username);
+  }
+
+  myUsername = username;
+  localStorage.setItem('username', myUsername);
+
+  // Clear URL hash to remove confirmation tokens
+  history.replaceState(null, '', window.location.pathname);
+
+  navigateTo('/home');
+}
+
+
+async function signOut() {
+  const { error } = await window.supabase.auth.signOut();
+  if (error) {
+    alert('Sign out error: ' + error.message);
+    return;
+  }
+  alert('Signed out!');
+  showUser();
+}
+
+
+async function updateNavUserState(session) {
+  const usernameDiv = document.getElementById('nav-username');
+  const signinBtn = document.getElementById('nav-signin-btn');
+  const signoutBtn = document.getElementById('nav-signout-btn');
+  const homeLink = document.getElementById('nav-home-link'); // ✅ Add this
+
+  if (!usernameDiv || !signinBtn || !signoutBtn || !homeLink) return;
+
+  if (!session || !session.user) {
+    // Not logged in
+    usernameDiv.style.display = 'none';
+    signinBtn.style.display = 'inline-block';
+    signoutBtn.style.display = 'none';
+    homeLink.style.display = 'none'; // ✅ Hide Home link
+  } else {
+    // Logged in
+    const user = session.user;
+    usernameDiv.textContent = `Hello, ${user.user_metadata?.username || user.email}`;
+    usernameDiv.style.display = 'inline-block';
+    signinBtn.style.display = 'none';
+    signoutBtn.style.display = 'inline-block';
+    homeLink.style.display = 'inline-block'; // ✅ Show Home link
+  }
+}
+
+
+async function resetPassword() {
+  const emailInput = document.getElementById('reset-email');
+  const email = emailInput.value.trim();
+
+  if (!email) {
+    alert('Please enter your email address.');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`
     });
-  }
-});
 
-// Handle browser back/forward navigation
-window.addEventListener('popstate', () => {
-  const path = window.location.pathname;
-  console.debug('[popstate] Navigating to:', path);
-  currentRoute = path;
-  showRouteSection(path);
-  updateUIForRoute(path);
-  attachRouteListeners(path);
-});
-
-// Initial route on page load
-document.addEventListener('DOMContentLoaded', () => {
-  const initialPath = (location.pathname === '/' || location.pathname === '') ? '/signup' : location.pathname;
-  renderRoute(initialPath);
-});
-
-
-    // After all routing logic:
-    if (justConfirmed) {
-      if (typeParam === 'recovery' || urlHash.includes('type=recovery')) {
-        navigateTo('/update-password');
-        return;
-      } else {
-        navigateTo('/confirmed');
-        return;
-      }
-    }
-  }); // End of DOMContentLoaded
-
-  function initSocket() {
-  if (window.socket && window.socket.connected) {
-    window.socket.disconnect();
-  }
-  socket = io();
-  window.socket = socket;
-  // Attach all event listeners again (idempotent)
-  socket.on('connect', () => {
-    console.log('[safeEmit] Socket connected — flushing emitQueue');
-    window.flushEmitQueue(); // ✅ always works!
-  });
-  socket.on('disconnect', (reason) => {
-    console.log('[DEBUG] Socket disconnected:', reason);
-    socketConnected = false;
-  });
-  socket.on('playersUpdate', (count) => {
-    console.log('[DEBUG] playersUpdate received:', count);
-    if (isLeavingGame) {
-      console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+    if (error) {
+      console.error('[ERROR] Supabase reset error:', error.message);
+      alert('Error sending reset email: ' + error.message);
       return;
     }
-    const statusDiv = document.getElementById('statusDiv');
-    const rematchBtn = document.getElementById('rematchBtn');
-    if (statusDiv) {
-      statusDiv.textContent = `Players in room: ${count}`;
-    } else {
-      console.warn('statusDiv not found in DOM');
+
+    console.log('[INFO] Password reset email sent:', data);
+    navigateTo('/reset-confirmed'); // Switch to your "Check your email" screen!
+  } catch (err) {
+    console.error('[ERROR] Unexpected:', err);
+    alert('An unexpected error occurred.');
+  }
+}
+
+async function updatePassword() {
+  const newPasswordInput = document.getElementById('new-password');
+  const newPassword = newPasswordInput.value.trim();
+
+  if (!newPassword) {
+    alert('Please enter a new password.');
+    return;
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    console.error('[ERROR] Failed to update password:', error.message);
+    alert('Error updating password: ' + error.message);
+    return;
+  }
+
+  console.log('[INFO] Password updated:', data);
+
+  // ✅ Redirect the user back to sign in, or show success
+  alert('Password updated successfully! Please sign in with your new password.');
+  navigateTo('/signup');
+}
+
+
+
+
+
+function setupAutocompleteListeners() {
+  const guessInput = document.getElementById('guessInput');
+  const submitGuessBtn = document.getElementById('submitGuessBtn');
+  
+  if (!guessInput || !submitGuessBtn) {
+    console.warn('Autocomplete elements not found');
+    return;
+  }
+
+  guessInput.addEventListener('input', function() {
+    const val = this.value.trim();
+    clearAutocomplete();
+    selectedPlayer = null;
+    submitGuessBtn.disabled = true;
+
+    if (!val) {
+      showAutocompleteSuggestions([]);
+      return;
     }
-    if (rematchBtn) {
-      if (count < 2) {
-        rematchBtn.style.display = 'none';
-        navigateTo('/waiting');
-      } else {
-        navigateTo('/play');
+
+    if (fetchTimeout) clearTimeout(fetchTimeout);
+
+    fetchTimeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/players?q=${encodeURIComponent(val)}`);
+        if (!res.ok) throw new Error('Network response not ok');
+
+        const results = await res.json();
+        if (results.length === 0) {
+          showAutocompleteSuggestions([]);
+          return;
+        }
+
+        const suggestions = results.map(player => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'autocomplete-item';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = player.player_name;
+
+          const yearsSpan = document.createElement('span');
+          yearsSpan.className = 'career-years';
+          yearsSpan.textContent = ` ${player.first_year || '?'}–${player.last_year || '?'}`;
+          yearsSpan.style.fontSize = '0.8em';
+          yearsSpan.style.color = 'gray';
+          yearsSpan.style.marginLeft = '5px';
+
+          wrapper.appendChild(nameSpan);
+          wrapper.appendChild(yearsSpan);
+
+          wrapper.addEventListener('click', () => {
+            guessInput.value = player.player_name;
+            selectedPlayer = player.player_name;
+            submitGuessBtn.disabled = false;
+            clearAutocomplete();
+          });
+
+          return wrapper;
+        });
+
+        showAutocompleteSuggestions(suggestions);
+
+      } catch (err) {
+        console.error('Autocomplete fetch error:', err);
+        showAutocompleteSuggestions([]);
       }
-    } else {
-      console.warn('rematchBtn not found in DOM');
+    }, 300);
+  });
+
+  guessInput.addEventListener('change', () => {
+    if (guessInput.value !== selectedPlayer) {
+      selectedPlayer = null;
+      submitGuessBtn.disabled = true;
     }
   });
+}
+
+
+function initializeAuthStateListener() {
+  if (window.supabase && window.supabase.auth) {
+    window.supabase.auth.onAuthStateChange((event, session) => {
+      updateNavUserState(session);
+    });
+  }
+}
+
+
+
+///////////////////////////////////////////////
+// 3. Socket handlers (outside DOMContentLoaded)
+function setupSocketHandlers() {
+socket.on('connect', () => {
+  console.log('[safeEmit] Socket connected — flushing emitQueue');
+  flushEmitQueue();
+});
+
+
+socket.on('disconnect', (reason) => {
+  console.log('[DEBUG] Socket disconnected:', reason);
+  socketConnected = false;
+});
+
+
+
+socket.on('playersUpdate', (count) => {
+  console.log('[DEBUG] playersUpdate received:', count);
+
+  if (isLeavingGame) {
+    console.log('[DEBUG] playersUpdate skipped: isLeavingGame is true');
+    return;
+  }
+
+  const statusDiv = document.getElementById('statusDiv');
+  const rematchBtn = document.getElementById('rematchBtn');
+
+  if (statusDiv) {
+    statusDiv.textContent = `Players in room: ${count}`;
+  } else {
+    console.warn('statusDiv not found in DOM');
+  }
+
+  if (rematchBtn) {
+    if (count < 2) {
+      rematchBtn.style.display = 'none';
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/play');
+    }
+  } else {
+    console.warn('rematchBtn not found in DOM');
+  }
+});
 
 
 
@@ -2035,6 +1937,8 @@ socket.on('matchStats', (stats) => {
   console.log('[CLIENT] Updated matchStats:', stats);
   updateSplitScoreboard(stats, myUsername, opponentName);
 });
+
+
 
 socket.on('gameOver', (data) => {
   console.log('[DEBUG] gameOver received:', data);
@@ -2235,6 +2139,10 @@ socket.on('timerTick', (data) => {
   timerEl.textContent = data.timeLeft;
 });
 
+
+
+
+
 // When another player requests a rematch
 socket.on('rematchRequested', ({ username }) => {
   showMessage(`${username} wants a rematch! Click your Rematch button to accept.`, 'info', true);
@@ -2265,40 +2173,154 @@ socket.on('rematchStarted', () => {
   }
 });
 
+  }
 
-}
 
-initSocket();
 
-  // Tab switching logic for auth forms
-    document.addEventListener('DOMContentLoaded', function() {
-      const tabSignup = document.getElementById('tab-signup');
-      const tabSignin = document.getElementById('tab-signin');
-      const signupForm = document.getElementById('signupForm');
-      const signinForm = document.getElementById('signinForm');
-      tabSignup.addEventListener('click', function() {
-        tabSignup.classList.add('active');
-        tabSignin.classList.remove('active');
-        signupForm.classList.add('active');
-        signinForm.classList.remove('active');
-      });
-      tabSignin.addEventListener('click', function() {
-        tabSignin.classList.add('active');
-        tabSignup.classList.remove('active');
-        signinForm.classList.add('active');
-        signupForm.classList.remove('active');
-      });
+
+// 4. DOMContentLoaded (minimal, focused)
+  document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[DEBUG] DOMContentLoaded');
+
+    let justConfirmed = false;
+
+      // Initialize all event listeners
+  setupAutocompleteListeners();
+  setupFormListeners();
+  setupSocketHandlers();
+  initializeAuthStateListener();
+  updateNavUserState();
+  // ✅ Setup global navigation listeners (including home link)
+  setupGlobalNavListeners();
+
+  
+
+
+    // ✅ Listen for auth state changes too — always keep nav fresh
+    supabase.auth.onAuthStateChange((_event, session) => {
+      updateNavUserState(session);
     });
 
-    // Attach signup handler to the form submit event instead of button click
-   const signupForm = document.getElementById('signupForm');
-   if (signupForm) {
-     signupForm.addEventListener('submit', function(e) {
-       e.preventDefault();
-       signUp();
-     });
+    // --- 1️⃣ Email confirmation or recovery flow ---
+    const urlHash = window.location.hash;
+    const searchParams = new URLSearchParams(window.location.search);
+    const typeParam = searchParams.get('type');
+
+    console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
+
+    if (
+     (urlHash.includes('access_token') &&
+       (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+     || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+   ) {
+     console.log('[DEBUG] Found email confirmation or recovery in URL');
+     try {
+       const { data: { user }, error } = await supabase.auth.getUser();
+       if (error) {
+         console.error('[ERROR] Email confirmation failed:', error.message);
+       } else {
+         console.log('[DEBUG] Email confirmed for:', user?.email);
+
+         // Update username here (but don't update nav yet)
+         myUsername = user.user_metadata?.username || user.email;
+         localStorage.setItem('username', myUsername);
+
+         // Get fresh session (optional)
+         const { data: { session } } = await supabase.auth.getSession();
+
+         // Navigate first
+         await navigateTo('/confirmed');
+
+         // Then update nav *after* navigation completes
+         await updateNavUserState(session);
+       }
+     } catch (e) {
+       console.error('[ERROR] Exception during email confirmation:', e);
+     }
+
+     return;
    }
-   // Remove the old signupBtn click handler if present
+
+    // --- 2️⃣ Connect socket early ---
+    socket = io();
+  
+
+    // --- 3️⃣ Get current Supabase session ---
+    const { data } = await supabase.auth.getSession();
+    await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
+
+    if (data.session?.user) {
+      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+    } else {
+      myUsername = localStorage.getItem('username') || null;
+    }
+
+    // --- 4️⃣ Load room info ---
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    if (roomFromUrl) {
+      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+      myRoomId = roomFromUrl;
+      roomId = roomFromUrl;
+      isPrivateGame = true;
+      localStorage.setItem('privateRoomId', roomFromUrl);
+    } else {
+      const savedRoom = localStorage.getItem('privateRoomId');
+      if (savedRoom) {
+        console.log('[DEBUG] Found saved private room:', savedRoom);
+        myRoomId = savedRoom;
+        roomId = savedRoom;
+        isPrivateGame = true;
+      }
+    }
+
+    console.log('[DEBUG] Final state before routing:', {
+      myUsername,
+      myRoomId,
+      isPrivateGame,
+      isLeavingGame,
+    });
+
+
+    window.addEventListener('popstate', () => {
+    navigateTo(window.location.pathname, { skipPush: true });
+  });
+
+    // --- 5️⃣ Determine initial route ---
+    if (!myUsername) {
+      navigateTo('/signup');
+    } else if (isLeavingGame) {
+      console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+      navigateTo('/home');
+    } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+      navigateTo('/waiting');
+    } else {
+      navigateTo('/home');
+    }
+
+  
+
+
+});
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
