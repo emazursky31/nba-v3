@@ -1153,7 +1153,7 @@ function safeEmit(event, data) {
   }
 }
 
-function flushEmitQueue() {
+window.flushEmitQueue = function() {
   if (!socket) {
     console.warn(`[flushEmitQueue] Socket is null — cannot flush`);
     return;
@@ -1164,8 +1164,7 @@ function flushEmitQueue() {
     console.log(`[safeEmit] Flushing queued "${event}"`);
     socket.emit(event, data);
   }
-}
-window.flushEmitQueue = flushEmitQueue;
+};
 
 
 
