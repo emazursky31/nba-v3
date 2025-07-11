@@ -1165,7 +1165,7 @@ function flushEmitQueue() {
     socket.emit(event, data);
   }
 }
-
+window.flushEmitQueue = flushEmitQueue;
 
 
 
@@ -2007,7 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Attach all event listeners again (idempotent)
   socket.on('connect', () => {
     console.log('[safeEmit] Socket connected — flushing emitQueue');
-    flushEmitQueue();
+    window.flushEmitQueue(); // ✅ always works!
   });
   socket.on('disconnect', (reason) => {
     console.log('[DEBUG] Socket disconnected:', reason);
