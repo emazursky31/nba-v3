@@ -1339,13 +1339,36 @@ function setupGlobalNavListeners() {
 
   // Sign out button
   const navSignoutBtn = document.getElementById('nav-signout-btn');
-  if (navSignoutBtn) {
-    navSignoutBtn.addEventListener('click', async () => {
-      await window.supabase.auth.signOut();
-      updateNavUserState();
-      navigateTo('/signup');
-    });
-  }
+if (navSignoutBtn) {
+  navSignoutBtn.addEventListener('click', async () => {
+    // Check if user is in an active game
+    if (gameStarted && !gameOver && socket && socket.connected) {
+      // Emit a specific sign-out event to give opponent the win
+      socket.emit('playerSignedOut', { 
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        reason: 'signed_out'
+      });
+    }
+    
+    // Set leaving game flag to prevent reconnection attempts
+    isLeavingGame = true;
+    localStorage.setItem('isLeavingGame', 'true');
+    
+    // Sign out from Supabase
+    await window.supabase.auth.signOut();
+    
+    // Clear game state
+    gameStarted = false;
+    gameOver = true;
+    myRoomId = null;
+    roomId = null;
+    
+    // Update UI and navigate
+    updateNavUserState();
+    navigateTo('/signup');
+  });
+}
 
   // Sign in button
   const navSigninBtn = document.getElementById('nav-signin-btn');
@@ -1807,9 +1830,20 @@ socket.on('connect', () => {
 
 socket.on('disconnect', (reason) => {
   console.log('[DEBUG] Socket disconnected:', reason);
-  socketConnected = false;
+  
+  // If this was an intentional sign-out, handle it immediately
+  if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
+    // Award win to opponent immediately
+    handlePlayerLeaving(socket.roomId, socket.username, 'signed_out');
+  } else {
+    // For accidental disconnects, give a grace period
+    setTimeout(() => {
+      if (!socket.connected) {
+        handlePlayerLeaving(socket.roomId, socket.username, 'disconnected');
+      }
+    }, 10000); // 10 second grace period
+  }
 });
-
 
 
 socket.on('playersUpdate', (count) => {
@@ -2316,6 +2350,19 @@ inviteLinkContainer = document.getElementById('inviteLinkContainer');
     window.addEventListener('popstate', () => {
     navigateTo(window.location.pathname, { skipPush: true });
   });
+
+
+  window.addEventListener('beforeunload', (e) => {
+  if (gameStarted && !gameOver && socket && socket.connected) {
+    // Mark as leaving and emit sign-out event
+    isLeavingGame = true;
+    socket.emit('playerSignedOut', { 
+      roomId: myRoomId || roomId,
+      username: myUsername,
+      reason: 'page_closed'
+    });
+  }
+});
 
     // --- 5️⃣ Determine initial route ---
     if (!myUsername) {

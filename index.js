@@ -489,6 +489,62 @@ socket.on('leaveGame', () => {
 });
 
 
+socket.on('playerSignedOut', ({ roomId, username, reason }) => {
+  console.log(`Player ${username} signed out from room ${roomId}, reason: ${reason}`);
+  
+  const game = games[roomId];
+  if (!game) return;
+  
+  const disconnectedSocketId = socket.id;
+  const disconnectedUsername = username || game.usernames[disconnectedSocketId] || 'Player';
+  
+  // Find remaining player
+  const remainingPlayerSocketId = game.players.find(id => id !== disconnectedSocketId);
+  
+  if (remainingPlayerSocketId) {
+    const remainingPlayerSocket = io.sockets.sockets.get(remainingPlayerSocketId);
+    const remainingUsername = game.usernames[remainingPlayerSocketId] || 'Player';
+    
+    if (remainingPlayerSocket && remainingPlayerSocket.connected) {
+      // Immediately award win to remaining player
+      remainingPlayerSocket.emit('gameOver', {
+        reason: 'opponent_signed_out',
+        message: `${disconnectedUsername} signed out. You win!`,
+        winnerName: remainingUsername,
+        loserName: disconnectedUsername,
+        role: 'winner',
+        canRematch: false,
+      });
+      
+      // Update stats if you have a stats system
+      // updatePlayerStats(remainingUsername, 'win');
+      // updatePlayerStats(disconnectedUsername, 'loss');
+    }
+  }
+  
+  // Clean up the game immediately
+  if (game.timer) {
+    clearInterval(game.timer);
+    delete game.timer;
+  }
+  
+  // Reset game state
+  game.players = [];
+  game.usernames = {};
+  game.currentTurn = 0;
+  game.currentPlayerName = null;
+  game.teammates = [];
+  game.successfulGuesses = [];
+  game.rematchVotes = new Set();
+  
+  // Clean up socket mappings
+  delete socketRoomMap[disconnectedSocketId];
+  playersInGame.delete(disconnectedSocketId);
+  
+  console.log(`Game in room ${roomId} ended due to ${disconnectedUsername} signing out`);
+});
+
+
 
 
 socket.on('getMatchStats', () => {
