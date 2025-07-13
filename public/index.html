@@ -867,7 +867,7 @@ function startPrivateGame() {
 
   if (isLeavingGame) {
     console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
-    return; // ✅ Do NOT start private game while intentionally leaving
+    return;
   }
 
   if (!myUsername) {
@@ -881,53 +881,61 @@ function startPrivateGame() {
   }
 
   isPrivateGame = true;
-  isLeavingGame = false; // ✅ You’re intentionally starting a new match
+  isLeavingGame = false;
 
-  // ✅ Generate new room and clear stale room data
+  // Generate new room and clear stale room data
   const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
   roomId = generatedRoomId;
   myRoomId = generatedRoomId;
 
-  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+  // Fetch user_id from Supabase and emit joinGame with userId
+  window.supabase.auth.getUser().then(({ data }) => {
+    const userId = data?.user?.id;
+    if (!userId) {
+      alert('Could not get your user ID. Please sign in again.');
+      return;
+    }
+    socket.emit('joinGame', { roomId: myRoomId, username: myUsername, userId });
 
-  statusDiv.textContent = `Started private room: ${myRoomId}`;
-  document.getElementById('displayRoomCode').textContent = myRoomId;
+    statusDiv.textContent = `Started private room: ${myRoomId}`;
+    document.getElementById('displayRoomCode').textContent = myRoomId;
 
-  setupCopyInviteListeners();
+    setupCopyInviteListeners();
 
-  inviteLinkContainer.innerHTML = `
-    Share this link to invite a friend:<br>
-    <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-      ${window.location.origin}?room=${myRoomId}
-    </a>
-  `;
+    inviteLinkContainer.innerHTML = `
+      Share this link to invite a friend:<br>
+      <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
+        ${window.location.origin}?room=${myRoomId}
+      </a>
+    `;
 
-  navigateTo('/waiting');
+    navigateTo('/waiting');
+  });
 }
 
 
-  async function joinPublicGame() {
-    console.log('[DEBUG] joinPublicGame called');
+async function joinPublicGame() {
+  console.log('[DEBUG] joinPublicGame called');
 
-    isLeavingGame = false;
-    localStorage.removeItem('isLeavingGame');
+  isLeavingGame = false;
+  localStorage.removeItem('isLeavingGame');
 
-    if (!myUsername) {
-      console.warn('[DEBUG] myUsername is null, attempting to recover from session');
-      // Try to get username from current session
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        myUsername = user.user_metadata?.username || user.email;
-        localStorage.setItem('username', myUsername);
-        console.log('[DEBUG] Recovered username:', myUsername);
-      }
-
-      // If still no username, show error
-      if (!myUsername) {
-        alert('Missing username. Please sign out and sign in again.');
-        return;
-      }
+  if (!myUsername) {
+    console.warn('[DEBUG] myUsername is null, attempting to recover from session');
+    // Try to get username from current session
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      myUsername = user.user_metadata?.username || user.email;
+      localStorage.setItem('username', myUsername);
+      console.log('[DEBUG] Recovered username:', myUsername);
     }
+
+    // If still no username, show error
+    if (!myUsername) {
+      alert('Missing username. Please sign out and sign in again.');
+      return;
+    }
+  }
 
   if (gameStarted && !gameOver) {
     alert('Finish your current game first.');
@@ -942,17 +950,25 @@ function startPrivateGame() {
   successfulGuesses = [];
   gameOver = false;
 
-// ✅ Ensure socket is connected (don't re-initialize)
-if (!socket || !socket.connected) {
-  console.log('[joinPublicGame] Socket not ready, waiting for connection...');
-  // Socket should already be initialized in DOMContentLoaded
-}
+  // ✅ Ensure socket is connected (don't re-initialize)
+  if (!socket || !socket.connected) {
+    console.log('[joinPublicGame] Socket not ready, waiting for connection...');
+    // Socket should already be initialized in DOMContentLoaded
+  }
+
+  // Fetch user_id from Supabase and emit findMatch with userId
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
+  if (!userId) {
+    alert('Could not get your user ID. Please sign in again.');
+    return;
+  }
 
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
 
-  console.log('[DEBUG] Using safeEmit to find match:', myUsername);
-  safeEmit('findMatch', myUsername);
+  console.log('[DEBUG] Using safeEmit to find match:', myUsername, userId);
+  safeEmit('findMatch', { username: myUsername, userId });
 }
 
 
@@ -1038,6 +1054,8 @@ function attachRouteListeners(route) {
           joinPublicGame();
         });
       }
+
+      loadPlayerStats();
       break;
 
     case '/play':
@@ -1841,6 +1859,36 @@ function initializeAuthStateListener() {
     });
   }
 }
+
+
+async function loadPlayerStats() {
+  const el = document.getElementById('player-history');
+  if (!el) return;
+
+  // Make sure you have a valid user
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !sessionData?.session?.user) {
+    el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
+    return;
+  }
+
+  const userId = sessionData.session.user.id;
+
+  // Fetch their stats row
+  const { data, error } = await supabase
+    .from('user_stats')
+    .select('games_played, wins, losses')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) {
+    console.log('[loadPlayerStats] No stats row found — showing default zeros.');
+    el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
+  } else {
+    el.textContent = `Games Played: ${data.games_played} | Wins: ${data.wins} | Losses: ${data.losses}`;
+  }
+}
+
 
 
 

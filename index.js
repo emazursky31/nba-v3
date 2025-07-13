@@ -123,8 +123,9 @@ io.on('connection', (socket) => {
   
 
 
-socket.on('findMatch', (username) => {
+socket.on('findMatch', ({ username, userId }) => {
   socket.data.username = username;
+    socket.data.userId = userId;
 
   // ✅ Player must not already be in a game
   if (playersInGame.has(socket.id)) {
@@ -217,9 +218,9 @@ socket.on('findMatch', (username) => {
 
 
 
-socket.on('joinGame', ({ roomId, username }) => {
-  handleJoinGame(socket, roomId, username);
-});
+socket.on('joinGame', ({ roomId, username, userId }) => {
+    handleJoinGame(socket, roomId, username, userId);
+  });
 
 
 // Diagnostic event to check current games from client on demand
@@ -756,7 +757,7 @@ async function getRandomPlayer() {
 }
 
 
-function handleJoinGame(socket, roomId, username) {
+function handleJoinGame(socket, roomId, username, userId) {
   if (!roomId) {
     console.error('[handleJoinGame] ERROR: roomId is null or undefined');
     return;
@@ -793,6 +794,8 @@ function handleJoinGame(socket, roomId, username) {
 
   const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
   game.usernames[socket.id] = finalUsername;
+  game.userIds = game.userIds || {};
+  game.userIds[socket.id] = userId;
 
   socket.username = finalUsername;
 
@@ -888,12 +891,32 @@ function handlePlayerDisconnect(socket) {
 
 
 
+async function updateUserStats(userId, result) {
+  if (!userId || !['win', 'loss'].includes(result)) return;
 
+  const winInc = result === 'win' ? 1 : 0;
+  const lossInc = result === 'loss' ? 1 : 0;
+
+  const query = `
+    INSERT INTO user_stats (user_id, wins, losses, games_played)
+    VALUES ($1, $2, $3, 1)
+    ON CONFLICT (user_id) DO UPDATE
+      SET wins = user_stats.wins + $2,
+          losses = user_stats.losses + $3,
+          games_played = user_stats.games_played + 1,
+          updated_at = NOW()
+  `;
+  try {
+    await client.query(query, [userId, winInc, lossInc]);
+  } catch (err) {
+    console.error('[DB] Error updating user_stats:', err);
+  }
+}
 
 
 
 // Starts the 30-second countdown timer for a turn
-function startTurnTimer(roomId) {
+async function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) return;
 
@@ -927,7 +950,7 @@ function startTurnTimer(roomId) {
   });
 
   // ✅ Start clean interval
-  game.timer = setInterval(() => {
+  game.timer = setInterval(async () => {
     game.timeLeft--;
 
     console.log(`[TIMER] Room ${roomId} - timeLeft: ${game.timeLeft}`);
@@ -948,9 +971,17 @@ function startTurnTimer(roomId) {
         game.matchStats = {};
       }
 
+      const loserUserId = game.userIds[loserSocketId];
+      const winnerUserId = game.userIds[winnerSocketId];
+
+      await updateUserStats(winnerUserId, 'win');
+      await updateUserStats(loserUserId, 'loss');
+
       // ✅ Increment winner’s count
-      if (!game.matchStats[winnerName]) game.matchStats[winnerName] = { wins: 0 };
+      if (!game.matchStats[loserName]) game.matchStats[loserName] = { wins: 0, losses: 0 };
+      if (!game.matchStats[winnerName]) game.matchStats[winnerName] = { wins: 0, losses: 0 };
       game.matchStats[winnerName].wins += 1;
+      game.matchStats[loserName].losses += 1;
 
       console.log(`[SCOREBOARD] Room ${roomId} - Updated stats:`, game.matchStats);
 
