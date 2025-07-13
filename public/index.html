@@ -799,6 +799,11 @@ let inviteLinkContainer = null;
     }
 
     console.log('✅ Sign In successful:', data);
+    const user = data.user;
+    myUsername = user.user_metadata?.username || user.email;
+    localStorage.setItem('username', myUsername);
+
+    console.log('[DEBUG] Username set to:', myUsername);
     navigateTo('/home'); // 👈 Take them to home or wherever
   }
 
@@ -901,16 +906,28 @@ function startPrivateGame() {
 }
 
 
-async function joinPublicGame() {
-  console.log('[DEBUG] joinPublicGame called');
+  async function joinPublicGame() {
+    console.log('[DEBUG] joinPublicGame called');
 
-  isLeavingGame = false;
-  localStorage.removeItem('isLeavingGame');
+    isLeavingGame = false;
+    localStorage.removeItem('isLeavingGame');
 
-  if (!myUsername) {
-    alert('Missing username');
-    return;
-  }
+    if (!myUsername) {
+      console.warn('[DEBUG] myUsername is null, attempting to recover from session');
+      // Try to get username from current session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        myUsername = user.user_metadata?.username || user.email;
+        localStorage.setItem('username', myUsername);
+        console.log('[DEBUG] Recovered username:', myUsername);
+      }
+
+      // If still no username, show error
+      if (!myUsername) {
+        alert('Missing username. Please sign out and sign in again.');
+        return;
+      }
+    }
 
   if (gameStarted && !gameOver) {
     alert('Finish your current game first.');
@@ -1002,13 +1019,21 @@ function attachRouteListeners(route) {
       
       if (privateGameBtn) {
         privateGameBtn.addEventListener('click', () => {
+          if (privateGameBtn.disabled) return; // Prevent multiple clicks
+          privateGameBtn.disabled = true;
+          setTimeout(() => privateGameBtn.disabled = false, 2000); // Re-enable after 2s
+
           isLeavingGame = false;
           startPrivateGame();
         });
       }
-      
+
       if (findGameBtn) {
         findGameBtn.addEventListener('click', () => {
+          if (findGameBtn.disabled) return; // Prevent multiple clicks
+          findGameBtn.disabled = true;
+          setTimeout(() => findGameBtn.disabled = false, 2000); // Re-enable after 2s
+
           isLeavingGame = false;
           joinPublicGame();
         });
@@ -2315,9 +2340,14 @@ inviteLinkContainer = document.getElementById('inviteLinkContainer');
     await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
 
     if (data.session?.user) {
-      myUsername = data.session.user.user_metadata?.username || data.session.user.email;
+      // ✅ FIX: More robust username setting
+      const user = data.session.user;
+      myUsername = user.user_metadata?.username || user.email;
+      localStorage.setItem('username', myUsername);
+      console.log('[DEBUG] Username set from session:', myUsername);
     } else {
       myUsername = localStorage.getItem('username') || null;
+      console.log('[DEBUG] Username from localStorage:', myUsername);
     }
 
     // --- 4️⃣ Load room info ---
