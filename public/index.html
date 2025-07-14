@@ -731,6 +731,7 @@ let autocompleteList = null;
 let waitingRoom = null;
 let gameArea = null;
 let inviteLinkContainer = null;
+let myUserId = null;
 
 
 
@@ -1973,7 +1974,13 @@ socket.on('matched', ({ roomId, opponent }) => {
   statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
 
   navigateTo('/waiting');
-  socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+
+  // ✅ Include userId!
+  socket.emit('joinGame', { 
+    roomId: myRoomId, 
+    username: myUsername,
+    userId: myUserId   // <-- this part is critical now
+  });
 });
 
 
@@ -2304,164 +2311,158 @@ socket.on('rematchStarted', () => {
 
 // 4. DOMContentLoaded (minimal, focused)
   document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[DEBUG] DOMContentLoaded');
+  console.log('[DEBUG] DOMContentLoaded');
 
-    let justConfirmed = false;
+  let justConfirmed = false;
 
-      // Initialize all event listeners
+  // Initialize all event listeners
   setupAutocompleteListeners();
   setupFormListeners();
   setupAuthTabs();
   initializeAuthStateListener();
   updateNavUserState();
-  // ✅ Setup global navigation listeners (including home link)
   setupGlobalNavListeners();
 
   // Cache DOM element references
-statusDiv = document.getElementById('status');
-guessInput = document.getElementById('guessInput');
-submitGuessBtn = document.getElementById('submitGuessBtn');
-rematchBtn = document.getElementById('rematchBtn');
-messagesEl = document.getElementById('messageContainer');
-currentPlayerNameEl = document.getElementById('currentPlayerName');
-timerEl = document.getElementById('timer');
-autocompleteList = document.getElementById('autocomplete-list');
-waitingRoom = document.getElementById('waitingRoom');
-gameArea = document.getElementById('gameArea');
-inviteLinkContainer = document.getElementById('inviteLinkContainer');
+  statusDiv = document.getElementById('status');
+  guessInput = document.getElementById('guessInput');
+  submitGuessBtn = document.getElementById('submitGuessBtn');
+  rematchBtn = document.getElementById('rematchBtn');
+  messagesEl = document.getElementById('messageContainer');
+  currentPlayerNameEl = document.getElementById('currentPlayerName');
+  timerEl = document.getElementById('timer');
+  autocompleteList = document.getElementById('autocomplete-list');
+  waitingRoom = document.getElementById('waitingRoom');
+  gameArea = document.getElementById('gameArea');
+  inviteLinkContainer = document.getElementById('inviteLinkContainer');
 
-  
+  supabase.auth.onAuthStateChange((_event, session) => {
+    updateNavUserState(session);
+  });
 
+  const urlHash = window.location.hash;
+  const searchParams = new URLSearchParams(window.location.search);
+  const typeParam = searchParams.get('type');
 
-    // ✅ Listen for auth state changes too — always keep nav fresh
-    supabase.auth.onAuthStateChange((_event, session) => {
-      updateNavUserState(session);
-    });
+  console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
 
-    // --- 1️⃣ Email confirmation or recovery flow ---
-    const urlHash = window.location.hash;
-    const searchParams = new URLSearchParams(window.location.search);
-    const typeParam = searchParams.get('type');
+  if (
+    (urlHash.includes('access_token') &&
+      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
+    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
+  ) {
+    console.log('[DEBUG] Found email confirmation or recovery in URL');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('[ERROR] Email confirmation failed:', error.message);
+      } else {
+        console.log('[DEBUG] Email confirmed for:', user?.email);
 
-    console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
+        myUsername = user.user_metadata?.username || user.email;
+        myUserId = user.id;  // ✅ Save userId
+        localStorage.setItem('username', myUsername);
+        localStorage.setItem('userId', myUserId);
 
-    if (
-     (urlHash.includes('access_token') &&
-       (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-     || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-   ) {
-     console.log('[DEBUG] Found email confirmation or recovery in URL');
-     try {
-       const { data: { user }, error } = await supabase.auth.getUser();
-       if (error) {
-         console.error('[ERROR] Email confirmation failed:', error.message);
-       } else {
-         console.log('[DEBUG] Email confirmed for:', user?.email);
+        const { data: { session } } = await supabase.auth.getSession();
 
-         // Update username here (but don't update nav yet)
-         myUsername = user.user_metadata?.username || user.email;
-         localStorage.setItem('username', myUsername);
-
-         // Get fresh session (optional)
-         const { data: { session } } = await supabase.auth.getSession();
-
-         // Navigate first
-         await navigateTo('/confirmed');
-
-         // Then update nav *after* navigation completes
-         await updateNavUserState(session);
-       }
-     } catch (e) {
-       console.error('[ERROR] Exception during email confirmation:', e);
-     }
-      if (!socket) {
-        socket = io();
-        setupSocketHandlers();
+        await navigateTo('/confirmed');
+        await updateNavUserState(session);
       }
-     return;
-   }
-
-    // --- 2️⃣ Connect socket early ---
-    socket = io();
-    setupSocketHandlers();
-  
-
-    // --- 3️⃣ Get current Supabase session ---
-    const { data } = await supabase.auth.getSession();
-    await updateNavUserState(data.session); // ✅ Always sync nav on normal load too
-
-    if (data.session?.user) {
-      // ✅ FIX: More robust username setting
-      const user = data.session.user;
-      myUsername = user.user_metadata?.username || user.email;
-      localStorage.setItem('username', myUsername);
-      console.log('[DEBUG] Username set from session:', myUsername);
-    } else {
-      myUsername = localStorage.getItem('username') || null;
-      console.log('[DEBUG] Username from localStorage:', myUsername);
+    } catch (e) {
+      console.error('[ERROR] Exception during email confirmation:', e);
     }
+    if (!socket) {
+      socket = io();
+      setupSocketHandlers();
+    }
+    return;
+  }
 
-    // --- 4️⃣ Load room info ---
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
-    if (roomFromUrl) {
-      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-      myRoomId = roomFromUrl;
-      roomId = roomFromUrl;
+  // --- 2️⃣ Connect socket early ---
+  socket = io();
+  setupSocketHandlers();
+
+  // --- 3️⃣ Get current Supabase session ---
+  const { data } = await supabase.auth.getSession();
+  await updateNavUserState(data.session);
+
+  if (data.session?.user) {
+    const user = data.session.user;
+    myUsername = user.user_metadata?.username || user.email;
+    myUserId = user.id;  // ✅ Save userId
+    localStorage.setItem('username', myUsername);
+    localStorage.setItem('userId', myUserId);
+    console.log('[DEBUG] Username set from session:', myUsername);
+    console.log('[DEBUG] User ID set from session:', myUserId);
+  } else {
+    myUsername = localStorage.getItem('username') || null;
+    myUserId = localStorage.getItem('userId') || null;  // ✅ Fallback
+    console.log('[DEBUG] Username from localStorage:', myUsername);
+    console.log('[DEBUG] User ID from localStorage:', myUserId);
+  }
+
+  // --- 4️⃣ Load room info ---
+  const params = new URLSearchParams(window.location.search);
+  const roomFromUrl = params.get('room');
+  if (roomFromUrl) {
+    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+    myRoomId = roomFromUrl;
+    roomId = roomFromUrl;
+    isPrivateGame = true;
+    localStorage.setItem('privateRoomId', roomFromUrl);
+  } else {
+    const savedRoom = localStorage.getItem('privateRoomId');
+    if (savedRoom) {
+      console.log('[DEBUG] Found saved private room:', savedRoom);
+      myRoomId = savedRoom;
+      roomId = savedRoom;
       isPrivateGame = true;
-      localStorage.setItem('privateRoomId', roomFromUrl);
-    } else {
-      const savedRoom = localStorage.getItem('privateRoomId');
-      if (savedRoom) {
-        console.log('[DEBUG] Found saved private room:', savedRoom);
-        myRoomId = savedRoom;
-        roomId = savedRoom;
-        isPrivateGame = true;
-      }
     }
+  }
 
-    console.log('[DEBUG] Final state before routing:', {
-      myUsername,
-      myRoomId,
-      isPrivateGame,
-      isLeavingGame,
-    });
+  console.log('[DEBUG] Final state before routing:', {
+    myUsername,
+    myUserId,  // ✅ Add to debug
+    myRoomId,
+    isPrivateGame,
+    isLeavingGame,
+  });
 
-
-    window.addEventListener('popstate', () => {
+  window.addEventListener('popstate', () => {
     navigateTo(window.location.pathname, { skipPush: true });
   });
 
-
   window.addEventListener('beforeunload', (e) => {
-  if (gameStarted && !gameOver && socket && socket.connected) {
-    // Mark as leaving and emit sign-out event
-    isLeavingGame = true;
-    socket.emit('playerSignedOut', { 
-      roomId: myRoomId || roomId,
+    if (gameStarted && !gameOver && socket && socket.connected) {
+      isLeavingGame = true;
+      socket.emit('playerSignedOut', {
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        userId: myUserId,  // ✅ Include if helpful
+        reason: 'page_closed'
+      });
+    }
+  });
+
+  // --- 5️⃣ Determine initial route ---
+  if (!myUsername) {
+    navigateTo('/signup');
+  } else if (isLeavingGame) {
+    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+    navigateTo('/home');
+  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+    socket.emit('joinGame', {
+      roomId: myRoomId,
       username: myUsername,
-      reason: 'page_closed'
+      userId: myUserId   // ✅ Always emit userId
     });
+    navigateTo('/waiting');
+  } else {
+    navigateTo('/home');
   }
 });
 
-    // --- 5️⃣ Determine initial route ---
-    if (!myUsername) {
-      navigateTo('/signup');
-    } else if (isLeavingGame) {
-      console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-      navigateTo('/home');
-    } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-      socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
-      navigateTo('/waiting');
-    } else {
-      navigateTo('/home');
-    }
-
-  
-
-
-});
 </script>
 
 

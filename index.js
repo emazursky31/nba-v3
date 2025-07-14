@@ -853,6 +853,9 @@ function handlePlayerDisconnect(socket) {
     // Remove player
     game.players.splice(idx, 1);
     delete game.usernames[socket.id];
+    if (game.userIds) {
+      delete game.userIds[socket.id];
+    }
     playersInGame.delete(socket.id);
     delete socketRoomMap[socket.id];
 
