@@ -196,8 +196,9 @@ socket.on('findMatch', ({ username, userId }) => {
     playersInGame.add(opponentSocket.id);
 
     // Handle joining game for both players
-    handleJoinGame(socket, roomId, username);
-    handleJoinGame(opponentSocket, roomId, opponentUsername);
+    handleJoinGame(socket, roomId, username, socket.data.userId);
+    handleJoinGame(opponentSocket, roomId, opponentUsername, opponentSocket.data.userId);
+
 
     // Check if game ready to start
     if (!(games[roomId]?.players?.length >= 2)) {
@@ -904,8 +905,10 @@ function handlePlayerDisconnect(socket) {
 async function updateUserStats(userId, result) {
   if (!userId || !['win', 'loss'].includes(result)) return;
 
+  console.log('[DB] updateUserStats called with:', userId, result);
   const winInc = result === 'win' ? 1 : 0;
   const lossInc = result === 'loss' ? 1 : 0;
+  console.log('[DB] Will insert or update with:', { winInc, lossInc });
 
   const query = `
     INSERT INTO user_stats (user_id, wins, losses, games_played)
@@ -916,6 +919,7 @@ async function updateUserStats(userId, result) {
           games_played = user_stats.games_played + 1,
           updated_at = NOW()
   `;
+  console.log('[DB] Final query:', query);
   try {
     await client.query(query, [userId, winInc, lossInc]);
   } catch (err) {
