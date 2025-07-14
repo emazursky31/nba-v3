@@ -988,6 +988,8 @@ async function startTurnTimer(roomId) {
       const loserUserId = game.userIds[loserSocketId];
       const winnerUserId = game.userIds[winnerSocketId];
 
+      console.log('[DEBUG] Resolved userIds:', { winnerSocketId, winnerUserId, loserSocketId, loserUserId });
+
       await updateUserStats(winnerUserId, 'win');
       await updateUserStats(loserUserId, 'loss');
 
