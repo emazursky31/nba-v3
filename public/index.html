@@ -901,14 +901,21 @@ function startPrivateGame() {
     statusDiv.textContent = `Started private room: ${myRoomId}`;
     document.getElementById('displayRoomCode').textContent = myRoomId;
 
-    setupCopyInviteListeners();
-
     inviteLinkContainer.innerHTML = `
-      Share this link to invite a friend:<br>
-      <a href="${window.location.origin}?room=${myRoomId}" target="_blank">
-        ${window.location.origin}?room=${myRoomId}
-      </a>
-    `;
+  Share this link to invite a friend:<br>
+  <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
+  <button id="copyInviteBtn">Copy Link</button>
+  <div id="copyToast" style="display:none; color: green; margin-top: 0.5rem;">Link copied!</div>
+`;
+
+    // Set invite link input value
+    document.getElementById('inviteLink').value = `${window.location.origin}?room=${myRoomId}`;
+
+    // Make sure the waiting room is visible
+    waitingRoom.classList.remove('hidden');
+
+    // Setup the copy button listener
+    setupCopyInviteListeners();
 
     navigateTo('/waiting');
   });
@@ -1078,8 +1085,14 @@ function attachRouteListeners(route) {
       break;
 
     case '/waiting':
-    case '/private-game':
-      // Setup copy invite functionality
+      if (isPrivateGame && myRoomId) {
+        const inviteInput = document.getElementById('inviteLink');
+        if (inviteInput) {
+          inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
+        }
+        waitingRoom.classList.remove('hidden');
+      }
+      // Setup copy invite button listener anyway
       setupCopyInviteListeners();
       break;
 
