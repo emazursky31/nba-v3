@@ -173,6 +173,16 @@ socket.on('findMatch', ({ username, userId }) => {
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
     console.log(`✅ Matched players ${username} (${socket.id}) and ${opponentUsername} (${opponentSocket.id}) in room ${roomId}`);
 
+    if (!games[roomId]) games[roomId] = { players: [], userIds: {}, usernames: {} };
+
+    games[roomId].players.push(socket.id, opponentSocket.id);
+
+    games[roomId].userIds[socket.id] = userId;
+    games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
+
+    games[roomId].usernames[socket.id] = username;
+    games[roomId].usernames[opponentSocket.id] = opponentUsername;
+
     // ✅ Track socket-room mapping (single map)
     socketRoomMap[socket.id] = roomId;
     socketRoomMap[opponentSocket.id] = roomId;
