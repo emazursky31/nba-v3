@@ -889,7 +889,6 @@ function startPrivateGame() {
   roomId = generatedRoomId;
   myRoomId = generatedRoomId;
 
-  // Fetch user_id from Supabase and emit joinGame with userId
   window.supabase.auth.getUser().then(({ data }) => {
     const userId = data?.user?.id;
     if (!userId) {
@@ -901,25 +900,22 @@ function startPrivateGame() {
     statusDiv.textContent = `Started private room: ${myRoomId}`;
     document.getElementById('displayRoomCode').textContent = myRoomId;
 
-    inviteLinkContainer.innerHTML = `
-  Share this link to invite a friend:<br>
-  <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
-  <button id="copyInviteBtn">Copy Link</button>
-  <div id="copyToast" style="display:none; color: green; margin-top: 0.5rem;">Link copied!</div>
-`;
+    // **Don't overwrite the container innerHTML!**
+    const inviteInput = document.getElementById('inviteLink');
+    if (inviteInput) {
+      inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
+    }
 
-    // Set invite link input value
-    document.getElementById('inviteLink').value = `${window.location.origin}?room=${myRoomId}`;
-
-    // Make sure the waiting room is visible
+    // Show the waiting room section
     waitingRoom.classList.remove('hidden');
 
-    // Setup the copy button listener
+    // Setup copy button listeners
     setupCopyInviteListeners();
 
     navigateTo('/waiting');
   });
 }
+
 
 
 async function joinPublicGame() {
@@ -1090,11 +1086,18 @@ function attachRouteListeners(route) {
         if (inviteInput) {
           inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
         }
+
+        const roomCodeEl = document.getElementById('displayRoomCode');
+        if (roomCodeEl) {
+          roomCodeEl.textContent = myRoomId;
+        }
+
         waitingRoom.classList.remove('hidden');
       }
       // Setup copy invite button listener anyway
       setupCopyInviteListeners();
       break;
+
 
     // Add other route handlers as needed
   }
@@ -1636,22 +1639,25 @@ function setupCopyInviteListeners() {
     return;
   }
 
-  copyInviteBtn.onclick = () => {
+  copyInviteBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(inviteInput.value)
       .then(() => {
         copyToast.style.display = 'block';
+        copyInviteBtn.disabled = true; // Disable to prevent spamming
 
         // Hide toast after 2 seconds
         setTimeout(() => {
           copyToast.style.display = 'none';
+          copyInviteBtn.disabled = false; // Re-enable button
         }, 2000);
       })
       .catch(err => {
         alert('Failed to copy link. Please copy it manually.');
         console.error('Clipboard copy failed:', err);
       });
-  };
+  });
 }
+
 
 
 
