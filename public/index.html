@@ -1865,7 +1865,7 @@ async function loadPlayerStats() {
   const el = document.getElementById('player-history');
   if (!el) return;
 
-  // Make sure you have a valid user
+  // ✅ Get the current session user
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError || !sessionData?.session?.user) {
     el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
@@ -1874,15 +1874,18 @@ async function loadPlayerStats() {
 
   const userId = sessionData.session.user.id;
 
-  // Fetch their stats row
+  // ✅ Fetch their stats
   const { data, error } = await supabase
     .from('user_stats')
     .select('games_played, wins, losses')
     .eq('user_id', userId)
     .single();
 
+  console.log('[loadPlayerStats] Fetched data:', data);
+  console.log('[loadPlayerStats] Error:', error);
+
   if (error || !data) {
-    console.log('[loadPlayerStats] No stats row found — showing default zeros.');
+    console.warn('[loadPlayerStats] No stats row found — showing default zeros.');
     el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
   } else {
     el.textContent = `Games Played: ${data.games_played} | Wins: ${data.wins} | Losses: ${data.losses}`;
