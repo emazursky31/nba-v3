@@ -653,7 +653,7 @@
   <div id="turnSection">
   <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
   🎯 Name any teammate of:<br>
-  <img id="currentPlayerHeadshot" src="/images/default-player.png" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+  <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
   <strong class="turn-player-name" id="currentPlayerName">LeBron James</strong>
 </p>
 
@@ -729,12 +729,14 @@ let rematchBtn = null;
 let messagesEl = null;
 let currentPlayerNameEl = null;
 let currentPlayerHeadshotEl = null;
+let currentPlayerHeadshotUrl = null;
 let timerEl = null;
 let autocompleteList = null;
 let waitingRoom = null;
 let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
+const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
 
@@ -1012,7 +1014,7 @@ function flushEmitQueue() {
 
 function updateHeadshot(player) {
   if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = player.headshot_url || '/images/default-player.png';
+    currentPlayerHeadshotEl.src = player.headshot_url || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${player.player_name || 'Unknown'} Headshot`;
   }
 }
@@ -2086,7 +2088,7 @@ socket.on('gameStarted', async (data) => {
 
   // ✅ Update current player headshot
   if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
   }
 
@@ -2238,7 +2240,7 @@ socket.on('yourTurn', (data) => {
 
   // ✅ Update headshot too:
   if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
@@ -2281,7 +2283,7 @@ socket.on('opponentTurn', (data) => {
 
   // ✅ Update headshot too:
   if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
@@ -2331,7 +2333,7 @@ socket.on('turnEnded', (data) => {
 
   // ✅ Save turn state
   currentPlayerName = data.currentPlayerName || '???';
-  currentPlayerHeadshotUrl = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+  currentPlayerHeadshotUrl = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
   timeLeft = data.timeLeft || 15;
 
   renderPlayScreen();
@@ -2425,6 +2427,10 @@ socket.on('rematchStarted', () => {
   waitingRoom = document.getElementById('waitingRoom');
   gameArea = document.getElementById('gameArea');
   inviteLinkContainer = document.getElementById('inviteLinkContainer');
+    // Set initial default image
+    if (currentPlayerHeadshotEl) {
+      currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
+    }
   
 
   supabase.auth.onAuthStateChange((_event, session) => {

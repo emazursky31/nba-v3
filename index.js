@@ -738,7 +738,7 @@ async function startGame(roomId) {
     guesser: 'Leadoff',
     isLeadoff: true,
     sharedTeams: [],
-    headshot_url: leadoffPlayer.headshot_url || 'defaultPlayerImage'
+    headshot_url: leadoffPlayer.headshot_url || defaultPlayerImage
   }];
 
   game.rematchVotes = new Set();
@@ -786,7 +786,7 @@ async function startGame(roomId) {
       currentPlayerUsername: game.currentGuesserUsername,
 
       // NBA player headshot URL (fallback if missing)
-      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || 'defaultPlayerImage',
+      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || defaultPlayerImage,
 
       timeLeft: game.timeLeft,
 
