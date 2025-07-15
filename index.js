@@ -355,7 +355,7 @@ socket.on('playerGuess', async ({ guess }) => {
       nextPlayerId: game.activePlayerSocketId,
       nextPlayerUsername: game.usernames[game.activePlayerSocketId],
       currentPlayerName: trimmedCurrentPlayerName,           
-      currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || 'defaultPlayerImage',                             
+      currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,                             
       timeLeft: game.timeLeft,
       successfulGuesses: game.successfulGuesses,
     });
@@ -376,6 +376,7 @@ async function getPlayerByName(playerName) {
     LIMIT 1;
   `;
   const { rows } = await client.query(query, [playerName]);
+  console.log(`[DEBUG] getPlayerByName for "${playerName}":`, result);
   return rows[0] || {};
 }
 
@@ -1012,6 +1013,7 @@ async function startTurnTimer(roomId) {
   if (activeSocket) {
     activeSocket.emit('yourTurn', {
       currentPlayerName: game.currentPlayerName,
+      currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
       timeLeft: game.timeLeft,
     });
   }
@@ -1022,6 +1024,7 @@ async function startTurnTimer(roomId) {
       if (opponentSocket) {
         opponentSocket.emit('opponentTurn', {
           currentPlayerName: game.currentPlayerName,
+          currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
         });
       }
     }
