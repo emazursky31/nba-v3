@@ -998,10 +998,20 @@ async function updateUserStats(userId, result) {
 // Starts the 30-second countdown timer for a turn
 async function startTurnTimer(roomId) {
   const game = games[roomId];
-  if (!game) return;
+  if (!game) {
+    console.warn(`[startTurnTimer] No game found for room ${roomId}`);
+    return;
+  }
 
+  // ✅ Check if game has already ended
+  if (game.gameEnded) {
+    console.warn(`[startTurnTimer] Game already ended for room ${roomId}`);
+    return;
+  }
+
+  // ✅ Defensive timer clearing - ensure any existing timer is properly cleared
   if (game.timer !== null) {
-    console.warn(`[SERVER] Clearing existing timer before starting new one in room ${roomId}`);
+    console.warn(`[startTurnTimer] Clearing existing timer before starting new one in room ${roomId}`);
     clearInterval(game.timer);
     game.timer = null;
   }
@@ -1010,6 +1020,7 @@ async function startTurnTimer(roomId) {
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
 
+  // ✅ Fetch current player headshot to fix the ReferenceError
   const trimmedCurrentPlayerName = game.currentPlayerName.trim();
   const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(trimmedCurrentPlayerName);
 
@@ -1036,14 +1047,24 @@ async function startTurnTimer(roomId) {
 
   // ✅ Start clean interval
   game.timer = setInterval(async () => {
+    // ✅ Additional safety check - ensure game still exists and hasn't ended
+    if (!games[roomId] || games[roomId].gameEnded) {
+      clearInterval(game.timer);
+      game.timer = null;
+      return;
+    }
+
     game.timeLeft--;
 
     console.log(`[TIMER] Room ${roomId} - timeLeft: ${game.timeLeft}`);
     io.to(roomId).emit('timerTick', { timeLeft: game.timeLeft });
 
     if (game.timeLeft <= 0) {
+      // ✅ Immediately clear timer and set game ended flag
       clearInterval(game.timer);
       game.timer = null;
+      game.gameEnded = true; // Prevent further timer operations
+      
       console.log(`[TIMER] Room ${roomId} - timer expired`);
 
       const loserSocketId = game.activePlayerSocketId;
@@ -1064,7 +1085,7 @@ async function startTurnTimer(roomId) {
       await updateUserStats(winnerUserId, 'win');
       await updateUserStats(loserUserId, 'loss');
 
-      // ✅ Increment winner’s count
+      // ✅ Increment winner's count
       if (!game.matchStats[loserName]) game.matchStats[loserName] = { wins: 0, losses: 0 };
       if (!game.matchStats[winnerName]) game.matchStats[winnerName] = { wins: 0, losses: 0 };
       game.matchStats[winnerName].wins += 1;
@@ -1077,7 +1098,6 @@ async function startTurnTimer(roomId) {
         [winnerName]: { wins: game.matchStats[winnerName] },
         [loserName]: { wins: game.matchStats[loserName] || 0 },
       });
-
 
       // ✅ Emit game over event to both players
       game.players.forEach((playerId) => {
@@ -1100,9 +1120,13 @@ async function startTurnTimer(roomId) {
           });
         }
       });
+
+      // ✅ CRITICAL: Return to exit the interval callback and prevent infinite loop
+      return;
     }
   }, 1000);
 }
+
 
 
 
