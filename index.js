@@ -280,8 +280,9 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  if (normalizedGuess === game.leadoffPlayer.toLowerCase()) {
-    socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer}"`);
+  // FIXED: Access player_name property and check for existence
+  if (game.leadoffPlayer.player_name && normalizedGuess === game.leadoffPlayer.player_name.toLowerCase()) {
+    socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer.player_name}"`);
     return;
   }
 
@@ -318,19 +319,15 @@ socket.on('playerGuess', async ({ guess }) => {
       sharedTeams
     });
 
-    // Ensure leadoff player is always at the front of successfulGuesses
     ensureLeadoffAtFront(game);
 
-    // Rotate turn
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
 
-    // Get new teammates
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
-    // ✅ Get the new current player's headshot URL
     const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(game.currentPlayerName);
 
     console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
