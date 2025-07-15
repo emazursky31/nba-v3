@@ -199,9 +199,9 @@ socket.on('findMatch', ({ username, userId }) => {
     playersInGame.add(socket.id);
     playersInGame.add(opponentSocket.id);
 
-    // Handle joining game for both players
-    handleJoinGame(socket, roomId, username, socket.data.userId);
-    handleJoinGame(opponentSocket, roomId, opponentUsername, opponentSocket.data.userId);
+    // // Handle joining game for both players
+    // handleJoinGame(socket, roomId, username, socket.data.userId);
+    // handleJoinGame(opponentSocket, roomId, opponentUsername, opponentSocket.data.userId);
 
 
     // Check if game ready to start
@@ -233,9 +233,9 @@ socket.on('findMatch', ({ username, userId }) => {
 
 
 
-socket.on('joinGame', ({ roomId, username, userId }) => {
-    handleJoinGame(socket, roomId, username, userId);
-  });
+socket.on('joinGame', async ({ roomId, username, userId }) => {
+    await handleJoinGame(socket, roomId, username, userId);
+});
 
 
 // Diagnostic event to check current games from client on demand
@@ -719,6 +719,12 @@ async function startGame(roomId) {
     return;
   }
 
+  // ✅ Additional safety check
+  if (game.starting || game.leadoffPlayer) {
+    console.log(`⚠️ Game already starting or started for room ${roomId}`);
+    return;
+  }
+
   // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
   const leadoffPlayer = await getRandomPlayer();
   game.leadoffPlayer = leadoffPlayer; // full object
@@ -830,7 +836,7 @@ async function getRandomPlayer() {
 }
 
 
-function handleJoinGame(socket, roomId, username, userId) {
+async function handleJoinGame(socket, roomId, username, userId) {
   if (!roomId) {
     console.error('[handleJoinGame] ERROR: roomId is null or undefined');
     return;
@@ -882,8 +888,9 @@ function handleJoinGame(socket, roomId, username, userId) {
   if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer && !game.starting) {
   console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
   game.starting = true; // Prevent duplicate starts
-  startGame(roomId);
-  }
+  await startGame(roomId);
+  game.starting = false; // Reset after start
+}
 }
 
 
