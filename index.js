@@ -376,7 +376,7 @@ async function getPlayerByName(playerName) {
     LIMIT 1;
   `;
   const { rows } = await client.query(query, [playerName]);
-  console.log(`[DEBUG] getPlayerByName for "${playerName}":`, result);
+  console.log(`[DEBUG] getPlayerByName for "${playerName}":`, rows[0] || {});
   return rows[0] || {};
 }
 
@@ -879,9 +879,10 @@ function handleJoinGame(socket, roomId, username, userId) {
 
   game.ready.add(socket.id);
 
-  if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer) {
-    console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
-    startGame(roomId);
+  if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer && !game.starting) {
+  console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
+  game.starting = true; // Prevent duplicate starts
+  startGame(roomId);
   }
 }
 
@@ -1008,6 +1009,9 @@ async function startTurnTimer(roomId) {
   game.timeLeft = 30;
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
+
+  const trimmedCurrentPlayerName = game.currentPlayerName.trim();
+  const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(trimmedCurrentPlayerName);
 
   const activeSocket = io.sockets.sockets.get(socketId);
   if (activeSocket) {
