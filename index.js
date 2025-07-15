@@ -16,6 +16,10 @@ const io = new Server(server);
 const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
 
+const defaultPlayerImage = 
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
+
+
 // Serve static files first - make sure this points to your frontend build folder
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -286,9 +290,13 @@ socket.on('playerGuess', async ({ guess }) => {
     return;
   }
 
-  // FIXED: Access player_name property and check for existence
-  if (game.leadoffPlayer.player_name && normalizedGuess === game.leadoffPlayer.player_name.toLowerCase()) {
-    socket.emit('message', `You can't guess the starting player: "${game.leadoffPlayer.player_name}"`);
+  // Defensive: leadoffPlayer may be an object or string
+  const leadoffPlayerName = typeof game.leadoffPlayer === 'object' && game.leadoffPlayer.player_name
+    ? game.leadoffPlayer.player_name.trim()
+    : (typeof game.leadoffPlayer === 'string' ? game.leadoffPlayer.trim() : '');
+
+  if (leadoffPlayerName && normalizedGuess === leadoffPlayerName.toLowerCase()) {
+    socket.emit('message', `You can't guess the starting player: "${leadoffPlayerName}"`);
     return;
   }
 
@@ -313,38 +321,41 @@ socket.on('playerGuess', async ({ guess }) => {
     const previousPlayer = game.currentPlayerName;
 
     const [career1, career2] = await Promise.all([
-      getCareer(previousPlayer),
-      getCareer(guess)
+      getCareer(previousPlayer.trim()),
+      getCareer(guess.trim())
     ]);
 
     const sharedTeams = getSharedTeams(career1, career2);
 
     game.successfulGuesses.push({
       guesser: game.usernames[socket.id],
-      name: guess,
+      name: guess.trim(),
       sharedTeams
     });
 
     ensureLeadoffAtFront(game);
 
     game.currentTurn = (game.currentTurn + 1) % 2;
-    game.currentPlayerName = guess;
+    game.currentPlayerName = guess.trim();
     game.activePlayerSocketId = game.players[game.currentTurn];
 
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
 
-    const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(game.currentPlayerName);
+    // Normalize currentPlayerName for DB query
+    const trimmedCurrentPlayerName = game.currentPlayerName.trim();
+    const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(trimmedCurrentPlayerName);
 
     console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
+    console.log('[SERVER] Emitting currentPlayerHeadshotUrl:', currentPlayerHeadshotUrl);
 
     io.to(roomId).emit('turnEnded', {
-      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess}" successfully!`,
+      successfulGuess: `Player ${game.usernames[socket.id]} guessed "${guess.trim()}" successfully!`,
       guessedByUsername: game.usernames[socket.id],
       nextPlayerId: game.activePlayerSocketId,
       nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-      currentPlayerName: game.currentPlayerName,           
-      currentPlayerHeadshotUrl,                             
+      currentPlayerName: trimmedCurrentPlayerName,           
+      currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || 'defaultPlayerImage',                             
       timeLeft: game.timeLeft,
       successfulGuesses: game.successfulGuesses,
     });
@@ -354,6 +365,7 @@ socket.on('playerGuess', async ({ guess }) => {
     socket.emit('message', `Incorrect guess: "${guess}"`);
   }
 });
+
 
 
 async function getPlayerByName(playerName) {
@@ -706,42 +718,43 @@ async function startGame(roomId) {
     return;
   }
 
-  // ✅ Pick the leadoff player from DB
+  // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
   const leadoffPlayer = await getRandomPlayer();
-  game.leadoffPlayer = leadoffPlayer; // { player_id, player_name, headshot_url }
+  game.leadoffPlayer = leadoffPlayer; // full object
 
-  // ✅ Get teammates for the leadoff player
+  // Get teammates for the leadoff player (pass player_name)
   game.teammates = await getTeammates(leadoffPlayer.player_name);
 
-  // ✅ Fully reset state for rematch
+  // Fully reset state for rematch, include headshot_url in the first guess entry
   game.successfulGuesses = [{
     name: leadoffPlayer.player_name,
     guesser: 'Leadoff',
     isLeadoff: true,
     sharedTeams: [],
-    headshot_url: leadoffPlayer.headshot_url
+    headshot_url: leadoffPlayer.headshot_url || 'defaultPlayerImage'
   }];
+
   game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
   game.timeLeft = 30;
 
-  // ✅ Pick first player to guess
+  // Pick first player to guess
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
   game.activePlayerSocketId = game.players[game.currentTurn];
 
-  // 🏀 NBA player currently being guessed:
+  // NBA player currently being guessed
   game.currentPlayerName = leadoffPlayer.player_name;
 
-  // 👤 Username of the player whose turn it is:
+  // Username of the player whose turn it is
   game.currentGuesserUsername = game.usernames[game.activePlayerSocketId];
 
-  // ✅ Map sockets to room again (for safety)
+  // Map sockets to room again (for safety)
   game.players.forEach((socketId) => {
     socketRoomMap[socketId] = roomId;
   });
 
-  // ✅ Logging
+  // Logging for debug
   console.log(`[STARTGAME] room ${roomId} starting with:`);
   console.log(`→ leadoffPlayer: ${JSON.stringify(leadoffPlayer)}`);
   console.log(`→ teammates: ${JSON.stringify(game.teammates)}`);
@@ -751,7 +764,7 @@ async function startGame(roomId) {
   console.log(`→ currentPlayerName (NBA player): ${game.currentPlayerName}`);
   console.log(`→ currentGuesserUsername: ${game.currentGuesserUsername}`);
 
-  // ✅ Notify each player INDIVIDUALLY
+  // Notify each player individually
   game.players.forEach((socketId) => {
     const opponentSocketId = game.players.find(id => id !== socketId);
     const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
@@ -759,26 +772,28 @@ async function startGame(roomId) {
     io.to(socketId).emit('gameStarted', {
       firstPlayerId: game.activePlayerSocketId,
 
-      // NBA player to guess:
+      // NBA player to guess
       currentPlayerName: game.currentPlayerName,
 
-      // User whose turn it is:
+      // User whose turn it is
       currentPlayerUsername: game.currentGuesserUsername,
 
-      // NBA player headshot:
-      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || null,
+      // NBA player headshot URL (fallback if missing)
+      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || 'defaultPlayerImage',
 
       timeLeft: game.timeLeft,
 
-      leadoffPlayer: game.leadoffPlayer, // full object: { player_name, headshot_url }
+      // Full leadoffPlayer object (player_name, headshot_url)
+      leadoffPlayer: game.leadoffPlayer,
 
       opponentName: opponentUsername
     });
   });
 
-  // ✅ Start turn timer
+  // Start turn timer
   startTurnTimer(roomId);
 }
+
 
 
 
