@@ -2066,21 +2066,23 @@ socket.on('gameStarted', async (data) => {
       headshot_url: leadoffPlayer.headshot_url
     });
 
-    // ✅ Show leadoff headshot
+    // ✅ Show leadoff headshot if you want to — or skip if you only want current player
     updateHeadshot(leadoffPlayer);
   }
 
   console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
   renderSuccessfulGuesses();
 
-  // Update current player name and headshot
+  // ✅ Update current player name (NBA player)
   currentPlayerNameEl.textContent = data.currentPlayerName || '???';
 
+  // ✅ Update current player headshot
   if (currentPlayerHeadshotEl) {
     currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
     currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
   }
 
+  // ✅ Update player labels
   const playerYouEl = document.getElementById('playerYou');
   const playerOpponentEl = document.getElementById('playerOpponent');
   if (playerOpponentEl && data.opponentName) {
@@ -2089,7 +2091,9 @@ socket.on('gameStarted', async (data) => {
   }
   if (playerYouEl) playerYouEl.textContent = myUsername || 'You';
 
-  const isYourTurn = data.currentPlayerName === myUsername;
+  // ✅ Correct: use currentPlayerUsername, not currentPlayerName!
+  const isYourTurn = data.currentPlayerUsername === myUsername;
+
   if (playerYouEl && playerOpponentEl) {
     playerYouEl.classList.toggle('active-turn', isYourTurn);
     playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
@@ -2098,13 +2102,13 @@ socket.on('gameStarted', async (data) => {
   timerEl.textContent = data.timeLeft || 15;
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
-  // ✅ ✅ ✅ NEW: Navigate to /play FIRST and wait!
   console.log('[DEBUG] Navigating to /play...');
   await navigateTo('/play');
   console.debug('[DEBUG] Waiting for scoreboard readiness...');
   await waitForScoreboard();
   socket.emit('getMatchStats');
 });
+
 
 
 
@@ -2221,7 +2225,15 @@ socket.on('yourTurn', (data) => {
   guessInput.disabled = false;
   submitGuessBtn.disabled = !guessInput.value.trim();
 
+  // ✅ NBA player to guess:
   currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+
+  // ✅ Update headshot too:
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+
   timerEl.textContent = data.timeLeft || 15;
 
   turnSection.style.display = 'block';
@@ -2229,12 +2241,10 @@ socket.on('yourTurn', (data) => {
 
   showMessage(data.message || "It's your turn to guess!", 'info');
 
- const turnPromptEl = document.getElementById('turnPromptText');
-if (turnPromptEl) {
-  turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
-}
-
-
+  const turnPromptEl = document.getElementById('turnPromptText');
+  if (turnPromptEl) {
+    turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+  }
 
   // ✅ Highlight the current player in playersDisplay
   const playerYouEl = document.getElementById('playerYou');
@@ -2245,8 +2255,6 @@ if (turnPromptEl) {
     playerOpponentEl.classList.remove('active-turn');
   }
 });
-
-
 
 socket.on('opponentTurn', (data) => {
   navigateTo('/play');
@@ -2260,8 +2268,16 @@ socket.on('opponentTurn', (data) => {
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
+  // ✅ NBA player to guess:
   currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
-  timerEl.textContent = '';
+
+  // ✅ Update headshot too:
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+
+  timerEl.textContent = data.timeLeft || '';
 
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
@@ -2269,11 +2285,9 @@ socket.on('opponentTurn', (data) => {
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 
   const turnPromptEl = document.getElementById('turnPromptText');
-if (turnPromptEl) {
-  turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
-}
-
-
+  if (turnPromptEl) {
+    turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+  }
 
   // ✅ Highlight the opponent in playersDisplay
   const playerYouEl = document.getElementById('playerYou');
@@ -2284,6 +2298,7 @@ if (turnPromptEl) {
     playerOpponentEl.classList.add('active-turn');
   }
 });
+
 
 
 

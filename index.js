@@ -340,8 +340,8 @@ socket.on('playerGuess', async ({ guess }) => {
       guessedByUsername: game.usernames[socket.id],
       nextPlayerId: game.activePlayerSocketId,
       nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-      currentPlayerName: game.currentPlayerName,           // player name being guessed next!
-      currentPlayerHeadshotUrl: nextPlayerRow.headshot_url, // new headshot!
+      currentPlayerName: game.currentPlayerName,           
+      currentPlayerHeadshotUrl,                             
       timeLeft: game.timeLeft,
       successfulGuesses: game.successfulGuesses,
     });
@@ -749,11 +749,23 @@ async function startGame(roomId) {
 
     io.to(socketId).emit('gameStarted', {
       firstPlayerId: game.activePlayerSocketId,
+
+      // 🏀 The NBA player they should name a teammate for:
       currentPlayerName: game.currentPlayerName,
+
+      // 👤 The username whose turn it is:
+      currentPlayerUsername: game.usernames[game.activePlayerSocketId],
+
+      // 🖼️ Optional: the NBA player headshot (if you have it)
+      currentPlayerHeadshotUrl: game.currentPlayerHeadshotUrl || null,
+
       timeLeft: game.timeLeft,
-      leadoffPlayer: game.leadoffPlayer, // full object!
-      opponentName: opponentUsername
+
+      leadoffPlayer: game.leadoffPlayer, // full object: { player_name, headshot_url }
+
+      opponentName: opponentUsername // The *opponent's username*
     });
+
   });
 
   // ✅ Start turn timer
