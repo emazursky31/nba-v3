@@ -286,19 +286,18 @@ socket.on('playerGuess', async ({ guess }) => {
   }
 
   if (
-  Array.isArray(game.successfulGuesses) &&
-  game.successfulGuesses.some(
-    g => g && typeof g.name === 'string' && g.name.toLowerCase() === normalizedGuess
-  )
-) {
-  socket.emit('message', `"${guess}" has already been guessed.`);
-  return;
-}
-
+    Array.isArray(game.successfulGuesses) &&
+    game.successfulGuesses.some(
+      g => g && typeof g.name === 'string' && g.name.toLowerCase() === normalizedGuess
+    )
+  ) {
+    socket.emit('message', `"${guess}" has already been guessed.`);
+    return;
+  }
 
   const validGuess = game.teammates.some(t => t.toLowerCase() === normalizedGuess);
 
- if (validGuess) {
+  if (validGuess) {
     console.log(`[SERVER] VALID guess "${guess}" by ${socket.data.username}. Advancing turn.`);
 
     clearInterval(game.timer);
@@ -322,12 +321,17 @@ socket.on('playerGuess', async ({ guess }) => {
     // Ensure leadoff player is always at the front of successfulGuesses
     ensureLeadoffAtFront(game);
 
+    // Rotate turn
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.currentPlayerName = guess;
     game.activePlayerSocketId = game.players[game.currentTurn];
 
+    // Get new teammates
     game.teammates = await getTeammates(game.currentPlayerName);
     game.timeLeft = 30;
+
+    // ✅ Get the new current player's headshot URL
+    const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(game.currentPlayerName);
 
     console.log('[SERVER] Emitting turnEnded with successfulGuesses:', JSON.stringify(game.successfulGuesses, null, 2));
 
@@ -337,6 +341,7 @@ socket.on('playerGuess', async ({ guess }) => {
       nextPlayerId: game.activePlayerSocketId,
       nextPlayerUsername: game.usernames[game.activePlayerSocketId],
       currentPlayerName: game.currentPlayerName,
+      currentPlayerHeadshotUrl, // ✅ New!
       timeLeft: game.timeLeft,
       successfulGuesses: game.successfulGuesses,
     });
@@ -346,6 +351,20 @@ socket.on('playerGuess', async ({ guess }) => {
     socket.emit('message', `Incorrect guess: "${guess}"`);
   }
 });
+
+
+async function getPlayerByName(playerName) {
+  const query = `
+    SELECT player_id, player_name, headshot_url
+    FROM players
+    WHERE LOWER(player_name) = LOWER($1)
+    LIMIT 1;
+  `;
+  const { rows } = await client.query(query, [playerName]);
+  return rows[0] || {};
+}
+
+
 
 
 
@@ -684,42 +703,46 @@ async function startGame(roomId) {
     return;
   }
 
+  // ✅ Pick the leadoff player from DB
+  const leadoffPlayer = await getRandomPlayer();
+  game.leadoffPlayer = leadoffPlayer; // { player_id, player_name, headshot_url }
+
+  // ✅ Get teammates for the leadoff player
+  game.teammates = await getTeammates(leadoffPlayer.player_name);
+
   // ✅ Fully reset state for rematch
   game.successfulGuesses = [{
-    name: game.leadoffPlayer,
+    name: leadoffPlayer.player_name,
     guesser: 'Leadoff',
     isLeadoff: true,
-    sharedTeams: []
+    sharedTeams: [],
+    headshot_url: leadoffPlayer.headshot_url
   }];
   game.rematchVotes = new Set();
   if (game.timer) clearInterval(game.timer);
   game.timeLeft = 30;
 
+  // ✅ Pick first player to guess
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
-
-  // ✅ Select leadoff player & their teammates
-  game.currentPlayerName = await getRandomPlayer();
-  game.leadoffPlayer = game.currentPlayerName;
-  game.teammates = await getTeammates(game.currentPlayerName);
-
-  // ✅ Set initial turn ownership
   game.activePlayerSocketId = game.players[game.currentTurn];
+  game.currentPlayerName = game.usernames[game.activePlayerSocketId]; // the guesser's name
 
-  // ✅ Map sockets to room again
+  // ✅ Map sockets to room again (for safety)
   game.players.forEach((socketId) => {
     socketRoomMap[socketId] = roomId;
   });
 
   // ✅ Logging
   console.log(`[STARTGAME] room ${roomId} starting with:`);
-  console.log(`→ currentPlayerName: ${game.currentPlayerName}`);
-  console.log(`→ teammates: ${game.teammates}`);
+  console.log(`→ leadoffPlayer: ${JSON.stringify(leadoffPlayer)}`);
+  console.log(`→ teammates: ${JSON.stringify(game.teammates)}`);
   console.log(`→ players: ${game.players}`);
   console.log(`→ currentTurn: ${game.currentTurn}`);
   console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
+  console.log(`→ currentPlayerName: ${game.currentPlayerName}`);
 
-  // ✅ Notify each player INDIVIDUALLY with their opponent’s name from game.usernames
+  // ✅ Notify each player INDIVIDUALLY
   game.players.forEach((socketId) => {
     const opponentSocketId = game.players.find(id => id !== socketId);
     const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
@@ -728,12 +751,12 @@ async function startGame(roomId) {
       firstPlayerId: game.activePlayerSocketId,
       currentPlayerName: game.currentPlayerName,
       timeLeft: game.timeLeft,
-      leadoffPlayer: game.leadoffPlayer,
+      leadoffPlayer: game.leadoffPlayer, // full object!
       opponentName: opponentUsername
     });
   });
 
-  // ✅ Start timer
+  // ✅ Start turn timer
   startTurnTimer(roomId);
 }
 
@@ -751,7 +774,10 @@ async function getRandomPlayer() {
       FROM player_team_stints
       WHERE start_season >= '2000'
     )
-    SELECT p.player_name
+    SELECT 
+      p.player_id,
+      p.player_name,
+      p.headshot_url
     FROM players p
     JOIN (
       SELECT player_id
@@ -764,7 +790,7 @@ async function getRandomPlayer() {
   `;
 
   const res = await client.query(query);
-  return res.rows[0]?.player_name || null;
+  return res.rows[0] || null;
 }
 
 

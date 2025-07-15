@@ -651,10 +651,12 @@
 </div>
 
   <div id="turnSection">
-  <p class="turn-prompt" id="turnPromptText">
+  <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
   🎯 Name any teammate of:<br>
+  <img id="currentPlayerHeadshot" src="/images/default-player.png" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
   <strong class="turn-player-name" id="currentPlayerName">LeBron James</strong>
 </p>
+
 
 
    <p>Time left: <span id="timer">15</span> seconds</p>
@@ -726,6 +728,7 @@ let submitGuessBtn = null;
 let rematchBtn = null;
 let messagesEl = null;
 let currentPlayerNameEl = null;
+let currentPlayerHeadshotEl = null;
 let timerEl = null;
 let autocompleteList = null;
 let waitingRoom = null;
@@ -1289,9 +1292,14 @@ function showGuessError(message) {
 
 
   function updateTurn(data) {
-    currentPlayerNameEl.textContent = data.currentPlayerName || '???';
-    timerEl.textContent = data.timeLeft || 15;
+  currentPlayerNameEl.textContent = data.currentPlayerName || '???';
+  timerEl.textContent = data.timeLeft || 15;
+
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
   }
+}
 
 
 
@@ -2018,7 +2026,8 @@ socket.on('gameStarted', async (data) => {
   gameStarted = true;
   gameOver = false;
 
-  leadoffPlayerName = data.leadoffPlayer || null;
+  const leadoffPlayer = data.leadoffPlayer || null;
+  leadoffPlayerName = leadoffPlayer?.player_name || null;
 
   if (window.timerInterval) {
     clearInterval(window.timerInterval);
@@ -2040,19 +2049,28 @@ socket.on('gameStarted', async (data) => {
   messagesEl.style.display = 'block';
 
   successfulGuesses = [];
-  if (data.leadoffPlayer && data.leadoffPlayer.trim() !== '') {
-    leadoffPlayerName = data.leadoffPlayer;
+  if (leadoffPlayer && leadoffPlayer.player_name) {
     successfulGuesses.push({
       guesser: 'Leadoff',
-      name: leadoffPlayerName,
-      isLeadoff: true
+      name: leadoffPlayer.player_name,
+      isLeadoff: true,
+      headshot_url: leadoffPlayer.headshot_url
     });
+
+    // ✅ Show leadoff headshot
+    updateHeadshot(leadoffPlayer);
   }
 
   console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
   renderSuccessfulGuesses();
 
-  currentPlayerNameEl.textContent = data.currentPlayerName;
+  // Update current player name and headshot
+  currentPlayerNameEl.textContent = data.currentPlayerName || '???';
+
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
+  }
 
   const playerYouEl = document.getElementById('playerYou');
   const playerOpponentEl = document.getElementById('playerOpponent');
@@ -2077,7 +2095,6 @@ socket.on('gameStarted', async (data) => {
   console.debug('[DEBUG] Waiting for scoreboard readiness...');
   await waitForScoreboard();
   socket.emit('getMatchStats');
-
 });
 
 
@@ -2280,7 +2297,13 @@ socket.on('turnEnded', (data) => {
   }
 
   updateTurn(data);
+
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
+  }
 });
+
 
 
 
