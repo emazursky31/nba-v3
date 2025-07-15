@@ -340,8 +340,8 @@ socket.on('playerGuess', async ({ guess }) => {
       guessedByUsername: game.usernames[socket.id],
       nextPlayerId: game.activePlayerSocketId,
       nextPlayerUsername: game.usernames[game.activePlayerSocketId],
-      currentPlayerName: game.currentPlayerName,
-      currentPlayerHeadshotUrl, // ✅ New!
+      currentPlayerName: game.currentPlayerName,           // player name being guessed next!
+      currentPlayerHeadshotUrl: nextPlayerRow.headshot_url, // new headshot!
       timeLeft: game.timeLeft,
       successfulGuesses: game.successfulGuesses,
     });

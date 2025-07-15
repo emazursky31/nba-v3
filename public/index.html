@@ -1010,6 +1010,15 @@ function flushEmitQueue() {
 }
 
 
+function updateHeadshot(player) {
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = player.headshot_url || '/images/default-player.png';
+    currentPlayerHeadshotEl.alt = `${player.player_name || 'Unknown'} Headshot`;
+  }
+}
+
+
+
 function attachRouteListeners(route) {
   switch (route) {
     case '/signup':
