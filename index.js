@@ -726,7 +726,12 @@ async function startGame(roomId) {
   const startIndex = Math.floor(Math.random() * game.players.length);
   game.currentTurn = startIndex;
   game.activePlayerSocketId = game.players[game.currentTurn];
-  game.currentPlayerName = game.usernames[game.activePlayerSocketId]; // the guesser's name
+
+  // 🏀 NBA player currently being guessed:
+  game.currentPlayerName = leadoffPlayer.player_name;
+
+  // 👤 Username of the player whose turn it is:
+  game.currentGuesserUsername = game.usernames[game.activePlayerSocketId];
 
   // ✅ Map sockets to room again (for safety)
   game.players.forEach((socketId) => {
@@ -740,7 +745,8 @@ async function startGame(roomId) {
   console.log(`→ players: ${game.players}`);
   console.log(`→ currentTurn: ${game.currentTurn}`);
   console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
-  console.log(`→ currentPlayerName: ${game.currentPlayerName}`);
+  console.log(`→ currentPlayerName (NBA player): ${game.currentPlayerName}`);
+  console.log(`→ currentGuesserUsername: ${game.currentGuesserUsername}`);
 
   // ✅ Notify each player INDIVIDUALLY
   game.players.forEach((socketId) => {
@@ -750,22 +756,21 @@ async function startGame(roomId) {
     io.to(socketId).emit('gameStarted', {
       firstPlayerId: game.activePlayerSocketId,
 
-      // 🏀 The NBA player they should name a teammate for:
+      // NBA player to guess:
       currentPlayerName: game.currentPlayerName,
 
-      // 👤 The username whose turn it is:
-      currentPlayerUsername: game.usernames[game.activePlayerSocketId],
+      // User whose turn it is:
+      currentPlayerUsername: game.currentGuesserUsername,
 
-      // 🖼️ Optional: the NBA player headshot (if you have it)
-      currentPlayerHeadshotUrl: game.currentPlayerHeadshotUrl || null,
+      // NBA player headshot:
+      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || null,
 
       timeLeft: game.timeLeft,
 
       leadoffPlayer: game.leadoffPlayer, // full object: { player_name, headshot_url }
 
-      opponentName: opponentUsername // The *opponent's username*
+      opponentName: opponentUsername
     });
-
   });
 
   // ✅ Start turn timer
