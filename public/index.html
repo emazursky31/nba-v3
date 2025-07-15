@@ -1345,12 +1345,23 @@ function renderSuccessfulGuesses() {
   const displayList = [...successfulGuesses].reverse();
 
   displayList.forEach((guessObj, index) => {
-    const name = guessObj.name || '';
-    const isLeadoff = guessObj.isLeadoff || false;
-    const guesser = guessObj.guesser || '';
-    const sharedTeams = guessObj.sharedTeams || [];
+    // Defensive: make sure we handle all cases
+    let rawName = guessObj?.name ?? '';
+    let name = '';
 
-    if (!name.trim()) return;
+    if (typeof rawName === 'string') {
+      name = rawName.trim();
+    } else if (rawName && typeof rawName === 'object' && rawName.player_name) {
+      name = String(rawName.player_name).trim();
+    } else {
+      name = String(rawName).trim();
+    }
+
+    const isLeadoff = !!guessObj?.isLeadoff;
+    const guesser = guessObj?.guesser ?? '';
+    const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
+
+    if (!name) return; // Skip invalid guesses
 
     // Guess box
     const box = document.createElement('div');
@@ -1381,7 +1392,14 @@ function renderSuccessfulGuesses() {
       sharedInfo.style.color = '#444';
       sharedInfo.style.marginBottom = '0.25rem';
 
-      const teamStrings = sharedTeams.map(t => `${t.team} (${t.years})`);
+      const teamStrings = sharedTeams.map(t => {
+        if (typeof t === 'string') return t;
+        if (typeof t === 'object' && t.team && t.years) {
+          return `${t.team} (${t.years})`;
+        }
+        return JSON.stringify(t); // Fallback debug output
+      });
+
       sharedInfo.textContent = teamStrings.join(' • ');
 
       listEl.appendChild(sharedInfo);
@@ -1399,6 +1417,7 @@ function renderSuccessfulGuesses() {
     }
   });
 }
+
 
 function setupGlobalNavListeners() {
   // Home navigation with game leave logic

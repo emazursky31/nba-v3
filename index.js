@@ -241,18 +241,24 @@ socket.on('testGames', () => {
 });
 
 function ensureLeadoffAtFront(game) {
-  if (!game.successfulGuesses.length || game.successfulGuesses[0].name !== game.leadoffPlayer) {
-    // Remove any previous leadoff entries
-    game.successfulGuesses = game.successfulGuesses.filter(g => !g.isLeadoff);
-    // Add the leadoff player at the front
-    game.successfulGuesses.unshift({
-      name: game.leadoffPlayer,
-      guesser: 'Leadoff',
-      isLeadoff: true,
-      sharedTeams: []
-    });
-  }
+  const leadoffName = typeof game.leadoffPlayer === 'string'
+    ? game.leadoffPlayer
+    : (typeof game.leadoffPlayer === 'object' && game.leadoffPlayer.player_name)
+      ? game.leadoffPlayer.player_name
+      : '';
+
+  // Remove any previous leadoff entries
+  game.successfulGuesses = game.successfulGuesses.filter(g => !g.isLeadoff);
+
+  // Add the leadoff player at the front
+  game.successfulGuesses.unshift({
+    name: leadoffName,
+    guesser: null, // Optional: use null instead of 'Leadoff'
+    isLeadoff: true,
+    sharedTeams: []
+  });
 }
+
 
   // Handle player guess
 socket.on('playerGuess', async ({ guess }) => {
