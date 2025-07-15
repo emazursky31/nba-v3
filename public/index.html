@@ -1300,17 +1300,6 @@ function showGuessError(message) {
 
 
 
-  function updateTurn(data) {
-  currentPlayerNameEl.textContent = data.currentPlayerName || '???';
-  timerEl.textContent = data.timeLeft || 15;
-
-  if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
-    currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
-  }
-}
-
-
 
   function clearAutocomplete() {
     autocompleteList.innerHTML = '';
@@ -2339,13 +2328,27 @@ socket.on('turnEnded', (data) => {
     showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
   }
 
-  updateTurn(data);
+  // ✅ Save turn state
+  currentPlayerName = data.currentPlayerName || '???';
+  currentPlayerHeadshotUrl = data.currentPlayerHeadshotUrl || '/images/default-player.png';
+  timeLeft = data.timeLeft || 15;
 
-  if (currentPlayerHeadshotEl) {
-    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || '/images/default-player.png';
-    currentPlayerHeadshotEl.alt = (data.currentPlayerName || 'Unknown') + ' Headshot';
-  }
+  renderPlayScreen();
 });
+
+
+function renderPlayScreen() {
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = currentPlayerName;
+  }
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = currentPlayerHeadshotUrl;
+    currentPlayerHeadshotEl.alt = `${currentPlayerName} Headshot`;
+  }
+  if (timerEl) {
+    timerEl.textContent = timeLeft;
+  }
+}
 
 
 
