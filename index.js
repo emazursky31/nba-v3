@@ -1011,7 +1011,7 @@ async function startTurnTimer(roomId) {
 
   // ✅ Defensive timer clearing - ensure any existing timer is properly cleared
   if (game.timer !== null) {
-    console.warn(`[startTurnTimer] Clearing existing timer before starting new one in room ${roomId}`);
+    console.warn(`[startTurnTimer] Clearing existing timer before starting new timer in room ${roomId}`);
     clearInterval(game.timer);
     game.timer = null;
   }
