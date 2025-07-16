@@ -733,9 +733,15 @@ async function startGame(roomId) {
     return;
   }
 
-  // ✅ Additional safety check
-  if (game.starting || game.leadoffPlayer) {
-    console.log(`⚠️ Game already starting or started for room ${roomId}`);
+  // // ✅ Additional safety check
+  // if (game.starting || game.leadoffPlayer) {
+  //   console.log(`⚠️ Game already starting or started for room ${roomId}`);
+  //   return;
+  // }
+
+
+  if (game.leadoffPlayer) {
+    console.log(`⚠️ Game already started for room ${roomId}`);
     return;
   }
 
