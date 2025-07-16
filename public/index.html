@@ -2431,7 +2431,11 @@ socket.on('rematchStarted', () => {
   // ✅ Re-join the same room to trigger new game start
   if (myRoomId && myUsername) {
     console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername });
+    socket.emit('joinGame', {
+      roomId: myRoomId,
+      username: myUsername,
+      userId: myUserId
+    });
     socket.emit('getMatchStats');
   } else {
     console.error('[CLIENT] Missing roomId or username for rematch.');
