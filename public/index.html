@@ -991,6 +991,11 @@ async function joinPublicGame() {
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');
 
+  // ✅ Add this: Ensure status message is set for public games
+  if (statusDiv) {
+    statusDiv.textContent = 'Looking for an opponent...';
+  }
+
   console.log('[DEBUG] Using safeEmit to find match:', myUsername, userId);
   safeEmit('findMatch', { username: myUsername, userId });
 }
@@ -1547,13 +1552,15 @@ if (path === '/waiting') {
     return;  // 🛑 Prevent accidental waiting room navigation
   }
 
-  // ✅ Use the shared statusDiv declared once near top
+   // ✅ Always set a status message, with fallback
   if (statusDiv) {
     if (isPrivateGame) {
       statusDiv.textContent = 'Waiting for a friend to join...';
     } else {
       statusDiv.textContent = 'Looking for an opponent...';
     }
+  } else {
+    console.warn('[WARN] statusDiv not found when trying to update!');
   }
 
   const codeEl = document.getElementById('displayRoomCode');
