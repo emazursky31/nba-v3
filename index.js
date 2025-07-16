@@ -965,22 +965,17 @@ function handlePlayerDisconnect(socket) {
 
     // 5️⃣ If no players left, or after notifying remaining player, fully reset the game object
     if (game.players.length < 2) {
-      console.log(`🧹 Resetting game in room ${room} due to insufficient players`);
+      console.log(`🧹 Deleting game in room ${room} due to insufficient players`);
 
-      game.players = [];
-      game.usernames = {};
-      game.currentTurn = 0;
-      game.currentPlayerName = null;
-      game.teammates = [];
-      game.successfulGuesses = [];
-      game.rematchVotes = new Set();
-
+      // Clear any remaining timer
       if (game.timer) {
         clearInterval(game.timer);
-        delete game.timer;
       }
 
-      console.log(`✅ Game in room ${room} fully reset`);
+      // Completely delete the game object instead of resetting it
+      delete games[room];
+
+      console.log(`✅ Game in room ${room} completely deleted`);
     }
 
     break; // Stop looping once we handled this socket
