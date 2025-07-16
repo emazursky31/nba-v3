@@ -2251,9 +2251,10 @@ socket.on('yourTurn', (data) => {
 
   showMessage(data.message || "It's your turn to guess!", 'info');
 
-  const turnPromptEl = document.getElementById('turnPromptText');
-  if (turnPromptEl) {
-    turnPromptEl.innerHTML = `🎯 Name any teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+  // Update only the player name text
+  const playerNameEl = document.getElementById('currentPlayerName');
+  if (playerNameEl) {
+    playerNameEl.textContent = data.currentPlayerName;
   }
 
   // ✅ Highlight the current player in playersDisplay
@@ -2294,9 +2295,10 @@ socket.on('opponentTurn', (data) => {
 
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 
-  const turnPromptEl = document.getElementById('turnPromptText');
-  if (turnPromptEl) {
-    turnPromptEl.innerHTML = `🕒 Waiting for opponent to name a teammate of:<br><strong class="turn-player-name">${data.currentPlayerName}</strong>`;
+  // Update only the player name text
+  const playerNameEl = document.getElementById('currentPlayerName');
+  if (playerNameEl) {
+    playerNameEl.textContent = data.currentPlayerName;
   }
 
   // ✅ Highlight the opponent in playersDisplay
