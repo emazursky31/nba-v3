@@ -1549,28 +1549,34 @@ if (path === '/waiting') {
 
   // ✅ Use the shared statusDiv declared once near top
   if (statusDiv) {
-    statusDiv.textContent = 'Waiting for an opponent...';
-  } else {
-    console.warn('[WARN] statusDiv not found when trying to update!');
+    if (isPrivateGame) {
+      statusDiv.textContent = 'Waiting for a friend to join...';
+    } else {
+      statusDiv.textContent = 'Looking for an opponent...';
+    }
   }
 
   const codeEl = document.getElementById('displayRoomCode');
   const inviteWrapper = document.getElementById('inviteLinkWrapper');
   const inviteInput = document.getElementById('inviteLink');
 
-  if (codeEl && myRoomId) {
-    codeEl.textContent = myRoomId;
+  if (codeEl) {
+    if (isPrivateGame && myRoomId) {
+      // Extract just the readable part after "room-"
+      const displayCode = myRoomId.replace('room-', '').substring(0, 8);
+      codeEl.textContent = displayCode;
+      codeEl.style.display = 'block';
+    } else {
+      codeEl.style.display = 'none';
+    }
   }
 
-  if (inviteWrapper && inviteInput) {
+ if (inviteWrapper && inviteInput) {
     if (isPrivateGame && myRoomId) {
       const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
       inviteInput.value = inviteUrl;
       inviteWrapper.style.display = 'block';
-      inviteInput.focus();
-      inviteInput.select();
     } else {
-      inviteInput.value = '';
       inviteWrapper.style.display = 'none';
     }
   }
