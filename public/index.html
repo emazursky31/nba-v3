@@ -651,10 +651,10 @@
 </div>
 
   <div id="turnSection">
-  <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
-  🎯 Name any teammate of:<br>
-  <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-  <strong class="turn-player-name" id="currentPlayerName">LeBron James</strong>
+ <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
+  <!-- Dynamic content will be inserted here by JavaScript -->
+  <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+  <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
 </p>
 
 
@@ -2272,10 +2272,14 @@ socket.on('yourTurn', (data) => {
 
   showMessage(data.message || "It's your turn to guess!", 'info');
 
-  // Update only the player name text
-  const playerNameEl = document.getElementById('currentPlayerName');
-  if (playerNameEl) {
-    playerNameEl.textContent = data.currentPlayerName;
+
+  const turnPromptText = document.getElementById('turnPromptText');
+  if (turnPromptText) {
+    turnPromptText.innerHTML = `
+    🎯 Name any teammate of:<br>
+    <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+    <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
+  `;
   }
 
   // ✅ Highlight the current player in playersDisplay
@@ -2307,6 +2311,15 @@ socket.on('opponentTurn', (data) => {
   if (currentPlayerHeadshotEl) {
     currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+
+  const turnPromptText = document.getElementById('turnPromptText');
+  if (turnPromptText) {
+    turnPromptText.innerHTML = `
+    ⏳ ${opponentName || 'Your opponent'} is naming a teammate of:<br>
+    <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+    <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
+  `;
   }
 
   timerEl.textContent = data.timeLeft || '';
