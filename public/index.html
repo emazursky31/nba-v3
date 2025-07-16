@@ -617,7 +617,7 @@
 <!-- Waiting Room View -->
 <section id="waitingRoom" data-route="/waiting" class="hidden" style="text-align: center; margin-top: 2rem;">
   <h2>Waiting Room</h2>
-  <p>Waiting for another player to join...</p>
+  <p id="waitingStatus">Waiting for another player to join...</p>
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
     <p>Invite a friend to join using this link:</p>
@@ -1553,14 +1553,13 @@ if (path === '/waiting') {
   }
 
    // ✅ Always set a status message, with fallback
-  if (statusDiv) {
+  const waitingStatus = document.getElementById('waitingStatus');
+  if (waitingStatus) {
     if (isPrivateGame) {
-      statusDiv.textContent = 'Waiting for a friend to join...';
+      waitingStatus.textContent = 'Waiting for a friend to join...';
     } else {
-      statusDiv.textContent = 'Looking for an opponent...';
+      waitingStatus.textContent = 'Looking for an opponent...';
     }
-  } else {
-    console.warn('[WARN] statusDiv not found when trying to update!');
   }
 
   const codeEl = document.getElementById('displayRoomCode');
