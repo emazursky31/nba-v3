@@ -988,27 +988,31 @@ async function updateUserStats(userId, result) {
   if (!userId || !['win', 'loss'].includes(result)) return;
 
   console.log('[DB] updateUserStats called with:', userId, result);
+  
   const winInc = result === 'win' ? 1 : 0;
   const lossInc = result === 'loss' ? 1 : 0;
-  console.log('[DB] Will insert or update with:', { winInc, lossInc });
+  
+  console.log('[DB] Will increment:', { winInc, lossInc, gamesInc: 1 });
 
   const query = `
-    INSERT INTO user_stats (user_id, wins, losses, games_played)
-    VALUES ($1, $2, $3, 1)
+    INSERT INTO user_stats (user_id, wins, losses, games_played, created_at, updated_at)
+    VALUES ($1, $2, $3, 1, NOW(), NOW())
     ON CONFLICT (user_id) DO UPDATE
       SET wins = user_stats.wins + $2,
           losses = user_stats.losses + $3,
           games_played = user_stats.games_played + 1,
           updated_at = NOW()
   `;
-  console.log('[DB] Final query:', query);
+  
   try {
-    await client.query(query, [userId, winInc, lossInc]);
+    const result = await client.query(query, [userId, winInc, lossInc]);
+    console.log('[DB] Stats updated successfully for user:', userId);
+    return result;
   } catch (err) {
     console.error('[DB] Error updating user_stats:', err);
+    throw err;
   }
 }
-
 
 
 // Starts the 30-second countdown timer for a turn
@@ -1098,8 +1102,15 @@ async function startTurnTimer(roomId) {
 
       console.log('[DEBUG] Resolved userIds:', { winnerSocketId, winnerUserId, loserSocketId, loserUserId });
 
+      if (game.statsUpdated) {
+        console.log('[STATS] Stats already updated for this game, skipping');
+        return;
+      }
+
+      console.log('[STATS] Before updating - Winner:', winnerUserId, 'Loser:', loserUserId);
       await updateUserStats(winnerUserId, 'win');
       await updateUserStats(loserUserId, 'loss');
+      console.log('[STATS] Stats updated for both players');
 
       // ✅ Increment winner's count
       if (!game.matchStats[loserName]) game.matchStats[loserName] = { wins: 0, losses: 0 };
