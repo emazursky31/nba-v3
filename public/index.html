@@ -954,10 +954,25 @@ async function joinPublicGame() {
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
-
   selectedPlayer = null;
   successfulGuesses = [];
   gameOver = false;
+  gameStarted = false;
+  leadoffPlayerName = null;
+  opponentName = null;
+
+  // Clear UI elements
+  if (currentPlayerNameEl) currentPlayerNameEl.textContent = '';
+  if (timerEl) timerEl.textContent = '';
+  if (currentPlayerHeadshotEl) currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
+
+  // Clear turn history
+  const successfulGuessesList = document.getElementById('successful-guesses-list');
+  if (successfulGuessesList) successfulGuessesList.innerHTML = '';
+
+  // Clear any persistent localStorage
+  localStorage.removeItem('privateRoomId');
+  localStorage.removeItem('isLeavingGame');
 
   // ✅ Ensure socket is connected (don't re-initialize)
   if (!socket || !socket.connected) {
@@ -1249,8 +1264,8 @@ function resetGameUI() {
   document.getElementById('successful-guesses-list').innerHTML = '';
   renderSuccessfulGuesses();
 
-  currentPlayerNameEl.textContent = '';
-  timerEl.textContent = '';
+  currentPlayerNameEl.textContent = 'Loading...';
+  timerEl.textContent = '30';
 
   // Show/hide game areas as needed
   waitingRoom.style.display = 'none';

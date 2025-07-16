@@ -427,6 +427,20 @@ socket.on('requestRematch', ({ roomId }) => {
     console.log('All players agreed for rematch in room', roomId);
     game.rematchVotes.clear();
     console.log('Cleared rematchVotes for room:', roomId);
+    // Reset game state for rematch
+    game.leadoffPlayer = null;
+    game.starting = false;
+    game.gameEnded = false;
+    game.currentPlayerName = null;
+    game.teammates = [];
+    game.successfulGuesses = [];
+    game.currentTurn = 0;
+    game.activePlayerSocketId = null;
+    game.timeLeft = 30;
+if (game.timer) {
+  clearInterval(game.timer);
+  game.timer = null;
+}
     startGame(roomId);
     io.to(roomId).emit('rematchStarted'); // Notify clients explicitly
     console.log('Emitted rematchStarted to room:', roomId);
