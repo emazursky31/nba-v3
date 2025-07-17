@@ -2,31 +2,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #2563eb;
+  --primary-color: #1e40af;
   --primary-hover: #1d4ed8;
-  --secondary-color: #10b981;
-  --secondary-hover: #059669;
-  --accent-color: #f59e0b;
+  --secondary-color: #dc2626;
+  --secondary-hover: #b91c1c;
+  --accent-color: #059669;
   --danger-color: #ef4444;
   --success-color: #22c55e;
   --warning-color: #f59e0b;
   
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-dark: #1e293b;
+  --bg-primary: #1e293b;
+  --bg-secondary: #334155;
+  --bg-tertiary: #475569;
+  --bg-card: #0f172a;
   
-  --border-color: #e2e8f0;
-  --border-hover: #cbd5e1;
+  --border-color: #475569;
+  --border-hover: #64748b;
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
   
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -44,7 +44,7 @@ body {
   margin: 0 auto;
   padding: 1.5rem;
   line-height: 1.6;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
   min-height: 100vh;
   color: var(--text-primary);
   font-weight: 400;
@@ -57,11 +57,11 @@ nav {
   align-items: center;
   padding: 1rem 0;
   margin-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color);
 }
 
 nav span, nav a, nav button {
-  color: white;
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -70,13 +70,13 @@ nav span, nav a, nav button {
 }
 
 nav button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   cursor: pointer;
 }
 
 nav button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
@@ -86,8 +86,12 @@ h1 {
   font-weight: 700;
   text-align: center;
   margin-bottom: 2rem;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #3b82f6 0%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 h2 {
@@ -108,7 +112,7 @@ h3 {
 
 /* Cards and Containers */
 section[data-route] {
-  background: var(--bg-primary);
+  background: var(--bg-card);
   border-radius: var(--radius-xl);
   padding: 2rem;
   box-shadow: var(--shadow-xl);
@@ -133,7 +137,11 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
   outline: none;
   border-color: var(--primary-color);
   background: var(--bg-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+}
+
+input[type="text"]::placeholder, input[type="email"]::placeholder, input[type="password"]::placeholder {
+  color: var(--text-muted);
 }
 
 /* Buttons */
@@ -169,7 +177,7 @@ button:active:not(:disabled) {
 
 button:disabled {
   background: var(--text-muted);
-  color: white;
+  color: var(--bg-primary);
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -184,7 +192,7 @@ button:disabled {
 }
 
 #privateGameBtn:hover, #findGameBtn:hover {
-  background: linear-gradient(135deg, var(--secondary-hover) 0%, var(--secondary-color) 100%);
+  background: linear-gradient(135deg, var(--secondary-hover) 0%, #991b1b 100%);
 }
 
 /* Game Area */
@@ -199,7 +207,7 @@ button:disabled {
   font-size: 1.25rem;
   font-weight: 600;
   padding: 1rem;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
 }
@@ -212,15 +220,15 @@ button:disabled {
 }
 
 .player-name.you {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--secondary-color);
-  border: 2px solid rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success-color);
+  border: 2px solid rgba(34, 197, 94, 0.3);
 }
 
 .player-name.opponent {
-  background: rgba(37, 99, 235, 0.1);
-  color: var(--primary-color);
-  border: 2px solid rgba(37, 99, 235, 0.2);
+  background: rgba(30, 64, 175, 0.2);
+  color: #3b82f6;
+  border: 2px solid rgba(30, 64, 175, 0.3);
 }
 
 .player-name.active-turn {
@@ -249,9 +257,9 @@ button:disabled {
 }
 
 #turnSection.your-turn {
-  border-color: var(--secondary-color);
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.1) 100%);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.2) 100%);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
   animation: pulse-border 2s infinite;
 }
 
@@ -261,8 +269,8 @@ button:disabled {
 }
 
 @keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2); }
-  50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4); }
+  0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
 }
 
 .turn-prompt {
@@ -278,7 +286,7 @@ button:disabled {
   display: block;
   font-size: 1.5rem;
   margin-top: 0.75rem;
-  color: var(--primary-color);
+  color: #3b82f6;
   font-weight: 600;
 }
 
@@ -287,9 +295,9 @@ button:disabled {
   font-size: 2.5rem;
   font-weight: 700;
   text-align: center;
-  color: var(--accent-color);
+  color: #f59e0b;
   margin: 1.5rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Guess Controls */
@@ -317,12 +325,12 @@ button:disabled {
   min-width: 140px;
   min-height: 56px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-color) 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #047857 100%);
   font-weight: 600;
 }
 
 #submitGuessBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d97706 0%, var(--accent-color) 100%);
+  background: linear-gradient(135deg, #047857 0%, var(--accent-color) 100%);
 }
 
 /* Autocomplete */
@@ -332,7 +340,7 @@ button:disabled {
   left: 0;
   right: 140px;
   z-index: 9999;
-  background: var(--bg-primary);
+  background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   max-height: 250px;
@@ -349,6 +357,7 @@ button:disabled {
   cursor: pointer;
   transition: background-color 0.15s ease;
   border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .autocomplete-item:last-child {
@@ -356,7 +365,7 @@ button:disabled {
 }
 
 .autocomplete-item:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
 }
 
 .career-years {
@@ -377,15 +386,15 @@ button:disabled {
 }
 
 .message:not(.error) {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--secondary-color);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success-color);
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .message.error {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.2);
   color: var(--danger-color);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .message.fade-out {
@@ -406,7 +415,7 @@ button:disabled {
 }
 
 #successful-guesses-list > div {
-  background: var(--bg-primary);
+  background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1rem;
@@ -414,6 +423,7 @@ button:disabled {
   max-width: 350px;
   box-shadow: var(--shadow-md);
   transition: all 0.2s ease;
+  color: var(--text-primary);
 }
 
 #successful-guesses-list > div:hover {
@@ -427,11 +437,16 @@ button:disabled {
   padding: 2rem;
 }
 
+#waitingRoom p {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}
+
 #displayRoomCode {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--primary-color);
-  background: var(--bg-tertiary);
+  color: #3b82f6;
+  background: var(--bg-secondary);
   padding: 1rem 1.5rem;
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
@@ -443,19 +458,24 @@ button:disabled {
 #inviteLinkWrapper {
   margin-top: 1.5rem;
   padding: 1.5rem;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
+}
+
+#inviteLinkWrapper p {
+  color: var(--text-secondary);
 }
 
 #inviteLink {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 0.875rem;
   margin: 0.5rem 0;
+  background: var(--bg-primary);
 }
 
 #copyInviteBtn {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-hover) 100%);
+  background: linear-gradient(135deg, var(--accent-color) 0%, #047857 100%);
   margin-top: 0.75rem;
 }
 
@@ -463,7 +483,7 @@ button:disabled {
 #gameOverContainer {
   text-align: center;
   padding: 2rem;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
 }
@@ -485,7 +505,7 @@ button:disabled {
 
 .auth-tabs {
   display: flex;
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   padding: 0.25rem;
   margin-bottom: 2rem;
@@ -505,8 +525,8 @@ button:disabled {
 }
 
 .auth-tab.active {
-  background: var(--bg-primary);
-  color: var(--primary-color);
+  background: var(--bg-card);
+  color: #3b82f6;
   box-shadow: var(--shadow-sm);
 }
 
@@ -516,7 +536,7 @@ button:disabled {
 }
 
 .auth-form {
-  background: var(--bg-primary);
+  background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
@@ -535,7 +555,7 @@ button:disabled {
 
 .auth-form h2 {
   margin-bottom: 0.5rem;
-  color: var(--primary-color);
+  color: #3b82f6;
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -551,7 +571,7 @@ button:disabled {
 .auth-form input:focus {
   border-color: var(--primary-color);
   background: var(--bg-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
 }
 
 .auth-form button {
@@ -568,7 +588,7 @@ button:disabled {
 }
 
 .auth-form a {
-  color: var(--primary-color);
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 500;
 }
