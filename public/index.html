@@ -911,35 +911,44 @@ function renderSuccessfulGuesses() {
     listEl.appendChild(box);
 
     // Shared stints above arrow, only if NOT leadoff
-    if (!isLeadoff && sharedTeams.length > 0 && index < displayList.length - 1) {
-      const sharedInfo = document.createElement('div');
-      sharedInfo.style.textAlign = 'center';
-      sharedInfo.style.fontSize = '0.85rem';
-      sharedInfo.style.color = '#444';
-      sharedInfo.style.marginBottom = '0.25rem';
+   if (!isLeadoff && index < displayList.length - 1) {
+      // Create a connection container for arrow + shared teams
+      const connectionContainer = document.createElement('div');
+      connectionContainer.style.textAlign = 'center';
+      connectionContainer.style.margin = '0.5rem 0';
+      connectionContainer.style.padding = '0.5rem';
+      connectionContainer.style.backgroundColor = '#f8f9fa';
+      connectionContainer.style.border = '1px solid #e9ecef';
+      connectionContainer.style.borderRadius = '8px';
+      connectionContainer.style.fontSize = '0.85rem';
+      connectionContainer.style.color = '#666';
 
-      const teamStrings = sharedTeams.map(t => {
-        if (typeof t === 'string') return t;
-        if (typeof t === 'object' && t.team && t.years) {
-          return `${t.team} (${t.years})`;
-        }
-        return JSON.stringify(t); // Fallback debug output
-      });
-
-      sharedInfo.textContent = teamStrings.join(' • ');
-
-      listEl.appendChild(sharedInfo);
-    }
-
-    // Up arrow (except for last guess)
-    if (index < displayList.length - 1) {
+      // Arrow
       const arrow = document.createElement('div');
       arrow.textContent = '↑';
       arrow.style.fontSize = '1.2rem';
       arrow.style.color = '#888';
-      arrow.style.textAlign = 'center';
-      arrow.style.margin = '0.25rem 0 0 0';
-      listEl.appendChild(arrow);
+      arrow.style.marginBottom = '0.25rem';
+
+      // Shared teams
+      if (sharedTeams.length > 0) {
+        const sharedInfo = document.createElement('div');
+        const teamStrings = sharedTeams.map(t => {
+          if (typeof t === 'string') return t;
+          if (typeof t === 'object' && t.team && t.years) {
+            return `${t.team} (${t.years})`;
+          }
+          return JSON.stringify(t);
+        });
+        sharedInfo.textContent = teamStrings.join(' • ');
+
+        connectionContainer.appendChild(arrow);
+        connectionContainer.appendChild(sharedInfo);
+      } else {
+        connectionContainer.appendChild(arrow);
+      }
+
+      listEl.appendChild(connectionContainer);
     }
   });
 }
