@@ -251,6 +251,7 @@ let waitingRoom = null;
 let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
+let storedHeadshots = new Map();
 const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
@@ -801,6 +802,8 @@ function resetGameUI() {
   messagesEl.style.display = 'block';
 
   resetCardSpread();
+
+  storedHeadshots.clear();
 
   // ✅ Clear stored headshot data
   window.leadoffPlayerData = null;
@@ -1608,6 +1611,9 @@ socket.on('gameStarted', async (data) => {
   gameStarted = true;
   gameOver = false;
 
+  // Clear previous headshot storage for new game
+  storedHeadshots.clear();
+
   const leadoffPlayer = data.leadoffPlayer || null;
   leadoffPlayerName = leadoffPlayer?.player_name || null;
 
@@ -1633,6 +1639,11 @@ socket.on('gameStarted', async (data) => {
   // ✅ Initialize successfulGuesses with leadoff player immediately
   successfulGuesses = [];
   if (leadoffPlayer && leadoffPlayer.player_name) {
+    // Store leadoff headshot
+    if (leadoffPlayer.headshot_url) {
+      storedHeadshots.set(leadoffPlayer.player_name, leadoffPlayer.headshot_url);
+    }
+    
     const leadoffGuess = {
       guesser: 'Leadoff',
       name: leadoffPlayer.player_name,
@@ -1817,13 +1828,9 @@ socket.on('yourTurn', (data) => {
 
   // ✅ Store current player headshot for when they get guessed
   if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
-    window.currentTurnPlayerHeadshot = {
-      name: data.currentPlayerName,
-      headshot_url: data.currentPlayerHeadshotUrl
-    };
-    
-    console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
-  }
+  storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
+}
 
   timerEl.textContent = data.timeLeft || 15;
 
@@ -1875,13 +1882,10 @@ socket.on('opponentTurn', (data) => {
 
   // ✅ Store current player headshot for when they get guessed
   if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
-    window.currentTurnPlayerHeadshot = {
-      name: data.currentPlayerName,
-      headshot_url: data.currentPlayerHeadshotUrl
-    };
-    
-    console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
-  }
+  storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
+}
+
 
   const turnPromptText = document.getElementById('turnPromptText');
   if (turnPromptText) {
@@ -1929,22 +1933,24 @@ socket.on('turnEnded', (data) => {
   navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    // Preserve headshot URLs from server data
+    // Preserve headshot URLs using our stored data
     successfulGuesses = data.successfulGuesses.map(guess => {
+      const storedHeadshot = storedHeadshots.get(guess.name);
       const updatedGuess = {
         ...guess,
-        headshot_url: guess.headshot_url || DEFAULT_PLAYER_IMAGE
+        headshot_url: storedHeadshot || guess.headshot_url || DEFAULT_PLAYER_IMAGE
       };
       
       // Ensure leadoff player is properly marked
       if (guess.name === leadoffPlayerName || guess.isLeadoff) {
         updatedGuess.isLeadoff = true;
-        // Use stored leadoff headshot if server data is missing
+        // Use stored leadoff headshot if available
         if (guess.name === leadoffPlayerName && window.leadoffPlayerData) {
-          updatedGuess.headshot_url = updatedGuess.headshot_url || window.leadoffPlayerData.headshot_url;
+          updatedGuess.headshot_url = storedHeadshots.get(guess.name) || window.leadoffPlayerData.headshot_url || DEFAULT_PLAYER_IMAGE;
         }
       }
       
+      console.log(`Preserving headshot for ${guess.name}:`, updatedGuess.headshot_url);
       return updatedGuess;
     });
     
@@ -1964,6 +1970,7 @@ socket.on('turnEnded', (data) => {
 
   renderPlayScreen();
 });
+
 
 
 
