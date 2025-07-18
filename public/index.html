@@ -209,8 +209,8 @@
 
 <!-- Shared Turn History List -->
 <div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
-  <h3 style="margin-bottom: 0.5rem;">Turn History</h3>
-  <ul id="successful-guesses-list" style="list-style: none; padding: 0;"></ul>
+  <h3 style="margin-bottom: 1rem;">🃏 Player Deck</h3>
+  <div id="card-deck" class="card-deck-container"></div>
 </div>
 
 
@@ -863,95 +863,81 @@ function showAutocompleteSuggestions(suggestions) {
 
 
 function renderSuccessfulGuesses() {
-  const listEl = document.getElementById('successful-guesses-list');
-  if (!listEl || !Array.isArray(successfulGuesses)) return;
+  const deckContainer = document.getElementById('card-deck');
+  if (!deckContainer || !Array.isArray(successfulGuesses)) return;
 
-  listEl.innerHTML = '';
+  deckContainer.innerHTML = '';
 
-  const displayList = [...successfulGuesses].reverse();
+  // Reverse order so most recent is on top
+  const reversedGuesses = [...successfulGuesses].reverse();
 
-  displayList.forEach((guessObj, index) => {
-    // Defensive: make sure we handle all cases
-    let rawName = guessObj?.name ?? '';
-    let name = '';
-
-    if (typeof rawName === 'string') {
-      name = rawName.trim();
-    } else if (rawName && typeof rawName === 'object' && rawName.player_name) {
-      name = String(rawName.player_name).trim();
-    } else {
-      name = String(rawName).trim();
-    }
-
+  reversedGuesses.forEach((guessObj, index) => {
+    const name = guessObj?.name || '';
     const isLeadoff = !!guessObj?.isLeadoff;
-    const guesser = guessObj?.guesser ?? '';
+    const guesser = guessObj?.guesser || '';
     const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
 
-    if (!name) return; // Skip invalid guesses
+    if (!name) return;
 
-    // Guess box
-    const box = document.createElement('div');
-    box.style.border = '1px solid #ccc';
-    box.style.borderRadius = '8px';
-    box.style.padding = '0.75rem';
-    box.style.margin = '0.5rem auto';
-    box.style.maxWidth = '300px';
-    box.style.textAlign = 'center';
-    box.style.backgroundColor = isLeadoff
-      ? '#e6f0ff'
-      : (guesser === myUsername ? '#d4edda' : '#f1f1f1');
-    box.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
-
-    const nameEl = document.createElement('div');
-    nameEl.textContent = name;
-    nameEl.style.fontSize = '1.1rem';
-    nameEl.style.fontWeight = 'bold';
-    box.appendChild(nameEl);
-
-    listEl.appendChild(box);
-
-    // Shared stints above arrow, only if NOT leadoff
-   if (!isLeadoff && index < displayList.length - 1) {
-      // Create a connection container for arrow + shared teams
-      const connectionContainer = document.createElement('div');
-      connectionContainer.style.textAlign = 'center';
-      connectionContainer.style.margin = '0.5rem 0';
-      connectionContainer.style.padding = '0.5rem';
-      connectionContainer.style.backgroundColor = '#f8f9fa';
-      connectionContainer.style.border = '1px solid #e9ecef';
-      connectionContainer.style.borderRadius = '8px';
-      connectionContainer.style.fontSize = '0.85rem';
-      connectionContainer.style.color = '#666';
-
-      // Arrow
-      const arrow = document.createElement('div');
-      arrow.textContent = '↑';
-      arrow.style.fontSize = '1.2rem';
-      arrow.style.color = '#888';
-      arrow.style.marginBottom = '0.25rem';
-
-      // Shared teams
-      if (sharedTeams.length > 0) {
-        const sharedInfo = document.createElement('div');
-        const teamStrings = sharedTeams.map(t => {
-          if (typeof t === 'string') return t;
-          if (typeof t === 'object' && t.team && t.years) {
-            return `${t.team} (${t.years})`;
-          }
-          return JSON.stringify(t);
-        });
-        sharedInfo.textContent = teamStrings.join(' • ');
-
-        connectionContainer.appendChild(arrow);
-        connectionContainer.appendChild(sharedInfo);
-      } else {
-        connectionContainer.appendChild(arrow);
-      }
-
-      listEl.appendChild(connectionContainer);
+    // Create card
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    
+    // Add animation for new cards
+    if (index === 0 && successfulGuesses.length > 1) {
+      card.classList.add('new-card');
     }
+    
+    if (isLeadoff) {
+      card.classList.add('leadoff');
+    } else if (guesser === myUsername) {
+      card.classList.add('your-guess');
+    } else {
+      card.classList.add('opponent-guess');
+    }
+
+    // Player name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'card-player-name';
+    nameEl.textContent = name;
+    card.appendChild(nameEl);
+
+    // Connection info
+    if (!isLeadoff && sharedTeams.length > 0) {
+      const connectionEl = document.createElement('div');
+      connectionEl.className = 'card-connection';
+      
+      const teamStrings = sharedTeams.map(team => {
+        if (typeof team === 'object' && team.team && team.years) {
+          return `${team.team} (${team.years})`;
+        }
+        return team;
+      });
+      
+      connectionEl.textContent = `Connected via: ${teamStrings.join(', ')}`;
+      card.appendChild(connectionEl);
+    }
+
+    // Guesser info
+    const guesserEl = document.createElement('div');
+    guesserEl.className = 'card-guesser';
+    guesserEl.textContent = isLeadoff ? 'Leadoff' : (guesser === myUsername ? 'You' : guesser);
+    card.appendChild(guesserEl);
+
+    // Click to bring card to front
+    card.addEventListener('click', () => {
+      deckContainer.removeChild(card);
+      deckContainer.insertBefore(card, deckContainer.firstChild);
+      
+      Array.from(deckContainer.children).forEach((child, idx) => {
+        child.style.zIndex = 10 - idx;
+      });
+    });
+
+    deckContainer.appendChild(card);
   });
 }
+
 
 
 function setupGlobalNavListeners() {
