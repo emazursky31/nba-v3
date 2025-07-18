@@ -345,8 +345,8 @@ button:disabled {
   left: 0;
   right: 140px;
   z-index: 9999;
-  background: var(--bg-card);
-  border: 2px solid var(--border-color);
+  background: #1e293b;  /* Darker background for better contrast */
+  border: 2px solid #475569;  /* Lighter border */
   border-radius: var(--radius-md);
   max-height: 250px;
   overflow-y: auto;
@@ -361,8 +361,8 @@ button:disabled {
   padding: 0.875rem 1rem;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);
+  border-bottom: 1px solid #374151;  /* Darker border between items */
+  color: #f1f5f9;  /* Brighter main text */
 }
 
 .autocomplete-item:last-child {
@@ -370,14 +370,16 @@ button:disabled {
 }
 
 .autocomplete-item:hover {
-  background: var(--bg-secondary);
+  background: #334155;  /* Lighter hover background */
 }
 
 .career-years {
   font-size: 0.875rem;
-  color: var(--text-muted);
-  font-weight: 400;
+  color: #cbd5e1;  /* Much brighter career years text */
+  font-weight: 500;
+  margin-left: 5px;
 }
+
 
 /* Messages */
 .message {
@@ -1009,6 +1011,35 @@ button:disabled {
     margin: 0.5rem 0;
   }
 
+   #playersDisplay {
+    text-align: center;
+    margin: 1rem 0;
+    font-size: 1rem;  /* Smaller font size */
+    font-weight: 600;
+    padding: 0.75rem;  /* Reduced padding */
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;  /* Stack vertically on mobile */
+    gap: 0.5rem;  /* Space between elements */
+  }
+
+  .player-name {
+    padding: 0.375rem 0.75rem;  /* Smaller padding */
+    border-radius: var(--radius-md);
+    margin: 0;  /* Remove horizontal margins */
+    transition: all 0.2s ease;
+    font-size: 0.9rem;  /* Smaller text */
+  }
+
+  .vs-separator {
+    color: var(--text-muted);
+    font-weight: 400;
+    padding: 0;  /* Remove padding */
+    font-size: 0.8rem;  /* Smaller vs text */
+  }
+
   .card-deck-container {
   width: 280px;
   height: 200px;
@@ -1124,6 +1155,32 @@ button:disabled {
   
   .turn-prompt .turn-player-name {
     font-size: 1.25rem;
+  }
+
+   #playersDisplay {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .player-name {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    max-width: 100%;  /* Full width when stacked */
+  }
+
+  .vs-separator {
+    font-size: 0.65rem;
+    order: 0;  /* Put "vs" between the names */
+  }
+
+  .player-name.you {
+    order: -1;  /* Put "You" first */
+  }
+
+  .player-name.opponent {
+    order: 1;  /* Put opponent last */
   }
 
 /* Card Deck Small Mobile */
