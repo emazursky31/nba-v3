@@ -554,6 +554,26 @@ function updateHeadshot(player) {
   }
 }
 
+function triggerGameEndCardSpread() {
+  const deckContainer = document.getElementById('card-deck');
+  if (!deckContainer) return;
+  
+  // Add a small delay to let the game over UI settle
+  setTimeout(() => {
+    deckContainer.parentElement.classList.add('game-ended');
+    
+    // Optional: Add a subtle sound effect or visual feedback
+    console.log('🎴 Cards spreading out to show the full game sequence!');
+  }, 1000); // 1 second delay after game ends
+}
+
+function resetCardSpread() {
+  const deckContainer = document.getElementById('card-deck');
+  if (!deckContainer) return;
+  
+  deckContainer.parentElement.classList.remove('game-ended');
+}
+
 
 
 function attachRouteListeners(route) {
@@ -779,6 +799,8 @@ function resetGameUI() {
   // Reset UI parts
   messagesEl.innerHTML = '';
   messagesEl.style.display = 'block';
+
+  resetCardSpread();
 
   successfulGuesses.length = 0;
   document.getElementById('card-deck').innerHTML = '';
@@ -1749,6 +1771,8 @@ socket.on('gameOver', (data) => {
 
   // Let server 'matchStats' handle scoreboard update
   navigateTo('/gameover');
+
+  triggerGameEndCardSpread();
 });
 
 
