@@ -567,28 +567,33 @@ button:disabled {
 
 .auth-tabs {
   display: flex;
-  background: var(--bg-secondary);
+  background: #374151;  /* Darker container background */
   border-radius: var(--radius-lg);
-  padding: 0.375rem;  /* Slightly more padding */
+  padding: 0.5rem;  /* More padding for better separation */
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-md);
-  border: 2px solid var(--border-color);
+  box-shadow: 
+    var(--shadow-md),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);  /* Inner shadow for depth */
+  border: 2px solid #4b5563;
+  gap: 0.25rem;  /* Small gap between tabs */
 }
+
 
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: #1e293b;  /* Darker than container for contrast */
+  background: #0f172a;  /* Much darker background for inactive tabs */
   border: none;
-  color: #e2e8f0;       /* Brighter text for inactive tabs */
+  color: #cbd5e1;       /* Lighter text for inactive tabs */
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: all 0.3s ease;
-  border: 2px solid #475569;
+  border: 2px solid #374151;  /* Darker border */
   position: relative;
+  opacity: 0.7;  /* Slightly transparent when inactive */
 }
 
 .auth-tab.active {
@@ -596,17 +601,20 @@ button:disabled {
   color: white;
   box-shadow: 
     inset 0 -2px 8px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(30, 64, 175, 0.4);
+    0 4px 12px rgba(30, 64, 175, 0.4),
+    0 0 0 2px rgba(30, 64, 175, 0.3);  /* Extra glow */
   border-color: var(--primary-hover);
   transform: translateY(-2px);
   z-index: 2;
+  opacity: 1;  /* Full opacity when active */
 }
 
 .auth-tab:hover:not(.active) {
-  background: #2d3748;  /* Lighter on hover */
-  color: #f1f5f9;       /* Even brighter text */
+  background: #1e293b;  /* Lighter gray on hover */
+  color: #f1f5f9;       /* Brighter text on hover */
   border-color: #64748b;
   transform: translateY(-1px);
+  opacity: 0.9;  /* Slightly more visible on hover */
 }
 
 .auth-tab.active::after {
@@ -615,25 +623,13 @@ button:disabled {
   bottom: -0.25rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background: white;
+  width: 70%;
+  height: 4px;  /* Thicker underline */
+  background: linear-gradient(90deg, transparent, white, transparent);
   border-radius: 2px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-
-.auth-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: -0.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60%;
-  height: 3px;
-  background: white;
-  border-radius: 2px;
-}
 
 
 .auth-forms-row {
@@ -661,9 +657,10 @@ button:disabled {
 
 .auth-form h2 {
   margin-bottom: 0.5rem;
-  color: #3b82f6;
+  color: #f8fafc;  /* Changed from #3b82f6 to bright white */
   font-size: 1.5rem;
   font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);  /* Added text shadow for better readability */
 }
 
 .auth-form input {
