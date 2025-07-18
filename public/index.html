@@ -1630,24 +1630,23 @@ socket.on('gameStarted', async (data) => {
   messagesEl.innerHTML = '';
   messagesEl.style.display = 'block';
 
+  // ✅ Initialize successfulGuesses with leadoff player immediately
   successfulGuesses = [];
   if (leadoffPlayer && leadoffPlayer.player_name) {
-    successfulGuesses.push({
+    const leadoffGuess = {
       guesser: 'Leadoff',
       name: leadoffPlayer.player_name,
       isLeadoff: true,
-      headshot_url: leadoffPlayer.headshot_url
-    });
-
+      headshot_url: leadoffPlayer.headshot_url || DEFAULT_PLAYER_IMAGE
+    };
+    
     successfulGuesses.push(leadoffGuess);
-
+    
+    // Store leadoff data globally for preservation
     window.leadoffPlayerData = {
       name: leadoffPlayer.player_name,
-      headshot_url: leadoffPlayer.headshot_url
+      headshot_url: leadoffPlayer.headshot_url || DEFAULT_PLAYER_IMAGE
     };
-
-    // // ✅ Show leadoff headshot if you want to — or skip if you only want current player
-    // updateHeadshot(leadoffPlayer);
   }
 
   console.log('[CLIENT] successfulGuesses after reset:', successfulGuesses);
@@ -1930,23 +1929,19 @@ socket.on('turnEnded', (data) => {
   navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    // Ensure each guess has a headshot_url and preserve leadoff player data
+    // Preserve headshot URLs from server data
     successfulGuesses = data.successfulGuesses.map(guess => {
       const updatedGuess = {
         ...guess,
         headshot_url: guess.headshot_url || DEFAULT_PLAYER_IMAGE
       };
       
-      // If this is the leadoff player, ensure it's properly marked and has headshot
+      // Ensure leadoff player is properly marked
       if (guess.name === leadoffPlayerName || guess.isLeadoff) {
         updatedGuess.isLeadoff = true;
-        // Preserve leadoff headshot if available from gameStarted event
-        if (guess.name === leadoffPlayerName && !updatedGuess.headshot_url) {
-          // Try to get leadoff headshot from stored data if available
-          const leadoffData = window.leadoffPlayerData;
-          if (leadoffData && leadoffData.headshot_url) {
-            updatedGuess.headshot_url = leadoffData.headshot_url;
-          }
+        // Use stored leadoff headshot if server data is missing
+        if (guess.name === leadoffPlayerName && window.leadoffPlayerData) {
+          updatedGuess.headshot_url = updatedGuess.headshot_url || window.leadoffPlayerData.headshot_url;
         }
       }
       
@@ -1969,6 +1964,7 @@ socket.on('turnEnded', (data) => {
 
   renderPlayScreen();
 });
+
 
 
 function renderPlayScreen() {
