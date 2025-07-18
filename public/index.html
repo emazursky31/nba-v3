@@ -1855,14 +1855,16 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
-  const turnPromptText = document.getElementById('turnPromptText');
-  if (turnPromptText) {
-    turnPromptText.innerHTML = `
-    🎯 Name any teammate of:<br>
+ const turnPromptText = document.getElementById('turnPromptText');
+if (turnPromptText) {
+  turnPromptText.innerHTML = `
+  <div>Name any teammate of:</div>
+  <div class="player-info">
     <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
     <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
-  `;
-  }
+  </div>
+`;
+}
 
   // ✅ Highlight the current player in playersDisplay
   const playerYouEl = document.getElementById('playerYou');
