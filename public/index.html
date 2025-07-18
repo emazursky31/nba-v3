@@ -482,8 +482,8 @@ async function joinPublicGame() {
   if (currentPlayerHeadshotEl) currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
 
   // Clear turn history
-  const successfulGuessesList = document.getElementById('successful-guesses-list');
-  if (successfulGuessesList) successfulGuessesList.innerHTML = '';
+  const cardDeck = document.getElementById('card-deck');
+  if (cardDeck) cardDeck.innerHTML = '';
 
   // Clear any persistent localStorage
   localStorage.removeItem('privateRoomId');
@@ -781,7 +781,7 @@ function resetGameUI() {
   messagesEl.style.display = 'block';
 
   successfulGuesses.length = 0;
-  document.getElementById('successful-guesses-list').innerHTML = '';
+  document.getElementById('card-deck').innerHTML = '';
   renderSuccessfulGuesses();
 
   currentPlayerNameEl.textContent = 'Loading...';
