@@ -476,21 +476,77 @@ button:disabled {
   margin-top: 0.75rem;
 }
 
+
 /* Game Over */
 #gameOverContainer {
   text-align: center;
   padding: 2rem;
-  background: var(--bg-secondary);
+  background: rgba(0, 0, 0, 0.8) !important; /* ✅ Much darker background */
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-xl);
 }
 
+/* ✅ NEW: Game Over Message Styling */
+#gameOverContainer > div:first-child {
+  background: rgba(0, 0, 0, 0.6); /* ✅ Dark semi-transparent background */
+  padding: 1.5rem 2rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important; /* ✅ Strong text shadow */
+  font-weight: 700 !important;
+}
+
+#gameOverContainer > div[style*="color: green"] {
+  color: #22c55e !important; /* ✅ Brighter green */
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+#gameOverContainer > div[style*="color: darkred"] {
+  color: #ef4444 !important; /* ✅ Brighter red */
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ✅ NEW: Neutral message styling (for draws, etc.) */
+#gameOverContainer > div[style*="color: gray"] {
+  color: #f8fafc !important; /* ✅ Bright white */
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.2) 0%, rgba(100, 116, 139, 0.1) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.4) !important;
+}
+
+/* ✅ Updated: Centered rematch button */
 #rematchBtn {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   padding: 1rem 2rem;
   font-size: 1.125rem;
-  margin-top: 1.5rem;
+  margin: 1.5rem auto 0 auto; /* ✅ Centered */
   font-weight: 600;
+  display: block; /* ✅ Required for centering */
+  width: fit-content; /* ✅ Prevents full width */
+}
+
+/* ✅ NEW: Game Over Results styling */
+#gameOverResults {
+  color: var(--text-primary) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+#gameOverResults p {
+  margin: 0.5rem 0;
+  font-weight: 500;
+}
+
+#gameOverResults strong {
+  color: #3b82f6 !important; /* ✅ Blue for labels */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Auth Forms */
