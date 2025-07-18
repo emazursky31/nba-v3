@@ -343,14 +343,15 @@ button:disabled {
 }
 
 /* Autocomplete */
+/* Autocomplete */
 #autocomplete-list {
   position: absolute;
   top: 100%;
   left: 0;
   right: 140px;
   z-index: 9999;
-  background: #1e293b;  /* Darker background for better contrast */
-  border: 2px solid #475569;  /* Lighter border */
+  background: var(--bg-card);  /* Changed to light background */
+  border: 2px solid var(--border-color);  /* Light border */
   border-radius: var(--radius-md);
   max-height: 250px;
   overflow-y: auto;
@@ -365,8 +366,8 @@ button:disabled {
   padding: 0.875rem 1rem;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-primary);  /* Changed from #f1f5f9 */
+  border-bottom: 1px solid var(--border-color);  /* Light border */
+  color: var(--text-primary);  /* Dark text */
 }
 
 .autocomplete-item:last-child {
@@ -376,26 +377,25 @@ button:disabled {
 /* Enhanced hover/selection state */
 .autocomplete-item:hover,
 .autocomplete-item.selected {
-  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);  /* Blue gradient */
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   color: white;
-  border-left-color: #60a5fa;  /* Blue left border */
   box-shadow: 
-    inset 0 0 0 2px rgba(96, 165, 250, 0.3),  /* Inner glow */
-    0 2px 8px rgba(30, 64, 175, 0.4);  /* Outer shadow */
-  transform: translateX(4px);  /* Slight slide effect */
+    inset 0 0 0 2px rgba(37, 99, 235, 0.3),
+    0 2px 8px rgba(37, 99, 235, 0.4);
+  transform: translateX(4px);
 }
 
 /* Active/pressed state for mobile */
 .autocomplete-item:active {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);  /* Darker blue */
-  transform: translateX(2px) scale(0.98);  /* Slight press effect */
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #1e3a8a 100%);
+  transform: translateX(2px) scale(0.98);
 }
 
 /* Enhanced career years styling in selected state */
 .autocomplete-item:hover .career-years,
 .autocomplete-item.selected .career-years {
-  color: #dbeafe;  /* Lighter blue tint when selected */
-  font-weight: 600;  /* Bolder when selected */
+  color: #dbeafe;
+  font-weight: 600;
 }
 
 /* Selection indicator arrow */
@@ -410,6 +410,14 @@ button:disabled {
   animation: slideIn 0.2s ease;
 }
 
+.career-years {
+  font-size: 0.875rem;
+  color: var(--text-secondary);  /* Dark gray text */
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -421,13 +429,6 @@ button:disabled {
   }
 }
 
-
-.career-years {
-  font-size: 0.875rem;
-  color: var(--text-secondary);  /* Changed from #f1f5f9 */
-  font-weight: 500;
-  margin-left: 5px;
-}
 
 /* Messages */
 .message {
@@ -536,65 +537,65 @@ button:disabled {
 }
 
 
+
 /* Game Over */
 #gameOverContainer {
   text-align: center;
   padding: 2rem;
-  background: rgba(0, 0, 0, 0.8) !important; /* ✅ Much darker background */
+  background: var(--bg-card) !important;  /* Light background */
   border-radius: var(--radius-lg);
   border: 2px solid var(--border-color);
   box-shadow: var(--shadow-xl);
 }
 
-/* ✅ NEW: Game Over Message Styling */
+/* Game Over Message Styling */
 #gameOverContainer > div:first-child {
-  background: rgba(0, 0, 0, 0.6); /* ✅ Dark semi-transparent background */
+  background: var(--bg-secondary) !important;  /* Light background */
   padding: 1.5rem 2rem;
   border-radius: var(--radius-lg);
   margin-bottom: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9) !important; /* ✅ Strong text shadow */
+  border: 2px solid var(--border-color);
   font-weight: 700 !important;
 }
 
 #gameOverContainer > div[style*="color: green"] {
-  color: #22c55e !important; /* ✅ Brighter green */
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%) !important;
-  border-color: rgba(34, 197, 94, 0.4) !important;
+  color: #059669 !important;  /* Darker green for better contrast */
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%) !important;
+  border-color: rgba(5, 150, 105, 0.3) !important;
 }
 
 #gameOverContainer > div[style*="color: darkred"] {
-  color: #ef4444 !important; /* ✅ Brighter red */
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #dc2626 !important;  /* Darker red for better contrast */
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%) !important;
+  border-color: rgba(220, 38, 38, 0.3) !important;
 }
 
-/* ✅ NEW: Neutral message styling (for draws, etc.) */
+/* Neutral message styling (for draws, etc.) */
 #gameOverContainer > div[style*="color: gray"] {
-  color: #f8fafc !important; /* ✅ Bright white */
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.2) 0%, rgba(100, 116, 139, 0.1) 100%) !important;
-  border-color: rgba(100, 116, 139, 0.4) !important;
+  color: var(--text-primary) !important;
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(100, 116, 139, 0.05) 100%) !important;
+  border-color: rgba(100, 116, 139, 0.3) !important;
 }
 
-/* ✅ Updated: Centered rematch button */
+/* Centered rematch button */
 #rematchBtn {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   padding: 1rem 2rem;
   font-size: 1.125rem;
-  margin: 1.5rem auto 0 auto; /* ✅ Centered */
+  margin: 1.5rem auto 0 auto;
   font-weight: 600;
-  display: block; /* ✅ Required for centering */
-  width: fit-content; /* ✅ Prevents full width */
+  display: block;
+  width: fit-content;
 }
 
-/* ✅ NEW: Game Over Results styling */
+/* Game Over Results styling */
 #gameOverResults {
   color: var(--text-primary) !important;
-  background: var(--bg-secondary) !important;  /* Changed from dark background */
+  background: var(--bg-secondary) !important;  /* Light background */
   padding: 1rem 1.5rem;
   border-radius: var(--radius-md);
   margin: 1rem 0;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
 }
 
 #gameOverResults p {
@@ -603,8 +604,10 @@ button:disabled {
 }
 
 #gameOverResults strong {
-  color: var(--primary-color) !important;  /* Changed from #3b82f6 */
+  color: var(--primary-color) !important;
 }
+
+
 
 /* Auth Forms */
 .auth-tabs-container {
@@ -615,42 +618,39 @@ button:disabled {
 
 .auth-tabs {
   display: flex;
-  background: #374151;  /* Darker container background */
+  background: var(--bg-secondary);  /* Light container background */
   border-radius: var(--radius-lg);
-  padding: 0.5rem;  /* More padding for better separation */
+  padding: 0.5rem;
   margin-bottom: 2rem;
-  box-shadow: 
-    var(--shadow-md),
-    inset 0 2px 4px rgba(0, 0, 0, 0.2);  /* Inner shadow for depth */
-  border: 2px solid #4b5563;
-  gap: 0.25rem;  /* Small gap between tabs */
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border-color);  /* Light border */
+  gap: 0.25rem;
 }
-
 
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: #0f172a;  /* Much darker background for inactive tabs */
+  background: var(--bg-card);  /* Light background for inactive tabs */
   border: none;
-  color: #cbd5e1;       /* Lighter text for inactive tabs */
+  color: var(--text-secondary);  /* Dark gray text for inactive tabs */
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: all 0.3s ease;
-  border: 2px solid #374151;  /* Darker border */
+  border: 2px solid var(--border-color);  /* Light border */
   position: relative;
-  opacity: 0.7;  /* Slightly transparent when inactive */
+  opacity: 0.8;  /* Slightly transparent when inactive */
 }
 
 .auth-tab.active {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   color: white;
   box-shadow: 
-    inset 0 -2px 8px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(30, 64, 175, 0.4),
-    0 0 0 2px rgba(30, 64, 175, 0.3);  /* Extra glow */
+    inset 0 -2px 8px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(37, 99, 235, 0.3),
+    0 0 0 2px rgba(37, 99, 235, 0.2);  /* Blue glow */
   border-color: var(--primary-hover);
   transform: translateY(-2px);
   z-index: 2;
@@ -658,11 +658,12 @@ button:disabled {
 }
 
 .auth-tab:hover:not(.active) {
-  background: #1e293b;  /* Lighter gray on hover */
-  color: #f1f5f9;       /* Brighter text on hover */
-  border-color: #64748b;
+  background: var(--bg-primary);  /* White on hover */
+  color: var(--text-primary);     /* Darker text on hover */
+  border-color: var(--border-hover);
   transform: translateY(-1px);
-  opacity: 0.9;  /* Slightly more visible on hover */
+  opacity: 1;  /* Full visibility on hover */
+  box-shadow: var(--shadow-sm);
 }
 
 .auth-tab.active::after {
@@ -672,12 +673,11 @@ button:disabled {
   left: 50%;
   transform: translateX(-50%);
   width: 70%;
-  height: 4px;  /* Thicker underline */
+  height: 4px;
   background: linear-gradient(90deg, transparent, white, transparent);
   border-radius: 2px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-
 
 
 .auth-forms-row {
@@ -884,9 +884,8 @@ button:disabled {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 15px;  /* Add horizontal padding to avoid headshots */
+  padding: 0 50px;  /* Increased padding to avoid headshots */
 }
-
 
 .card-player-name {
   font-size: 1.1rem;
@@ -894,7 +893,7 @@ button:disabled {
   text-align: center;
   margin: 0.5rem 0;
   line-height: 1.2;
-  padding: 0 15px;  /* Add horizontal padding to avoid headshots */
+  padding: 0 50px;  /* Increased padding to avoid headshots */
 }
 
 .card-connection {
@@ -905,16 +904,58 @@ button:disabled {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 15px;  /* Add horizontal padding to avoid headshots */
+  padding: 0 50px;  /* Increased padding to avoid headshots */
 }
 
 .card-footer {
   text-align: center;
   font-size: 0.7rem;
   margin-top: auto;
-  padding: 0.5rem 15px;  /* Add horizontal padding */
+  padding: 0.5rem 50px;  /* Increased padding */
   border-top: 1px solid rgba(0,0,0,0.1);
 }
+
+/* Desktop Turn Prompt Styling */
+.turn-prompt {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.turn-prompt .player-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.25rem;
+  justify-content: center;
+}
+
+#currentPlayerHeadshot {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.turn-prompt .turn-player-name {
+  font-size: 1.75rem;
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 
 /* Hover effects */
 .player-card:hover {
