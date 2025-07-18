@@ -180,15 +180,24 @@ button:disabled {
 
 /* Game Mode Buttons */
 #privateGameBtn, #findGameBtn {
-  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-hover) 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   padding: 1.25rem 2rem;
   font-size: 1.125rem;
   margin: 0.75rem;
   min-width: 200px;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3); /* ✅ Gold shadow */
+  border: 1px solid #b45309; /* ✅ Darker gold border */
 }
 
 #privateGameBtn:hover, #findGameBtn:hover {
-  background: linear-gradient(135deg, var(--secondary-hover) 0%, #991b1b 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow: 0 6px 8px rgba(245, 158, 11, 0.4); /* ✅ Enhanced gold shadow */
+  transform: translateY(-2px);
+}
+
+#privateGameBtn:active, #findGameBtn:active {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  transform: translateY(0);
 }
 
 /* Game Area */
@@ -567,20 +576,28 @@ button:disabled {
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: transparent;
+  background: var(--bg-card); /* ✅ Darker background for inactive */
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-muted); /* ✅ Muted color for inactive */
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
+  border: 2px solid transparent; /* ✅ Add border for better definition */
 }
 
 .auth-tab.active {
-  background: var(--bg-card);
-  color: #3b82f6;
-  box-shadow: var(--shadow-sm);
+  background: var(--primary-color); /* ✅ Bright blue background for active */
+  color: white; /* ✅ White text for active */
+  box-shadow: var(--shadow-md); /* ✅ Elevated appearance */
+  border-color: var(--primary-hover); /* ✅ Slightly darker border */
+  transform: translateY(-1px); /* ✅ Subtle lift effect */
+}
+
+.auth-tab:hover:not(.active) {
+  background: var(--bg-secondary); /* ✅ Lighter on hover for inactive */
+  color: var(--text-secondary);
 }
 
 .auth-forms-row {
