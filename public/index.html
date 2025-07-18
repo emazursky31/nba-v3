@@ -867,8 +867,6 @@ function renderSuccessfulGuesses() {
   if (!deckContainer || !Array.isArray(successfulGuesses)) return;
 
   deckContainer.innerHTML = '';
-
-  // Reverse order so most recent is on top
   const reversedGuesses = [...successfulGuesses].reverse();
 
   reversedGuesses.forEach((guessObj, index) => {
@@ -879,11 +877,9 @@ function renderSuccessfulGuesses() {
 
     if (!name) return;
 
-    // Create card
     const card = document.createElement('div');
     card.className = 'player-card';
     
-    // Add animation for new cards
     if (index === 0 && successfulGuesses.length > 1) {
       card.classList.add('new-card');
     }
@@ -896,6 +892,12 @@ function renderSuccessfulGuesses() {
       card.classList.add('opponent-guess');
     }
 
+    // Card header
+    const headerEl = document.createElement('div');
+    headerEl.className = 'card-header';
+    headerEl.textContent = isLeadoff ? 'Leadoff Player' : 'Teammate';
+    card.appendChild(headerEl);
+
     // Player name
     const nameEl = document.createElement('div');
     nameEl.className = 'card-player-name';
@@ -903,10 +905,10 @@ function renderSuccessfulGuesses() {
     card.appendChild(nameEl);
 
     // Connection info
+    const connectionEl = document.createElement('div');
+    connectionEl.className = 'card-connection';
+    
     if (!isLeadoff && sharedTeams.length > 0) {
-      const connectionEl = document.createElement('div');
-      connectionEl.className = 'card-connection';
-      
       const teamStrings = sharedTeams.map(team => {
         if (typeof team === 'object' && team.team && team.years) {
           return `${team.team} (${team.years})`;
@@ -914,29 +916,22 @@ function renderSuccessfulGuesses() {
         return team;
       });
       
-      connectionEl.textContent = `Connected via: ${teamStrings.join(', ')}`;
-      card.appendChild(connectionEl);
+      connectionEl.innerHTML = `<strong>Connected via:</strong><br>${teamStrings.join('<br>')}`;
+    } else if (isLeadoff) {
+      connectionEl.innerHTML = '<strong>Starting Player</strong><br>Begin the chain!';
     }
+    card.appendChild(connectionEl);
 
-    // Guesser info
-    const guesserEl = document.createElement('div');
-    guesserEl.className = 'card-guesser';
-    guesserEl.textContent = isLeadoff ? 'Leadoff' : (guesser === myUsername ? 'You' : guesser);
-    card.appendChild(guesserEl);
-
-    // Click to bring card to front
-    card.addEventListener('click', () => {
-      deckContainer.removeChild(card);
-      deckContainer.insertBefore(card, deckContainer.firstChild);
-      
-      Array.from(deckContainer.children).forEach((child, idx) => {
-        child.style.zIndex = 10 - idx;
-      });
-    });
+    // Card footer
+    const footerEl = document.createElement('div');
+    footerEl.className = 'card-footer';
+    footerEl.textContent = isLeadoff ? 'Game Start' : `Guessed by ${guesser === myUsername ? 'You' : guesser}`;
+    card.appendChild(footerEl);
 
     deckContainer.appendChild(card);
   });
 }
+
 
 
 
