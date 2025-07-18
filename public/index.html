@@ -1930,10 +1930,18 @@ socket.on('message', (msg) => {
 
 socket.on('turnEnded', (data) => {
   console.log('turnEnded currentPlayerHeadshotUrl:', data.currentPlayerHeadshotUrl);
+  
+  // ✅ CRITICAL: Store the NEW current player's headshot FIRST
+  // This is the player who was just guessed and will be on the new card
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+    console.log('Storing NEW current player headshot BEFORE processing:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+  
   navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    // Preserve headshot URLs using our stored data
+    // Now the headshot will be available for the newly added card
     successfulGuesses = data.successfulGuesses.map(guess => {
       const storedHeadshot = storedHeadshots.get(guess.name);
       const updatedGuess = {
@@ -1941,20 +1949,17 @@ socket.on('turnEnded', (data) => {
         headshot_url: storedHeadshot || guess.headshot_url || DEFAULT_PLAYER_IMAGE
       };
       
-      // Ensure leadoff player is properly marked
       if (guess.name === leadoffPlayerName || guess.isLeadoff) {
         updatedGuess.isLeadoff = true;
-        // Use stored leadoff headshot if available
         if (guess.name === leadoffPlayerName && window.leadoffPlayerData) {
           updatedGuess.headshot_url = storedHeadshots.get(guess.name) || window.leadoffPlayerData.headshot_url || DEFAULT_PLAYER_IMAGE;
         }
       }
       
-      console.log(`Preserving headshot for ${guess.name}:`, updatedGuess.headshot_url);
+      console.log(`Final headshot for ${guess.name}:`, updatedGuess.headshot_url);
       return updatedGuess;
     });
     
-    // Mark leadoff player in the guesses array
     successfulGuesses = markLeadoffInGuesses(successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
   }
@@ -1970,6 +1975,7 @@ socket.on('turnEnded', (data) => {
 
   renderPlayScreen();
 });
+
 
 
 
