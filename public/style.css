@@ -154,9 +154,9 @@ h3 {
 section[data-route] {
   background: var(--bg-card);
   border-radius: var(--radius-xl);
-  padding: 2rem;
+  padding: 1.5rem 2rem;  /* Reduced from 2rem */
   box-shadow: var(--shadow-xl);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;  /* Reduced from 2rem */
   border: 2px solid var(--border-color);
 }
 
@@ -255,7 +255,7 @@ button:disabled {
 
 #playersDisplay {
   text-align: center;
-  margin: 1.5rem 0;
+  margin: 1rem 0;  /* Reduced from 1.5rem 0 */
   font-size: 1.25rem;
   font-weight: 600;
   padding: 1rem;
@@ -300,8 +300,8 @@ button:disabled {
 
 /* Turn Section */
 #turnSection {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1.5rem;  /* Reduced from 2rem */
+  padding: 1.25rem;       /* Reduced from 1.5rem */
   border-radius: var(--radius-lg);
   transition: all 0.3s ease;
   border: 2px solid var(--border-color);
@@ -1040,32 +1040,60 @@ button:disabled {
 /* Game End Card Spread Animation */
 .card-deck-container.game-ended {
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   height: 350px;
   margin: 2rem auto;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;  /* Start from left for consistent scrolling */
   align-items: center;
-  gap: 1rem;  /* Even spacing between cards */
+  gap: 0;  /* No gap - cards touch each other */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 1rem;
+  
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;  /* iOS smooth scrolling */
+  
+  /* Remove bounce effect */
+  overscroll-behavior-x: none;
+  -webkit-overscroll-behavior-x: none;
 }
 
 .card-deck-container.game-ended .player-card {
-  position: relative;  /* Changed from absolute */
-  transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;  /* Faster, smoother transitions */
   animation: none;
-  transform: rotate(0deg);  /* Reset rotation */
+  transform: rotate(0deg);
   opacity: 1 !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  z-index: auto;  /* Let natural stacking work */
+  z-index: auto;
+  
+  /* Maintain original card dimensions */
+  width: 200px !important;
+  height: 280px !important;
+  flex-shrink: 0;
+  min-width: 200px;
+  
+  /* Cards touch each other */
+  margin-right: -1px;  /* Slight overlap to prevent gaps */
+  border: 2px solid #333;  /* Ensure borders are visible */
 }
 
-
+/* Last card doesn't need margin */
+.card-deck-container.game-ended .player-card:last-child {
+  margin-right: 0;
+}
 
 .card-deck-container.game-ended .player-card:hover {
-  transform: translateY(-20px) scale(1.05) !important;
+  transform: translateY(-10px) scale(1.02) !important;  /* Reduced scale for less movement */
   z-index: 20 !important;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+  margin-left: 5px;   /* Add space when hovering */
+  margin-right: 5px;  /* Add space when hovering */
 }
+
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -1088,8 +1116,8 @@ button:disabled {
     height: 2px;
   }
   
-  section[data-route] {
-    padding: 1.5rem;
+ section[data-route] {
+    padding: 1rem 1.5rem;  /* Even more compact on mobile */
     margin-bottom: 1rem;
   }
 
@@ -1124,6 +1152,11 @@ button:disabled {
     border: 2px solid #3b82f6;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     flex-shrink: 0;  /* Don't shrink the headshot */
+  }
+
+  #turnSection {
+    margin-bottom: 1rem;
+    padding: 1rem;
   }
 
   .turn-player-name {
@@ -1202,7 +1235,7 @@ button:disabled {
 
    #playersDisplay {
     text-align: center;
-    margin: 1rem 0;
+    margin: 0.75rem 0;
     font-size: 1rem;  /* Smaller font size */
     font-weight: 600;
     padding: 0.75rem;  /* Reduced padding */
@@ -1296,15 +1329,13 @@ button:disabled {
 
   .card-deck-container.game-ended {
     height: 280px;
-    gap: 0.5rem;  /* Smaller gap on mobile */
-    overflow-x: auto;  /* Allow horizontal scrolling */
-    padding: 0 1rem;
-    justify-content: flex-start;  /* Allow scrolling */
+    padding: 0 0.5rem;
   }
   
   .card-deck-container.game-ended .player-card {
-    flex-shrink: 0;  /* Prevent cards from shrinking */
-    min-width: 160px;  /* Ensure minimum card width */
+    width: 180px !important;
+    height: 240px !important;
+    min-width: 180px;
   }
 }
 
@@ -1513,11 +1544,13 @@ button:disabled {
 
 .card-deck-container.game-ended {
     height: 240px;
-    gap: 0.25rem;
+    padding: 0 0.25rem;
   }
   
   .card-deck-container.game-ended .player-card {
-    min-width: 140px;
+    width: 160px !important;
+    height: 220px !important;
+    min-width: 160px;
   }
 
 }
