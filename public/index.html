@@ -896,11 +896,16 @@ function renderSuccessfulGuesses() {
     const isLeadoff = !!guessObj?.isLeadoff;
     const guesser = guessObj?.guesser || '';
     const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
+    const headshotUrl = guessObj?.headshot_url || DEFAULT_PLAYER_IMAGE;
 
     if (!name) return;
 
     const card = document.createElement('div');
     card.className = 'player-card';
+    
+    // Set the headshot URL as a CSS custom property
+    card.style.setProperty('--headshot-url', `url("${headshotUrl}")`);
+    card.setAttribute('data-headshot', headshotUrl);
     
     if (index === 0 && successfulGuesses.length > 1) {
       card.classList.add('new-card');
@@ -914,19 +919,17 @@ function renderSuccessfulGuesses() {
       card.classList.add('opponent-guess');
     }
 
-    // Card header
+    // Rest of the card creation code remains the same...
     const headerEl = document.createElement('div');
     headerEl.className = 'card-header';
     headerEl.textContent = isLeadoff ? 'Leadoff Player' : 'Teammate';
     card.appendChild(headerEl);
 
-    // Player name
     const nameEl = document.createElement('div');
     nameEl.className = 'card-player-name';
     nameEl.textContent = name;
     card.appendChild(nameEl);
 
-    // Connection info
     const connectionEl = document.createElement('div');
     connectionEl.className = 'card-connection';
     
@@ -944,7 +947,6 @@ function renderSuccessfulGuesses() {
     }
     card.appendChild(connectionEl);
 
-    // Card footer
     const footerEl = document.createElement('div');
     footerEl.className = 'card-footer';
     footerEl.textContent = isLeadoff ? 'Game Start' : `Guessed by ${guesser === myUsername ? 'You' : guesser}`;
@@ -953,6 +955,7 @@ function renderSuccessfulGuesses() {
     deckContainer.appendChild(card);
   });
 }
+
 
 
 

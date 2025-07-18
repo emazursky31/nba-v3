@@ -661,22 +661,38 @@ button:disabled {
 
 /* Card suit corners */
 .player-card::before {
-  content: attr(data-suit);
+  content: "";
   position: absolute;
   top: 0.5rem;
   left: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
+  width: 40px;
+  height: 40px;
+  background-image: var(--headshot-url);
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  border: 2px solid #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .player-card::after {
-  content: attr(data-suit);
+  content: "";
   position: absolute;
   bottom: 0.5rem;
   right: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
-  transform: rotate(180deg);
+  width: 40px;
+  height: 40px;
+  background-image: var(--headshot-url);
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  border: 2px solid #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.player-card[data-headshot=""] ::before,
+.player-card[data-headshot=""] ::after {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==');
 }
 
 /* Card types with different suits */
@@ -927,17 +943,17 @@ button:disabled {
   font-size: 0.65rem;
 }
 
-.player-card::before {
+.player-card::before,
+  .player-card::after {
+    width: 35px;
+    height: 35px;
     top: 0.375rem;
     left: 0.375rem;
-    font-size: 1.25rem;
   }
   
   .player-card::after {
     bottom: 0.375rem;
     right: 0.375rem;
-    font-size: 1.25rem;
-    transform: rotate(180deg);
   }
 
   .card-deck-container.game-ended {
@@ -1030,17 +1046,17 @@ button:disabled {
     margin-bottom: 0.25rem;
   }
 
-.player-card::before {
+.player-card::before,
+  .player-card::after {
+    width: 30px;
+    height: 30px;
     top: 0.25rem;
     left: 0.25rem;
-    font-size: 1.1rem;
   }
   
   .player-card::after {
     bottom: 0.25rem;
     right: 0.25rem;
-    font-size: 1.1rem;
-    transform: rotate(180deg);
   }
 
 /* Adjust stacking for smaller cards */
