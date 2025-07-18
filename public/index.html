@@ -1905,13 +1905,15 @@ socket.on('opponentTurn', (data) => {
 
 
   const turnPromptText = document.getElementById('turnPromptText');
-  if (turnPromptText) {
-    turnPromptText.innerHTML = `
-    ⏳ ${opponentName || 'Your opponent'} is naming a teammate of:<br>
+if (turnPromptText) {
+  turnPromptText.innerHTML = `
+  <div>${opponentName || 'Your opponent'} is naming a teammate of:</div>
+  <div class="player-info">
     <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
     <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
-  `;
-  }
+  </div>
+`;
+}
 
   timerEl.textContent = data.timeLeft || '';
 

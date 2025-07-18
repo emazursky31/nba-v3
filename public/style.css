@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #1e40af;
+  --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
   --secondary-color: #dc2626;
   --secondary-hover: #b91c1c;
@@ -11,22 +11,23 @@
   --success-color: #22c55e;
   --warning-color: #f59e0b;
   
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+  --text-primary: #1e293b;        /* Dark text on light backgrounds */
+  --text-secondary: #475569;      /* Medium gray text */
+  --text-muted: #64748b;          /* Light gray text */
   
   /* Lightened background colors */
-  --bg-primary: #475569;    /* Lighter (was #334155) */
-  --bg-secondary: #64748b;  /* Lighter (was #475569) */
-  --bg-card: #334155;       /* Lighter (was #1e293b) */
-  --border-color: #94a3b8;  /* Lighter (was #64748b) */
+  --bg-primary: #ffffff;          /* Pure white */
+  --bg-secondary: #f8fafc;        /* Very light blue-gray */
+  --bg-card: #ffffff;             /* White cards */
+  --border-color: #e2e8f0;        /* Light gray borders */
+  --border-hover: #cbd5e1;        /* Slightly darker borders */
   
   --border-hover: #cbd5e1;
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -44,7 +45,7 @@ body {
   margin: 0 auto;
   padding: 1.5rem;
   line-height: 1.6;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
   min-height: 100vh;
   color: var(--text-primary);
   font-weight: 400;
@@ -61,7 +62,7 @@ nav {
 }
 
 nav span, nav a, nav button {
-  color: var(--text-primary);
+  color: var(--text-primary);  /* Changed from var(--text-primary) which was white */
   text-decoration: none;
   font-weight: 500;
   padding: 0.5rem 1rem;
@@ -86,8 +87,8 @@ h1 {
   font-weight: 700;
   text-align: center;
   margin-bottom: 2rem;
-  color: #f8fafc;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
@@ -113,7 +114,7 @@ section[data-route] {
   padding: 2rem;
   box-shadow: var(--shadow-xl);
   margin-bottom: 2rem;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
 }
 
 /* Form Elements */
@@ -133,7 +134,7 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
   outline: none;
   border-color: var(--primary-color);
   background: var(--bg-primary);
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 input[type="text"]::placeholder, input[type="email"]::placeholder, input[type="password"]::placeholder {
@@ -180,23 +181,26 @@ button:disabled {
 
 /* Game Mode Buttons */
 #privateGameBtn, #findGameBtn {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   padding: 1.25rem 2rem;
   font-size: 1.125rem;
   margin: 0.75rem;
   min-width: 200px;
-  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3); /* ✅ Gold shadow */
-  border: 1px solid #b45309; /* ✅ Darker gold border */
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  border: 2px solid #1e40af;
+  color: white;
+  font-weight: 600;
 }
 
 #privateGameBtn:hover, #findGameBtn:hover {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  box-shadow: 0 6px 8px rgba(245, 158, 11, 0.4); /* ✅ Enhanced gold shadow */
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
   transform: translateY(-2px);
+  border-color: #1e3a8a;
 }
 
 #privateGameBtn:active, #findGameBtn:active {
-  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   transform: translateY(0);
 }
 
@@ -291,7 +295,7 @@ button:disabled {
   display: block;
   font-size: 1.5rem;
   margin-top: 0.75rem;
-  color: #3b82f6;
+  color: var(--primary-color);  /* Changed from #3b82f6 to use variable */
   font-weight: 600;
 }
 
@@ -300,9 +304,9 @@ button:disabled {
   font-size: 2.5rem;
   font-weight: 700;
   text-align: center;
-  color: #f59e0b;
+  color: #d97706;  /* Changed from #f59e0b to darker orange for better contrast */
   margin: 1.5rem 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Reduced shadow */
 }
 
 /* Guess Controls */
@@ -361,8 +365,8 @@ button:disabled {
   padding: 0.875rem 1rem;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  border-bottom: 1px solid #374151;  /* Darker border between items */
-  color: #f1f5f9;  /* Brighter main text */
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);  /* Changed from #f1f5f9 */
 }
 
 .autocomplete-item:last-child {
@@ -420,11 +424,10 @@ button:disabled {
 
 .career-years {
   font-size: 0.875rem;
-  color: #f1f5f9;  /* Much brighter career years text */
+  color: var(--text-secondary);  /* Changed from #f1f5f9 */
   font-weight: 500;
   margin-left: 5px;
 }
-
 
 /* Messages */
 .message {
@@ -498,7 +501,7 @@ button:disabled {
 #displayRoomCode {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--primary-color);  /* Changed from #3b82f6 to use variable */
   background: var(--bg-secondary);
   padding: 1rem 1.5rem;
   border-radius: var(--radius-lg);
@@ -587,12 +590,11 @@ button:disabled {
 /* ✅ NEW: Game Over Results styling */
 #gameOverResults {
   color: var(--text-primary) !important;
-  background: rgba(0, 0, 0, 0.4) !important;
+  background: var(--bg-secondary) !important;  /* Changed from dark background */
   padding: 1rem 1.5rem;
   border-radius: var(--radius-md);
   margin: 1rem 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid var(--border-color);
 }
 
 #gameOverResults p {
@@ -601,8 +603,7 @@ button:disabled {
 }
 
 #gameOverResults strong {
-  color: #3b82f6 !important; /* ✅ Blue for labels */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  color: var(--primary-color) !important;  /* Changed from #3b82f6 */
 }
 
 /* Auth Forms */
@@ -704,10 +705,9 @@ button:disabled {
 
 .auth-form h2 {
   margin-bottom: 0.5rem;
-  color: #f8fafc;  /* Changed from #3b82f6 to bright white */
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);  /* Added text shadow for better readability */
 }
 
 .auth-form input {
@@ -715,18 +715,18 @@ button:disabled {
   font-size: 1rem;
   border-radius: var(--radius-md);
   border: 2px solid var(--border-color);
-  background: #1e293b;  /* Darker for better contrast */
-  color: #f1f5f9;       /* Brighter text */
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .auth-form input:focus {
   border-color: var(--primary-color);
-  background: #0f172a;  /* Even darker on focus */
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .auth-form input::placeholder {
-  color: #94a3b8;  /* Ensure placeholder is visible */
+  color: var(--text-muted);
 }
 
 .auth-form button {
