@@ -572,7 +572,21 @@ function resetCardSpread() {
   const deckContainer = document.getElementById('card-deck');
   if (!deckContainer) return;
   
-  deckContainer.classList.remove('game-ended');  // ✅ Remove from the container itself
+  // Remove the game-ended class
+  deckContainer.classList.remove('game-ended');
+  
+  // ✅ Also force remove any lingering transform styles
+  deckContainer.style.transform = '';
+  
+  // ✅ Reset any individual card transforms
+  const cards = deckContainer.querySelectorAll('.player-card');
+  cards.forEach(card => {
+    card.style.transform = '';
+    card.style.left = '';
+    card.style.zIndex = '';
+  });
+  
+  console.log('🎴 Card spread animation reset for new game');
 }
 
 
@@ -792,22 +806,20 @@ function resetGameUI() {
   clearAutocomplete();
 
   // Reset rematch button visibility and style
-  rematchBtn.style.display = 'none';  // Or 'inline-block' if you want it visible immediately
+  rematchBtn.style.display = 'none';
   rematchBtn.disabled = false;
   rematchBtn.textContent = 'Rematch';
-  rematchBtn.style.backgroundColor = ''; // Clear any highlight
+  rematchBtn.style.backgroundColor = '';
 
   // Reset UI parts
   messagesEl.innerHTML = '';
   messagesEl.style.display = 'block';
 
+  // ✅ CRITICAL: Reset card spread animation BEFORE clearing cards
   resetCardSpread();
 
+  // Clear stored headshots for new game
   storedHeadshots.clear();
-
-  // ✅ Clear stored headshot data
-  window.leadoffPlayerData = null;
-  window.currentTurnPlayerHeadshot = null;
 
   successfulGuesses.length = 0;
   document.getElementById('card-deck').innerHTML = '';
@@ -832,6 +844,7 @@ function resetGameUI() {
     messageContainer.innerHTML = '';
   }
 }
+
 
 
 function showGuessError(message) {
@@ -1607,6 +1620,8 @@ socket.on('gameStarted', async (data) => {
   }
 
   console.log('[CLIENT] Received gameStarted event:', data);
+
+  resetCardSpread();
 
   gameStarted = true;
   gameOver = false;
