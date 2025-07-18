@@ -1897,7 +1897,12 @@ socket.on('turnEnded', (data) => {
   navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    successfulGuesses = markLeadoffInGuesses(data.successfulGuesses, leadoffPlayerName);
+    // Ensure each guess has a headshot_url
+    successfulGuesses = data.successfulGuesses.map(guess => ({
+      ...guess,
+      headshot_url: guess.headshot_url || DEFAULT_PLAYER_IMAGE
+    }));
+    successfulGuesses = markLeadoffInGuesses(successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
   }
 

@@ -660,40 +660,39 @@ button:disabled {
 }
 
 /* Card suit corners */
-.player-card::before {
-  content: "";
+.player-card::before,
+.player-card::after {
+  content: "" !important;
   position: absolute;
+  width: 40px;
+  height: 40px;
+  background-image: var(--headshot-url);
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  border: 2px solid #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+
+.player-card::before {
   top: 0.5rem;
   left: 0.5rem;
-  width: 40px;
-  height: 40px;
-  background-image: var(--headshot-url);
-  background-size: cover;
-  background-position: center;
-  border-radius: 50%;
-  border: 2px solid #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
 
 .player-card::after {
-  content: "";
-  position: absolute;
   bottom: 0.5rem;
   right: 0.5rem;
-  width: 40px;
-  height: 40px;
-  background-image: var(--headshot-url);
-  background-size: cover;
-  background-position: center;
-  border-radius: 50%;
-  border: 2px solid #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.player-card[data-headshot=""] ::before,
-.player-card[data-headshot=""] ::after {
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==');
+
+/* Fallback for missing headshots */
+.player-card:not([style*="--headshot-url"])::before,
+.player-card:not([style*="--headshot-url"])::after {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==') !important;
 }
+
 
 /* Card types with different suits */
 .player-card.leadoff {
@@ -702,11 +701,7 @@ button:disabled {
   color: var(--accent-color);
 }
 
-.player-card.leadoff::before,
-.player-card.leadoff::after {
-  content: "♠️";
-  color: var(--accent-color);
-}
+
 
 .player-card.your-guess {
   background: linear-gradient(135deg, #fff 0%, #f0fff0 100%);
@@ -714,11 +709,7 @@ button:disabled {
   color: #2d5a2d;
 }
 
-.player-card.your-guess::before,
-.player-card.your-guess::after {
-  content: "♥️";
-  color: var(--success-color);
-}
+
 
 .player-card.opponent-guess {
   background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
@@ -726,11 +717,6 @@ button:disabled {
   color: #2d2d5a;
 }
 
-.player-card.opponent-guess::before,
-.player-card.opponent-guess::after {
-  content: "♦️";
-  color: var(--primary-color);
-}
 
 /* Card content */
 .card-header {
@@ -945,8 +931,18 @@ button:disabled {
 
 .player-card::before,
   .player-card::after {
+    content: "" !important;
     width: 35px;
     height: 35px;
+    background-image: var(--headshot-url);
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 2px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .player-card::before {
     top: 0.375rem;
     left: 0.375rem;
   }
@@ -955,6 +951,13 @@ button:disabled {
     bottom: 0.375rem;
     right: 0.375rem;
   }
+
+   /* Fallback for missing headshots on mobile */
+  .player-card:not([style*="--headshot-url"])::before,
+  .player-card:not([style*="--headshot-url"])::after {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==') !important;
+  }
+
 
   .card-deck-container.game-ended {
       height: 280px;
@@ -1046,10 +1049,20 @@ button:disabled {
     margin-bottom: 0.25rem;
   }
 
-.player-card::before,
+  .player-card::before,
   .player-card::after {
+    content: "" !important;
     width: 30px;
     height: 30px;
+    background-image: var(--headshot-url);
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 2px solid #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .player-card::before {
     top: 0.25rem;
     left: 0.25rem;
   }
@@ -1057,6 +1070,11 @@ button:disabled {
   .player-card::after {
     bottom: 0.25rem;
     right: 0.25rem;
+  }
+
+  .player-card:not([style*="--headshot-url"])::before,
+  .player-card:not([style*="--headshot-url"])::after {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==') !important;
   }
 
 /* Adjust stacking for smaller cards */
