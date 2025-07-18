@@ -369,9 +369,54 @@ button:disabled {
   border-bottom: none;
 }
 
-.autocomplete-item:hover {
-  background: #334155;  /* Lighter hover background */
+/* Enhanced hover/selection state */
+.autocomplete-item:hover,
+.autocomplete-item.selected {
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);  /* Blue gradient */
+  color: white;
+  border-left-color: #60a5fa;  /* Blue left border */
+  box-shadow: 
+    inset 0 0 0 2px rgba(96, 165, 250, 0.3),  /* Inner glow */
+    0 2px 8px rgba(30, 64, 175, 0.4);  /* Outer shadow */
+  transform: translateX(4px);  /* Slight slide effect */
 }
+
+/* Active/pressed state for mobile */
+.autocomplete-item:active {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%);  /* Darker blue */
+  transform: translateX(2px) scale(0.98);  /* Slight press effect */
+}
+
+/* Enhanced career years styling in selected state */
+.autocomplete-item:hover .career-years,
+.autocomplete-item.selected .career-years {
+  color: #dbeafe;  /* Lighter blue tint when selected */
+  font-weight: 600;  /* Bolder when selected */
+}
+
+/* Selection indicator arrow */
+.autocomplete-item:hover::after,
+.autocomplete-item.selected::after {
+  content: "→";
+  position: absolute;
+  right: 0.5rem;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2rem;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 
 .career-years {
   font-size: 0.875rem;
@@ -994,7 +1039,37 @@ button:disabled {
   }
   
   #autocomplete-list {
+    left: 0;
     right: 0;
+  }
+
+  .autocomplete-item {
+    padding: 1.25rem 1rem;  /* Even larger padding for mobile */
+    font-size: 1rem;  /* Slightly larger text */
+    min-height: 60px;  /* Minimum touch target size */
+  }
+
+  /* More pronounced selection on mobile */
+  .autocomplete-item:hover,
+  .autocomplete-item.selected {
+    background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+    border-left-width: 6px;  /* Thicker left border */
+    box-shadow: 
+      inset 0 0 0 3px rgba(96, 165, 250, 0.4),  /* Stronger inner glow */
+      0 4px 12px rgba(30, 64, 175, 0.5);  /* Stronger shadow */
+    transform: translateX(6px);  /* More pronounced slide */
+  }
+
+  /* Larger selection arrow on mobile */
+  .autocomplete-item:hover::after,
+  .autocomplete-item.selected::after {
+    font-size: 1.5rem;
+    right: 1rem;
+  }
+
+  .career-years {
+    font-size: 0.9rem;  /* Slightly larger on mobile */
+    font-weight: 500;
   }
   
   .auth-forms-row {
@@ -1181,6 +1256,28 @@ button:disabled {
 
   .player-name.opponent {
     order: 1;  /* Put opponent last */
+  }
+
+   .autocomplete-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    gap: 0.25rem;
+  }
+
+  .career-years {
+    margin-left: 0;
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+
+  /* Adjust arrow position for stacked layout */
+  .autocomplete-item:hover::after,
+  .autocomplete-item.selected::after {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
   }
 
 /* Card Deck Small Mobile */
