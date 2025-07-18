@@ -898,6 +898,8 @@ function renderSuccessfulGuesses() {
     const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
     const headshotUrl = guessObj?.headshot_url || DEFAULT_PLAYER_IMAGE;
 
+    console.log(`Card ${index}: ${name}, headshot: ${headshotUrl}`);
+
     if (!name) return;
 
     const card = document.createElement('div');
