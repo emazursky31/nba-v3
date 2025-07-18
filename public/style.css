@@ -1040,62 +1040,26 @@ button:disabled {
 /* Game End Card Spread Animation */
 .card-deck-container.game-ended {
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   height: 350px;
   margin: 2rem auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;  /* Even spacing between cards */
 }
 
 .card-deck-container.game-ended .player-card {
+  position: relative;  /* Changed from absolute */
   transition: all 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  animation: none; /* Disable other animations */
-}
-
-/* Spread cards horizontally in order */
-.card-deck-container.game-ended .player-card:nth-child(1) {
-  transform: translateX(-200px) translateY(-20px) rotate(-15deg);
-  z-index: 10;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(2) {
-  transform: translateX(-100px) translateY(-10px) rotate(-8deg);
-  z-index: 9;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(3) {
-  transform: translateX(0px) translateY(0px) rotate(0deg);
-  z-index: 8;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(4) {
-  transform: translateX(100px) translateY(-10px) rotate(8deg);
-  z-index: 7;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(5) {
-  transform: translateX(200px) translateY(-20px) rotate(15deg);
-  z-index: 6;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(6) {
-  transform: translateX(300px) translateY(-30px) rotate(22deg);
-  z-index: 5;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(7) {
-  transform: translateX(-300px) translateY(-30px) rotate(-22deg);
-  z-index: 4;
-}
-
-.card-deck-container.game-ended .player-card:nth-child(8) {
-  transform: translateX(400px) translateY(-40px) rotate(30deg);
-  z-index: 3;
-}
-
-/* Enhanced card visibility in spread */
-.card-deck-container.game-ended .player-card {
+  animation: none;
+  transform: rotate(0deg);  /* Reset rotation */
   opacity: 1 !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  z-index: auto;  /* Let natural stacking work */
 }
+
+
 
 .card-deck-container.game-ended .player-card:hover {
   transform: translateY(-20px) scale(1.05) !important;
@@ -1331,31 +1295,16 @@ button:disabled {
 
 
   .card-deck-container.game-ended {
-      height: 280px;
+    height: 280px;
+    gap: 0.5rem;  /* Smaller gap on mobile */
+    overflow-x: auto;  /* Allow horizontal scrolling */
+    padding: 0 1rem;
+    justify-content: flex-start;  /* Allow scrolling */
   }
-
-  .card-deck-container.game-ended .player-card:nth-child(1) {
-      transform: translateX(-120px) translateY(-15px) rotate(-12deg);
-  }
-
-  .card-deck-container.game-ended .player-card:nth-child(2) {
-      transform: translateX(-60px) translateY(-8px) rotate(-6deg);
-  }
-
-  .card-deck-container.game-ended .player-card:nth-child(3) {
-      transform: translateX(0px) translateY(0px) rotate(0deg);
-  }
-
-  .card-deck-container.game-ended .player-card:nth-child(4) {
-      transform: translateX(60px) translateY(-8px) rotate(6deg);
-  }
-
-  .card-deck-container.game-ended .player-card:nth-child(5) {
-      transform: translateX(120px) translateY(-15px) rotate(12deg);
-  }
-
-  .card-deck-container.game-ended .player-card:nth-child(6) {
-      transform: translateX(180px) translateY(-22px) rotate(18deg);
+  
+  .card-deck-container.game-ended .player-card {
+    flex-shrink: 0;  /* Prevent cards from shrinking */
+    min-width: 160px;  /* Ensure minimum card width */
   }
 }
 
@@ -1564,26 +1513,11 @@ button:disabled {
 
 .card-deck-container.game-ended {
     height: 240px;
+    gap: 0.25rem;
   }
   
-  .card-deck-container.game-ended .player-card:nth-child(1) {
-    transform: translateX(-80px) translateY(-10px) rotate(-10deg);
-  }
-  
-  .card-deck-container.game-ended .player-card:nth-child(2) {
-    transform: translateX(-40px) translateY(-5px) rotate(-5deg);
-  }
-  
-  .card-deck-container.game-ended .player-card:nth-child(3) {
-    transform: translateX(0px) translateY(0px) rotate(0deg);
-  }
-  
-  .card-deck-container.game-ended .player-card:nth-child(4) {
-    transform: translateX(40px) translateY(-5px) rotate(5deg);
-  }
-  
-  .card-deck-container.game-ended .player-card:nth-child(5) {
-    transform: translateX(80px) translateY(-10px) rotate(10deg);
+  .card-deck-container.game-ended .player-card {
+    min-width: 140px;
   }
 
 }

@@ -971,7 +971,13 @@ function renderSuccessfulGuesses() {
 
     const footerEl = document.createElement('div');
     footerEl.className = 'card-footer';
-    footerEl.textContent = isLeadoff ? 'Game Start' : `Guessed by ${guesser === myUsername ? 'You' : guesser}`;
+    if (isLeadoff) {
+      footerEl.textContent = 'Game Start';
+    } else if (guesser === myUsername) {
+      footerEl.textContent = 'Guessed by You';
+    } else {
+      footerEl.innerHTML = `Guessed by<br>${guesser}`;
+    }
     card.appendChild(footerEl);
 
     deckContainer.appendChild(card);
