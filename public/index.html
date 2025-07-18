@@ -802,6 +802,10 @@ function resetGameUI() {
 
   resetCardSpread();
 
+  // ✅ Clear stored headshot data
+  window.leadoffPlayerData = null;
+  window.currentTurnPlayerHeadshot = null;
+
   successfulGuesses.length = 0;
   document.getElementById('card-deck').innerHTML = '';
   renderSuccessfulGuesses();
@@ -1635,6 +1639,13 @@ socket.on('gameStarted', async (data) => {
       headshot_url: leadoffPlayer.headshot_url
     });
 
+    successfulGuesses.push(leadoffGuess);
+
+    window.leadoffPlayerData = {
+      name: leadoffPlayer.player_name,
+      headshot_url: leadoffPlayer.headshot_url
+    };
+
     // // ✅ Show leadoff headshot if you want to — or skip if you only want current player
     // updateHeadshot(leadoffPlayer);
   }
@@ -1805,6 +1816,16 @@ socket.on('yourTurn', (data) => {
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
+  // ✅ Store current player headshot for when they get guessed
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    window.currentTurnPlayerHeadshot = {
+      name: data.currentPlayerName,
+      headshot_url: data.currentPlayerHeadshotUrl
+    };
+    
+    console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+
   timerEl.textContent = data.timeLeft || 15;
 
   turnSection.style.display = 'block';
@@ -1853,6 +1874,16 @@ socket.on('opponentTurn', (data) => {
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
+  // ✅ Store current player headshot for when they get guessed
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    window.currentTurnPlayerHeadshot = {
+      name: data.currentPlayerName,
+      headshot_url: data.currentPlayerHeadshotUrl
+    };
+    
+    console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+
   const turnPromptText = document.getElementById('turnPromptText');
   if (turnPromptText) {
     turnPromptText.innerHTML = `
@@ -1899,11 +1930,30 @@ socket.on('turnEnded', (data) => {
   navigateTo('/play');
 
   if (Array.isArray(data.successfulGuesses)) {
-    // Ensure each guess has a headshot_url
-    successfulGuesses = data.successfulGuesses.map(guess => ({
-      ...guess,
-      headshot_url: guess.headshot_url || DEFAULT_PLAYER_IMAGE
-    }));
+    // Ensure each guess has a headshot_url and preserve leadoff player data
+    successfulGuesses = data.successfulGuesses.map(guess => {
+      const updatedGuess = {
+        ...guess,
+        headshot_url: guess.headshot_url || DEFAULT_PLAYER_IMAGE
+      };
+      
+      // If this is the leadoff player, ensure it's properly marked and has headshot
+      if (guess.name === leadoffPlayerName || guess.isLeadoff) {
+        updatedGuess.isLeadoff = true;
+        // Preserve leadoff headshot if available from gameStarted event
+        if (guess.name === leadoffPlayerName && !updatedGuess.headshot_url) {
+          // Try to get leadoff headshot from stored data if available
+          const leadoffData = window.leadoffPlayerData;
+          if (leadoffData && leadoffData.headshot_url) {
+            updatedGuess.headshot_url = leadoffData.headshot_url;
+          }
+        }
+      }
+      
+      return updatedGuess;
+    });
+    
+    // Mark leadoff player in the guesses array
     successfulGuesses = markLeadoffInGuesses(successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
   }
@@ -1912,7 +1962,7 @@ socket.on('turnEnded', (data) => {
     showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
   }
 
-  // ✅ Save turn state
+  // ✅ Save turn state for next turn rendering
   currentPlayerName = data.currentPlayerName || '???';
   currentPlayerHeadshotUrl = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
   timeLeft = data.timeLeft || 15;
