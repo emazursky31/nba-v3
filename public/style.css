@@ -571,34 +571,54 @@ button:disabled {
   border-radius: var(--radius-lg);
   padding: 0.25rem;
   margin-bottom: 2rem;
+  box-shadow: var(--shadow-md); /* NEW: Adds subtle outer shadow */
+  border: 2px solid var(--border-color); /* NEW: Outline for definition */
 }
 
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: var(--bg-card); /* ✅ Darker background for inactive */
+  background: var(--bg-card);
   border: none;
-  color: var(--text-muted); /* ✅ Muted color for inactive */
+  color: var(--text-muted);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: center;
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
-  border: 2px solid transparent; /* ✅ Add border for better definition */
+  border: 2px solid transparent;
+  position: relative;
 }
 
 .auth-tab.active {
-  background: var(--primary-color); /* ✅ Bright blue background for active */
-  color: white; /* ✅ White text for active */
-  box-shadow: var(--shadow-md); /* ✅ Elevated appearance */
-  border-color: var(--primary-hover); /* ✅ Slightly darker border */
-  transform: translateY(-1px); /* ✅ Subtle lift effect */
+  background: var(--primary-color);
+  color: white;
+  box-shadow: inset 0 -2px 8px rgba(0, 0, 0, 0.2); /* NEW: Inner depth */
+  border-color: var(--primary-hover);
+  transform: translateY(-1px);
+  z-index: 1; /* NEW: Bring active tab slightly above inactive */
 }
 
 .auth-tab:hover:not(.active) {
-  background: var(--bg-secondary); /* ✅ Lighter on hover for inactive */
-  color: var(--text-secondary);
+  background: var(--bg-hover); /* NEW: A little lighter than bg-card */
+  color: var(--text-primary); /* NEW: Less muted */
+  border-color: var(--border-color);
 }
+
+
+.auth-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+}
+
 
 .auth-forms-row {
   display: flex;
