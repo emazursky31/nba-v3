@@ -560,7 +560,7 @@ function triggerGameEndCardSpread() {
   
   // Add a small delay to let the game over UI settle
   setTimeout(() => {
-    deckContainer.parentElement.classList.add('game-ended');
+    deckContainer.classList.add('game-ended');  // ✅ Add to the container itself
     
     // Optional: Add a subtle sound effect or visual feedback
     console.log('🎴 Cards spreading out to show the full game sequence!');
@@ -571,7 +571,7 @@ function resetCardSpread() {
   const deckContainer = document.getElementById('card-deck');
   if (!deckContainer) return;
   
-  deckContainer.parentElement.classList.remove('game-ended');
+  deckContainer.classList.remove('game-ended');  // ✅ Remove from the container itself
 }
 
 
