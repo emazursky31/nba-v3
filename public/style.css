@@ -15,13 +15,13 @@
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   
-  --bg-primary: #334155;    /* Lighter (was #1e293b) */
-  --bg-secondary: #475569;  /* Lighter (was #334155) */
-  --bg-card: #1e293b;       /* Lighter (was #0f172a) */
-  --border-color: #64748b;  /* Lighter (was #475569) */
+  /* Lightened background colors */
+  --bg-primary: #475569;    /* Lighter (was #334155) */
+  --bg-secondary: #64748b;  /* Lighter (was #475569) */
+  --bg-card: #334155;       /* Lighter (was #1e293b) */
+  --border-color: #94a3b8;  /* Lighter (was #64748b) */
   
-  --border-color: #475569;
-  --border-hover: #64748b;
+  --border-hover: #cbd5e1;
   
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
@@ -569,41 +569,57 @@ button:disabled {
   display: flex;
   background: var(--bg-secondary);
   border-radius: var(--radius-lg);
-  padding: 0.25rem;
+  padding: 0.375rem;  /* Slightly more padding */
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-md); /* NEW: Adds subtle outer shadow */
-  border: 2px solid var(--border-color); /* NEW: Outline for definition */
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--border-color);
 }
 
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: var(--bg-card);
+  background: #1e293b;  /* Darker than container for contrast */
   border: none;
-  color: var(--text-muted);
+  color: #e2e8f0;       /* Brighter text for inactive tabs */
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  border: 2px solid #475569;
   position: relative;
 }
 
 .auth-tab.active {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
   color: white;
-  box-shadow: inset 0 -2px 8px rgba(0, 0, 0, 0.2); /* NEW: Inner depth */
+  box-shadow: 
+    inset 0 -2px 8px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(30, 64, 175, 0.4);
   border-color: var(--primary-hover);
-  transform: translateY(-1px);
-  z-index: 1; /* NEW: Bring active tab slightly above inactive */
+  transform: translateY(-2px);
+  z-index: 2;
 }
 
 .auth-tab:hover:not(.active) {
-  background: var(--bg-hover); /* NEW: A little lighter than bg-card */
-  color: var(--text-primary); /* NEW: Less muted */
-  border-color: var(--border-color);
+  background: #2d3748;  /* Lighter on hover */
+  color: #f1f5f9;       /* Even brighter text */
+  border-color: #64748b;
+  transform: translateY(-1px);
+}
+
+.auth-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -655,13 +671,18 @@ button:disabled {
   font-size: 1rem;
   border-radius: var(--radius-md);
   border: 2px solid var(--border-color);
-  background: var(--bg-secondary);
+  background: #1e293b;  /* Darker for better contrast */
+  color: #f1f5f9;       /* Brighter text */
 }
 
 .auth-form input:focus {
   border-color: var(--primary-color);
-  background: var(--bg-primary);
+  background: #0f172a;  /* Even darker on focus */
   box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.3);
+}
+
+.auth-form input::placeholder {
+  color: #94a3b8;  /* Ensure placeholder is visible */
 }
 
 .auth-form button {
