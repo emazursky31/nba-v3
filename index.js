@@ -15,6 +15,7 @@ const io = new Server(server);
 
 const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
+const activeTimers = new Map();
 
 const defaultPlayerImage = 
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
@@ -438,7 +439,7 @@ socket.on('requestRematch', ({ roomId }) => {
     game.activePlayerSocketId = null;
     game.timeLeft = 30;
 if (game.timer) {
-  clearInterval(game.timer);
+  cleanupTimer(roomId);
   game.timer = null;
 }
     startGame(roomId);
@@ -466,9 +467,12 @@ socket.on('disconnect', () => {
   // Remove from socketRoomMap (once)
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
+    cleanupTimer(roomId);
     delete socketRoomMap[socket.id];
     console.log(`Removed socket ${socket.id} from socketRoomMap`);
   }
+
+  
 
   for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
@@ -975,7 +979,7 @@ function handlePlayerDisconnect(socket) {
 
       // Clear any remaining timer
       if (game.timer) {
-        clearInterval(game.timer);
+        cleanupTimer(room);
       }
 
       // Completely delete the game object instead of resetting it
@@ -988,6 +992,22 @@ function handlePlayerDisconnect(socket) {
   }
 }
 
+function cleanupTimer(roomId) {
+  const game = games[roomId];
+  
+  if (activeTimers.has(roomId)) {
+    clearInterval(activeTimers.get(roomId));
+    activeTimers.delete(roomId);
+  }
+  
+  if (game && game.timer) {
+    clearInterval(game.timer);
+    game.timer = null;
+    game.timerRunning = false;
+  }
+  
+  console.log(`[CLEANUP] Timer cleaned up for room ${roomId}`);
+}
 
 
 async function updateUserStats(userId, result) {
@@ -1035,18 +1055,28 @@ async function startTurnTimer(roomId) {
     return;
   }
 
-  // ✅ Defensive timer clearing - ensure any existing timer is properly cleared
+  // ✅ NEW: Prevent duplicate timers for the same room
+  if (activeTimers.has(roomId)) {
+    console.warn(`[startTurnTimer] Timer already active for room ${roomId}, clearing first`);
+    const existingTimer = activeTimers.get(roomId);
+    clearInterval(existingTimer);
+    activeTimers.delete(roomId);
+  }
+
+  // ✅ Clear any existing timer on game object
   if (game.timer !== null) {
-    console.warn(`[startTurnTimer] Clearing existing timer before starting new timer in room ${roomId}`);
+    console.warn(`[startTurnTimer] Clearing existing game timer in room ${roomId}`);
     clearInterval(game.timer);
     game.timer = null;
   }
 
+  // ✅ NEW: Add timer state tracking
+  game.timerRunning = true;
   game.timeLeft = 30;
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
 
-  // ✅ Fetch current player headshot to fix the ReferenceError
+  // Fetch current player headshot
   const trimmedCurrentPlayerName = game.currentPlayerName.trim();
   const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(trimmedCurrentPlayerName);
 
@@ -1071,69 +1101,66 @@ async function startTurnTimer(roomId) {
     }
   });
 
-  // ✅ Start clean interval
-  game.timer = setInterval(async () => {
-    // ✅ Additional safety check - ensure game still exists and hasn't ended
-    if (!games[roomId] || games[roomId].gameEnded) {
-      clearInterval(game.timer);
-      game.timer = null;
+  // ✅ Start clean interval with enhanced safety
+  const timerId = setInterval(async () => {
+    // ✅ Multiple safety checks
+    const currentGame = games[roomId];
+    if (!currentGame || currentGame.gameEnded || !currentGame.timerRunning) {
+      console.log(`[TIMER] Stopping timer for room ${roomId} - game ended or missing`);
+      clearInterval(timerId);
+      activeTimers.delete(roomId);
+      if (currentGame) {
+        currentGame.timer = null;
+        currentGame.timerRunning = false;
+      }
       return;
     }
 
-    game.timeLeft--;
+    currentGame.timeLeft--;
+    console.log(`[TIMER] Room ${roomId} - timeLeft: ${currentGame.timeLeft}`);
+    io.to(roomId).emit('timerTick', { timeLeft: currentGame.timeLeft });
 
-    console.log(`[TIMER] Room ${roomId} - timeLeft: ${game.timeLeft}`);
-    io.to(roomId).emit('timerTick', { timeLeft: game.timeLeft });
-
-    if (game.timeLeft <= 0) {
-      // ✅ Immediately clear timer and set game ended flag
-      clearInterval(game.timer);
-      game.timer = null;
-      game.gameEnded = true; // Prevent further timer operations
+    if (currentGame.timeLeft <= 0) {
+      // ✅ Immediately stop timer and cleanup
+      clearInterval(timerId);
+      activeTimers.delete(roomId);
+      currentGame.timer = null;
+      currentGame.timerRunning = false;
+      currentGame.gameEnded = true;
       
       console.log(`[TIMER] Room ${roomId} - timer expired`);
 
-      const loserSocketId = game.activePlayerSocketId;
-      const loserName = game.usernames[loserSocketId];
-      const winnerSocketId = game.players.find(id => id !== loserSocketId);
-      const winnerName = game.usernames[winnerSocketId];
+      // Rest of your timeout logic...
+      const loserSocketId = currentGame.activePlayerSocketId;
+      const loserName = currentGame.usernames[loserSocketId];
+      const winnerSocketId = currentGame.players.find(id => id !== loserSocketId);
+      const winnerName = currentGame.usernames[winnerSocketId];
 
-      // ✅ Initialize matchStats if missing
-      if (!game.matchStats) {
-        game.matchStats = {};
+      // Your existing timeout handling code...
+      if (!currentGame.matchStats) {
+        currentGame.matchStats = {};
       }
 
-      const loserUserId = game.userIds[loserSocketId];
-      const winnerUserId = game.userIds[winnerSocketId];
+      const loserUserId = currentGame.userIds[loserSocketId];
+      const winnerUserId = currentGame.userIds[winnerSocketId];
 
-      console.log('[DEBUG] Resolved userIds:', { winnerSocketId, winnerUserId, loserSocketId, loserUserId });
-
-      if (game.statsUpdated) {
-        console.log('[STATS] Stats already updated for this game, skipping');
-        return;
+      if (!currentGame.statsUpdated) {
+        await updateUserStats(winnerUserId, 'win');
+        await updateUserStats(loserUserId, 'loss');
+        currentGame.statsUpdated = true;
       }
 
-      console.log('[STATS] Before updating - Winner:', winnerUserId, 'Loser:', loserUserId);
-      await updateUserStats(winnerUserId, 'win');
-      await updateUserStats(loserUserId, 'loss');
-      console.log('[STATS] Stats updated for both players');
+      if (!currentGame.matchStats[loserName]) currentGame.matchStats[loserName] = { wins: 0, losses: 0 };
+      if (!currentGame.matchStats[winnerName]) currentGame.matchStats[winnerName] = { wins: 0, losses: 0 };
+      currentGame.matchStats[winnerName].wins += 1;
+      currentGame.matchStats[loserName].losses += 1;
 
-      // ✅ Increment winner's count
-      if (!game.matchStats[loserName]) game.matchStats[loserName] = { wins: 0, losses: 0 };
-      if (!game.matchStats[winnerName]) game.matchStats[winnerName] = { wins: 0, losses: 0 };
-      game.matchStats[winnerName].wins += 1;
-      game.matchStats[loserName].losses += 1;
-
-      console.log(`[SCOREBOARD] Room ${roomId} - Updated stats:`, game.matchStats);
-
-      // ✅ Emit updated stats to both players
       io.to(roomId).emit('matchStats', {
-        [winnerName]: { wins: game.matchStats[winnerName] },
-        [loserName]: { wins: game.matchStats[loserName] || 0 },
+        [winnerName]: { wins: currentGame.matchStats[winnerName] },
+        [loserName]: { wins: currentGame.matchStats[loserName] || 0 },
       });
 
-      // ✅ Emit game over event to both players
-      game.players.forEach((playerId) => {
+      currentGame.players.forEach((playerId) => {
         const socket = io.sockets.sockets.get(playerId);
         if (!socket) return;
 
@@ -1154,12 +1181,16 @@ async function startTurnTimer(roomId) {
         }
       });
 
-      // ✅ CRITICAL: Return to exit the interval callback and prevent infinite loop
       return;
     }
   }, 1000);
-}
 
+  // ✅ Store timer references
+  game.timer = timerId;
+  activeTimers.set(roomId, timerId);
+  
+  console.log(`[TIMER] Started new timer for room ${roomId}`);
+}
 
 
 
