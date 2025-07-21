@@ -1144,10 +1144,14 @@ async function startTurnTimer(roomId) {
       const loserUserId = currentGame.userIds[loserSocketId];
       const winnerUserId = currentGame.userIds[winnerSocketId];
 
-      if (!currentGame.statsUpdated) {
+      console.log('[TIMER] About to update stats for:', { loserUserId, winnerUserId, statsUpdated: currentGame.statsUpdated });     
+
+      if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
         await updateUserStats(winnerUserId, 'win');
         await updateUserStats(loserUserId, 'loss');
         currentGame.statsUpdated = true;
+      } else {
+        console.log('[TIMER] Skipping stats update:', { statsUpdated: currentGame.statsUpdated, loserUserId, winnerUserId });
       }
 
       if (!currentGame.matchStats[loserName]) currentGame.matchStats[loserName] = { wins: 0, losses: 0 };
