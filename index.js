@@ -521,6 +521,8 @@ socket.on('disconnect', () => {
           }
         });
 
+        const preservedUserIds = { ...game.userIds };
+
         // Reset game state
         game.players = [];
         game.usernames = {};
@@ -529,6 +531,7 @@ socket.on('disconnect', () => {
         game.teammates = [];
         game.successfulGuesses = [];
         game.rematchVotes = new Set();
+        game.userIds = preservedUserIds;
 
         if (game.timer) {
           clearInterval(game.timer);
@@ -560,7 +563,7 @@ socket.on('leaveGame', () => {
 });
 
 
-socket.on('playerSignedOut', ({ roomId, username, reason }) => {
+socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
   console.log(`Player ${username} signed out from room ${roomId}, reason: ${reason}`);
   
   const game = games[roomId];
@@ -577,7 +580,27 @@ socket.on('playerSignedOut', ({ roomId, username, reason }) => {
     const remainingUsername = game.usernames[remainingPlayerSocketId] || 'Player';
     
     if (remainingPlayerSocket && remainingPlayerSocket.connected) {
-      // Immediately award win to remaining player
+      // ✅ UPDATE STATS with hardened userID lookup
+      const remainingUserId = game.userIds[remainingPlayerSocketId] || 
+                             remainingPlayerSocket.data?.userId;
+      const disconnectedUserId = game.userIds[disconnectedSocketId] || 
+                                socket.data?.userId;
+      
+      console.log('[SIGNOUT] Updating stats:', { remainingUserId, disconnectedUserId });
+      
+      if (remainingUserId && disconnectedUserId) {
+        try {
+          await updateUserStats(remainingUserId, 'win');
+          await updateUserStats(disconnectedUserId, 'loss');
+          console.log('[SIGNOUT] Stats updated successfully');
+        } catch (err) {
+          console.error('[SIGNOUT] Error updating stats:', err);
+        }
+      } else {
+        console.warn('[SIGNOUT] Missing userIds, skipping stats update:', { remainingUserId, disconnectedUserId });
+      }
+      
+      // Notify remaining player
       remainingPlayerSocket.emit('gameOver', {
         reason: 'opponent_signed_out',
         message: `${disconnectedUsername} signed out. You win!`,
@@ -586,10 +609,6 @@ socket.on('playerSignedOut', ({ roomId, username, reason }) => {
         role: 'winner',
         canRematch: false,
       });
-      
-      // Update stats if you have a stats system
-      // updatePlayerStats(remainingUsername, 'win');
-      // updatePlayerStats(disconnectedUsername, 'loss');
     }
   }
   
@@ -602,6 +621,7 @@ socket.on('playerSignedOut', ({ roomId, username, reason }) => {
   // Reset game state
   game.players = [];
   game.usernames = {};
+  game.userIds = {}; // ✅ Clear userIds too
   game.currentTurn = 0;
   game.currentPlayerName = null;
   game.teammates = [];
@@ -614,6 +634,7 @@ socket.on('playerSignedOut', ({ roomId, username, reason }) => {
   
   console.log(`Game in room ${roomId} ended due to ${disconnectedUsername} signing out`);
 });
+
 
 
 
@@ -906,6 +927,8 @@ async function handleJoinGame(socket, roomId, username, userId) {
   game.userIds = game.userIds || {};
   game.userIds[socket.id] = userId;
 
+  socket.data.userId = userId;
+
   socket.username = finalUsername;
 
   socket.join(roomId);
@@ -1147,10 +1170,22 @@ async function startTurnTimer(roomId) {
         currentGame.matchStats = {};
       }
 
-      const loserUserId = currentGame.userIds[loserSocketId];
-      const winnerUserId = currentGame.userIds[winnerSocketId];
+      const loserUserId = currentGame.userIds[loserSocketId] ||
+        io.sockets.sockets.get(loserSocketId)?.data?.userId;
+      const winnerUserId = currentGame.userIds[winnerSocketId] ||
+        io.sockets.sockets.get(winnerSocketId)?.data?.userId;
 
-      console.log('[TIMER] About to update stats for:', { loserUserId, winnerUserId, statsUpdated: currentGame.statsUpdated });     
+      console.log('[TIMER] About to update stats for:', {
+        loserUserId,
+        winnerUserId,
+        statsUpdated: currentGame.statsUpdated,
+        // ✅ Debug info
+        gameUserIds: currentGame.userIds,
+        socketUserIds: {
+          loser: io.sockets.sockets.get(loserSocketId)?.data?.userId,
+          winner: io.sockets.sockets.get(winnerSocketId)?.data?.userId
+        }
+      });   
 
       if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
         await updateUserStats(winnerUserId, 'win');
