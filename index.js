@@ -245,7 +245,11 @@ socket.on('findMatch', ({ username, userId }) => {
 });
 
 
-
+socket.on('userSignedIn', ({ userId, username }) => {
+  console.log('[SIGNIN] Setting socket data for user:', { userId, username });
+  socket.data.userId = userId;
+  socket.data.username = username;
+});
 
 
 socket.on('joinGame', async ({ roomId, username, userId }) => {

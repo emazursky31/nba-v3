@@ -292,6 +292,7 @@ const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwA
     }
 
     console.log('✅ Sign Up successful:', data);
+    socket.emit('userSignedIn', { userId: currentUserId, username: currentUsername });
     navigateTo('/verify'); // 👈 Show verification screen
   }
 
@@ -326,6 +327,7 @@ const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwA
     localStorage.setItem('username', myUsername);
 
     console.log('[DEBUG] Username set to:', myUsername);
+    socket.emit('userSignedIn', { userId: currentUserId, username: currentUsername });
     navigateTo('/home'); // 👈 Take them to home or wherever
   }
 
