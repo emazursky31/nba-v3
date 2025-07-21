@@ -329,6 +329,12 @@ const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwA
 
     console.log('[DEBUG] Username set to:', myUsername);
     console.log('[DEBUG] UserId set to:', myUserId);
+
+    // ✅ ADD: Notify server about authentication
+    if (socket && socket.connected) {
+      socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
+    }
+    
     navigateTo('/home'); 
   }
 
@@ -446,6 +452,20 @@ function startPrivateGame() {
 
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
+
+   const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session?.user) {
+    console.warn('[joinPublicGame] No valid session, redirecting to signup');
+    navigateTo('/signup');
+    return;
+  }
+
+  if (socket && socket.connected && session.user) {
+    socket.emit('userSignedIn', { 
+      userId: session.user.id, 
+      username: session.user.user_metadata?.username || session.user.email 
+    });
+  }
 
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
@@ -1577,6 +1597,12 @@ function setupSocketHandlers() {
 
 socket.on('connect', () => {
   console.log('[safeEmit] Socket connected — flushing emitQueue');
+
+  if (myUserId && myUsername) {
+    socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
+  }
+
+
   flushEmitQueue();
 });
 
@@ -1586,17 +1612,31 @@ socket.on('disconnect', (reason) => {
   
   // If this was an intentional sign-out, handle it immediately
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-    // Award win to opponent immediately
-    handlePlayerLeaving(socket.roomId, socket.username, 'signed_out');
+    // ✅ FIXED: Replace the missing handlePlayerLeaving function
+    if (gameStarted && !gameOver && myRoomId && myUsername) {
+      socket.emit('playerSignedOut', { 
+        roomId: myRoomId,
+        username: myUsername,
+        reason: 'signed_out'
+      });
+    }
   } else {
     // For accidental disconnects, give a grace period
     setTimeout(() => {
       if (!socket.connected) {
-        handlePlayerLeaving(socket.roomId, socket.username, 'disconnected');
+        // ✅ FIXED: Replace the missing handlePlayerLeaving function
+        if (gameStarted && !gameOver && myRoomId && myUsername) {
+          socket.emit('playerSignedOut', { 
+            roomId: myRoomId,
+            username: myUsername,
+            reason: 'disconnected'
+          });
+        }
       }
     }, 10000); // 10 second grace period
   }
 });
+
 
 socket.on('gameStarted', async (data) => {
     if (isLeavingGame) {
