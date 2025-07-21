@@ -593,6 +593,10 @@ function resetCardSpread() {
 
 
 function attachRouteListeners(route) {
+  supabase.auth.getSession().then(({ data }) => {
+    updateNavUserState(data.session);
+  });
+  
   switch (route) {
     case '/signup':
       // Setup auth tab switching
