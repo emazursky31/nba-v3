@@ -1078,6 +1078,8 @@ function updateUIForRoute(path) {
  if (path === '/home') {
   console.log('[DEBUG] updateUIForRoute: Handling /home');
 
+  updateNavUserState();
+
   // ✅ Mark that you are intentionally leaving
   if (socket && socket.connected) {
     isLeavingGame = true;
@@ -1337,6 +1339,15 @@ async function updateNavUserState(session) {
     signinBtn.style.display = 'inline-block';
     signoutBtn.style.display = 'none';
     homeLink.style.display = 'none'; // ✅ Hide Home link
+
+    // Hide sign in button on signup/signin pages since forms are already there
+    if (currentRoute === '/signup' || window.location.pathname === '/signup' || 
+        currentRoute === '/signin' || window.location.pathname === '/signin') {
+      signinBtn.style.display = 'none';
+    } else {
+      signinBtn.style.display = 'inline-block';
+    }
+
   } else {
     // Logged in
     const user = session.user;
