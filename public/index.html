@@ -323,10 +323,13 @@ const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwA
     console.log('✅ Sign In successful:', data);
     const user = data.user;
     myUsername = user.user_metadata?.username || user.email;
+    myUserId = user.id;
     localStorage.setItem('username', myUsername);
+    localStorage.setItem('userId', myUserId);
 
     console.log('[DEBUG] Username set to:', myUsername);
-    navigateTo('/home'); // 👈 Take them to home or wherever
+    console.log('[DEBUG] UserId set to:', myUserId);
+    navigateTo('/home'); 
   }
 
 
@@ -416,6 +419,8 @@ function startPrivateGame() {
       alert('Could not get your user ID. Please sign in again.');
       return;
     }
+     myUserId = userId;
+    localStorage.setItem('userId', myUserId);
     socket.emit('joinGame', { roomId: myRoomId, username: myUsername, userId });
 
     statusDiv.textContent = `Started private room: ${myRoomId}`;
@@ -503,6 +508,9 @@ async function joinPublicGame() {
     alert('Could not get your user ID. Please sign in again.');
     return;
   }
+
+  myUserId = userId;
+  localStorage.setItem('userId', myUserId);
 
   console.log('[DEBUG] Navigating to /waiting...');
   await navigateTo('/waiting');

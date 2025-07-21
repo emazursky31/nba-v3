@@ -185,6 +185,20 @@ socket.on('findMatch', ({ username, userId }) => {
     games[roomId].userIds[socket.id] = userId;
     games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
 
+    if (!userId || !opponentSocket.data.userId) {
+      console.error('[MATCH] Missing userIds:', {
+        currentUser: { socketId: socket.id, userId },
+        opponent: { socketId: opponentSocket.id, userId: opponentSocket.data.userId }
+      });
+
+      // Re-queue both players for another match attempt
+      waitingPlayers.push({ socket });
+      if (opponentSocket.data.userId) {
+        waitingPlayers.push({ socket: opponentSocket });
+      }
+      return;
+    }
+
     // ✅ ADD DEFENSIVE CHECKS AND LOGGING
     console.log('[MATCH] Setting userIds:', {
       [socket.id]: userId,
@@ -911,6 +925,12 @@ async function getRandomPlayer() {
 
 
 async function handleJoinGame(socket, roomId, username, userId) {
+  if (!userId || typeof userId !== 'string') {
+    console.error('[handleJoinGame] Invalid userId:', userId, 'for user:', username);
+    socket.emit('message', 'Authentication error. Please refresh and sign in again.');
+    return;
+  }
+  
   if (!roomId) {
     console.error('[handleJoinGame] ERROR: roomId is null or undefined');
     return;
@@ -1183,20 +1203,39 @@ async function startTurnTimer(roomId) {
       console.log(`[TIMER] Room ${roomId} - timer expired`);
 
       // Rest of your timeout logic...
+      const playerIds = currentGame.players || [];
       const loserSocketId = currentGame.activePlayerSocketId;
       const loserName = currentGame.usernames[loserSocketId];
-      const winnerSocketId = currentGame.players.find(id => id !== loserSocketId);
+      const winnerSocketId = playerIds.find(id => id && id !== loserSocketId);
       const winnerName = currentGame.usernames[winnerSocketId];
+      if (!winnerSocketId || !loserSocketId) {
+        console.warn(`[TIMER] Could not determine winner/loser socket IDs. Skipping stats update.`);
+      }
 
       // Your existing timeout handling code...
       if (!currentGame.matchStats) {
         currentGame.matchStats = {};
       }
 
-      const loserUserId = currentGame.userIds[loserSocketId] ||
-        io.sockets.sockets.get(loserSocketId)?.data?.userId;
-      const winnerUserId = currentGame.userIds[winnerSocketId] ||
-        io.sockets.sockets.get(winnerSocketId)?.data?.userId;
+      let loserUserId = currentGame.userIds[loserSocketId];
+      let winnerUserId = currentGame.userIds[winnerSocketId];
+
+      // ✅ ADD: Fallback userId lookup if missing
+      if (!loserUserId) {
+        console.warn('[TIMER] Missing loserUserId, attempting fallback lookup');
+        const loserSocket = io.sockets.sockets.get(loserSocketId);
+        loserUserId = loserSocket?.data?.userId;
+      }
+
+      if (!winnerUserId) {
+        console.warn('[TIMER] Missing winnerUserId, attempting fallback lookup');
+        const winnerSocket = io.sockets.sockets.get(winnerSocketId);
+        winnerUserId = winnerSocket?.data?.userId;
+      }
+
+      // Enhanced logging
+      console.log('[TIMER] Final userIds after fallback:', { loserUserId, winnerUserId });
+
 
       console.log('[TIMER] About to update stats for:', {
         loserUserId,
