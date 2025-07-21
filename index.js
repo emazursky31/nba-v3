@@ -446,6 +446,7 @@ socket.on('requestRematch', ({ roomId }) => {
     console.log('Cleared rematchVotes for room:', roomId);
 
     const preservedUserIds = { ...game.userIds };
+    console.log('[REMATCH] Preserving userIds:', preservedUserIds);
 
     // Reset game state for rematch
     game.leadoffPlayer = null;
@@ -457,7 +458,11 @@ socket.on('requestRematch', ({ roomId }) => {
     game.currentTurn = 0;
     game.activePlayerSocketId = null;
     game.timeLeft = 30;
+
+    // ✅ RESTORE userIds AFTER resetting
     game.userIds = preservedUserIds;
+    console.log('[REMATCH] Restored userIds:', game.userIds);
+
     if (game.timer) {
       cleanupTimer(roomId);
       game.timer = null;
