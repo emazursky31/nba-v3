@@ -494,7 +494,7 @@ socket.on('requestRematch', ({ roomId }) => {
 
 
 // Disconnect cleanup
-socket.on('disconnect', () => {
+socket.on('disconnect', async () => {
   const username = socket.data?.username || 'an unnamed player';
   console.log(`User disconnected: ${socket.id} (${username})`);
 
@@ -514,8 +514,6 @@ socket.on('disconnect', () => {
     delete socketRoomMap[socket.id];
     console.log(`Removed socket ${socket.id} from socketRoomMap`);
   }
-
-  
 
   for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
@@ -581,11 +579,15 @@ socket.on('disconnect', () => {
       break;
     }
   }
+
+  
+  await handlePlayerDisconnect(socket);
 });
 
 
 
-socket.on('leaveGame', () => {
+
+socket.on('leaveGame', async () => {
   console.log(`🚪 leaveGame: ${socket.id}`);
 
   // Remove from waiting queue if in it
@@ -596,7 +598,7 @@ socket.on('leaveGame', () => {
   }
 
   // Handle disconnect logic too
-  handlePlayerDisconnect(socket);
+  await handlePlayerDisconnect(socket);
 });
 
 
@@ -990,7 +992,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
 }
 
 
-function handlePlayerDisconnect(socket) {
+async function handlePlayerDisconnect(socket) {
   console.log(`🛑 handlePlayerDisconnect: ${socket.id} (${socket.data.username || 'unknown user'})`);
 
   // 1️⃣ Remove from waiting queue if present
@@ -1028,22 +1030,50 @@ function handlePlayerDisconnect(socket) {
     console.log(`✅ Removed ${disconnectedUsername} from active game in room ${room}`);
     io.to(room).emit('playersUpdate', game.players.length);
 
-    // 4️⃣ If exactly one player remains, notify them
-    if (game.players.length === 1) {
-      const remainingId = game.players[0];
-      const remainingUsername = game.usernames[remainingId] || `Socket ${remainingId}`;
+   // 4️⃣ If exactly one player remains, notify them AND update stats
+if (game.players.length === 1) {
+  const remainingId = game.players[0];
+  const remainingUsername = game.usernames[remainingId] || `Socket ${remainingId}`;
 
-      console.log(`ℹ️ Notifying ${remainingUsername} that ${disconnectedUsername} left the match`);
+  console.log(`ℹ️ Notifying ${remainingUsername} that ${disconnectedUsername} left the match`);
 
-      io.to(remainingId).emit('gameOver', {
-        reason: 'opponent_left',
-        message: `${disconnectedUsername} left the match.`,
-        winnerName: remainingUsername,
-        loserName: disconnectedUsername,
-        role: 'winner',
-        canRematch: false
+  // ✅ ADD: Update stats when player leaves during active game
+  if (gameStarted && !gameOver && game.userIds) {
+    const remainingUserId = game.userIds[remainingId];
+    const disconnectedUserId = game.userIds[socket.id];
+    
+    console.log('[DISCONNECT] Updating stats for game abandonment:', { 
+      remainingUserId, 
+      disconnectedUserId,
+      remainingUsername,
+      disconnectedUsername 
+    });
+    
+    if (remainingUserId && disconnectedUserId) {
+      try {
+        await updateUserStats(remainingUserId, 'win');
+        await updateUserStats(disconnectedUserId, 'loss');
+        console.log('[DISCONNECT] Stats updated successfully');
+      } catch (err) {
+        console.error('[DISCONNECT] Error updating stats:', err);
+      }
+    } else {
+      console.warn('[DISCONNECT] Missing userIds, skipping stats update:', { 
+        remainingUserId, 
+        disconnectedUserId 
       });
     }
+  }
+
+  io.to(remainingId).emit('gameOver', {
+    reason: 'opponent_left',
+    message: `${disconnectedUsername} left the match.`,
+    winnerName: remainingUsername,
+    loserName: disconnectedUsername,
+    role: 'winner',
+    canRematch: false
+  });
+}
 
     // 5️⃣ If no players left, or after notifying remaining player, fully reset the game object
     if (game.players.length < 2) {
