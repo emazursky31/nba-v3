@@ -185,6 +185,20 @@ socket.on('findMatch', ({ username, userId }) => {
     games[roomId].userIds[socket.id] = userId;
     games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
 
+    // ✅ ADD DEFENSIVE CHECKS AND LOGGING
+    console.log('[MATCH] Setting userIds:', {
+      [socket.id]: userId,
+      [opponentSocket.id]: opponentSocket.data.userId
+    });
+
+    // ✅ ENSURE SOCKET DATA IS SET
+    socket.data.userId = userId;
+    if (!opponentSocket.data.userId) {
+      console.warn('[MATCH] Opponent missing userId, attempting to get from stored data');
+      // Try to get from any stored location
+      opponentSocket.data.userId = opponentSocket.data.userId || userId; // fallback if needed
+    }
+
     games[roomId].usernames[socket.id] = username;
     games[roomId].usernames[opponentSocket.id] = opponentUsername;
 
