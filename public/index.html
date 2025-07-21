@@ -1513,7 +1513,6 @@ async function loadPlayerStats() {
   const el = document.getElementById('player-history');
   if (!el) return;
 
-  // ✅ Get the current session user
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError || !sessionData?.session?.user) {
     el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
@@ -1522,22 +1521,42 @@ async function loadPlayerStats() {
 
   const userId = sessionData.session.user.id;
 
-  // ✅ Fetch their stats
-  const { data, error } = await supabase
+  // ✅ First, try to get existing stats
+  let { data, error } = await supabase
     .from('user_stats')
     .select('games_played, wins, losses')
     .eq('user_id', userId)
     .single();
 
-  console.log('[loadPlayerStats] Fetched data:', data);
-  console.log('[loadPlayerStats] Error:', error);
+  // ✅ If no row exists, create one
+  if (error && error.code === 'PGRST116') { // No rows returned
+    console.log('[loadPlayerStats] Creating new stats row for user:', userId);
+    
+    const { data: newData, error: insertError } = await supabase
+      .from('user_stats')
+      .insert({ 
+        user_id: userId, 
+        games_played: 0, 
+        wins: 0, 
+        losses: 0 
+      })
+      .select('games_played, wins, losses')
+      .single();
 
-  if (error || !data) {
-    console.warn('[loadPlayerStats] No stats row found — showing default zeros.');
+    if (insertError) {
+      console.error('[loadPlayerStats] Failed to create stats row:', insertError);
+      el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
+      return;
+    }
+    
+    data = newData;
+  } else if (error) {
+    console.error('[loadPlayerStats] Unexpected error:', error);
     el.textContent = 'Games Played: 0 | Wins: 0 | Losses: 0';
-  } else {
-    el.textContent = `Games Played: ${data.games_played} | Wins: ${data.wins} | Losses: ${data.losses}`;
+    return;
   }
+
+  el.textContent = `Games Played: ${data.games_played || 0} | Wins: ${data.wins || 0} | Losses: ${data.losses || 0}`;
 }
 
 
