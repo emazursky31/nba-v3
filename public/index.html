@@ -392,14 +392,47 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 }
 
 
+/**
+ * Clean up client state and leave current game/room
+ */
+function leaveRoom() {
+    console.log('[DEBUG] leaveRoom called');
+    
+    // Clear any running timers
+    if (window.gameTimer) {
+        clearInterval(window.gameTimer);
+        window.gameTimer = null;
+    }
+    
+    // Reset game state variables
+    window.currentRoomId = null;
+    window.gameInProgress = false;
+    window.isMyTurn = false;
+    
+    // Clear game UI elements
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        gameContainer.innerHTML = '';
+    }
+    
+    // Reset successful guesses
+    if (window.successfulGuesses) {
+        window.successfulGuesses = [];
+    }
+    
+    // Use your existing server handler
+    safeEmit('leaveGame');  // ✅ Uses your existing server logic
+    
+    console.log('[DEBUG] Client cleanup completed, leaveGame emitted');
+}
+
+
+
+
 
 function startPrivateGame() {
   console.log('[DEBUG] startPrivateGame called');
-
-  if (isLeavingGame) {
-    console.log('[DEBUG] startPrivateGame aborted: isLeavingGame is true');
-    return;
-  }
+  leaveRoom();
 
   if (!myUsername) {
     alert('Missing username');
@@ -415,9 +448,8 @@ function startPrivateGame() {
   isLeavingGame = false;
 
   // Generate new room and clear stale room data
-  const generatedRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-  roomId = generatedRoomId;
-  myRoomId = generatedRoomId;
+  myRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
+  console.log(`[DEBUG] Generated new private room: ${myRoomId}`);
 
   window.supabase.auth.getUser().then(({ data }) => {
     const userId = data?.user?.id;
@@ -425,7 +457,7 @@ function startPrivateGame() {
       alert('Could not get your user ID. Please sign in again.');
       return;
     }
-     myUserId = userId;
+    myUserId = userId;
     localStorage.setItem('userId', myUserId);
     safeEmit('joinGame', { roomId: myRoomId, username: myUsername, userId });
 
@@ -452,6 +484,7 @@ function startPrivateGame() {
 
 async function joinPublicGame() {
   console.log('[DEBUG] joinPublicGame called');
+  leaveRoom();
 
    const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session?.user) {
@@ -1023,16 +1056,15 @@ function renderSuccessfulGuesses() {
 function setupGlobalNavListeners() {
   // Home navigation with game leave logic
   const navHomeLink = document.getElementById('nav-home-link');
-  if (navHomeLink) {
-    navHomeLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      isLeavingGame = true;
-      if (socket && socket.connected) {
-        socket.emit('leaveGame');
-      }
-      navigateTo('/home');
-    });
-  }
+if (navHomeLink) {
+  navHomeLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    isLeavingGame = true;
+    leaveRoom();        // ✅ Clean client + emit 'leaveGame'
+    navigateTo('/home');
+  });
+}
+
 
   // Sign out button
   const navSignoutBtn = document.getElementById('nav-signout-btn');

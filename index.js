@@ -894,8 +894,6 @@ async function startGame(roomId) {
 
 
 
-
-
 async function getRandomPlayer() {
   const query = `
     WITH player_seasons AS (
