@@ -1009,7 +1009,7 @@ async function handlePlayerDisconnect(socket) {
     if (playerIndex !== -1) {
       console.log(`✅ Removed ${username} from active game in room ${room}`);
       
-      // ✅ FIX: Check if game was active BEFORE clearing timer
+      // Check if game was active BEFORE clearing timer
       const wasActiveGame = game.teammates && game.teammates.length > 0 && game.timer;
       console.log(`🔍 Game state check: teammates=${game.teammates?.length}, timer=${!!game.timer}, wasActiveGame=${wasActiveGame}`);
       
@@ -1030,20 +1030,15 @@ async function handlePlayerDisconnect(socket) {
           console.log(`📊 Updating stats: ${username} (${leavingUserId}) gets a loss for leaving active game`);
           
           try {
+            // ✅ FIX: Use 'client' instead of 'supabase'
             // Give the leaving player a loss
-            const { error: lossError } = await supabase
-              .from('user_stats')
-              .update({ 
-                losses: supabase.raw('losses + 1'),
-                games_played: supabase.raw('games_played + 1')
-              })
-              .eq('user_id', leavingUserId);
-
-            if (lossError) {
-              console.error('❌ Error updating leaver stats:', lossError);
-            } else {
-              console.log(`✅ Updated stats for leaving player ${username}`);
-            }
+            const lossQuery = `
+              UPDATE user_stats 
+              SET losses = losses + 1, games_played = games_played + 1 
+              WHERE user_id = $1
+            `;
+            await client.query(lossQuery, [leavingUserId]);
+            console.log(`✅ Updated stats for leaving player ${username}`);
 
             // Give remaining player(s) a win
             for (const remainingSocketId of game.players) {
@@ -1052,19 +1047,13 @@ async function handlePlayerDisconnect(socket) {
                 const remainingUsername = game.usernames[remainingSocketId] || 'Unknown';
                 console.log(`📊 Updating stats: ${remainingUsername} (${remainingUserId}) gets a win`);
                 
-                const { error: winError } = await supabase
-                  .from('user_stats')
-                  .update({ 
-                    wins: supabase.raw('wins + 1'),
-                    games_played: supabase.raw('games_played + 1')
-                  })
-                  .eq('user_id', remainingUserId);
-
-                if (winError) {
-                  console.error('❌ Error updating winner stats:', winError);
-                } else {
-                  console.log(`✅ Updated stats for remaining player ${remainingUsername}`);
-                }
+                const winQuery = `
+                  UPDATE user_stats 
+                  SET wins = wins + 1, games_played = games_played + 1 
+                  WHERE user_id = $1
+                `;
+                await client.query(winQuery, [remainingUserId]);
+                console.log(`✅ Updated stats for remaining player ${remainingUsername}`);
               }
             }
           } catch (error) {
@@ -1108,6 +1097,7 @@ async function handlePlayerDisconnect(socket) {
     }
   }
 }
+
 
 
 
