@@ -803,17 +803,14 @@ async function startGame(roomId) {
     return;
   }
 
-  // // ✅ Additional safety check
-  // if (game.starting || game.leadoffPlayer) {
-  //   console.log(`⚠️ Game already starting or started for room ${roomId}`);
-  //   return;
-  // }
-
-
   if (game.leadoffPlayer) {
     console.log(`⚠️ Game already started for room ${roomId}`);
     return;
   }
+
+  // ✅ RESET STATS TRACKING FOR NEW GAME
+  game.statsUpdated = false;
+  console.log(`[GAME_START] Reset statsUpdated flag for room ${roomId}`);
 
   // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
   const leadoffPlayer = await getRandomPlayer();
@@ -860,6 +857,7 @@ async function startGame(roomId) {
   console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
   console.log(`→ currentPlayerName (NBA player): ${game.currentPlayerName}`);
   console.log(`→ currentGuesserUsername: ${game.currentGuesserUsername}`);
+  console.log(`→ statsUpdated: ${game.statsUpdated}`); // ✅ ADD DEBUG LOG
 
   // Notify each player individually
   game.players.forEach((socketId) => {
@@ -890,6 +888,7 @@ async function startGame(roomId) {
   // Start turn timer
   startTurnTimer(roomId);
 }
+
 
 
 
@@ -1010,7 +1009,7 @@ async function handlePlayerDisconnect(socket) {
       console.log(`✅ Removed ${username} from active game in room ${room}`);
       
       // Check if game was active BEFORE clearing timer
-      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.timer;
+      const wasActiveGame = game.teammates && game.teammates.length > 0 && !game.statsUpdated;
       console.log(`🔍 Game state check: teammates=${game.teammates?.length}, timer=${!!game.timer}, wasActiveGame=${wasActiveGame}`);
       
       // Remove player from game
