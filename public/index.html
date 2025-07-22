@@ -1133,94 +1133,81 @@ function showRouteSection(path) {
 }
 
 function updateUIForRoute(path) {
-   if (path !== currentRoute) {
+  if (path !== currentRoute) {
     console.debug('[updateUIForRoute] Skipped because stale:', path, 'Expected:', currentRoute);
     return;
   }
 
   console.debug('[updateUIForRoute] Handling:', path);
- if (path === '/home') {
-  console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  updateNavUserState();
+  if (path === '/home') {
+    console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  // ✅ Mark that you are intentionally leaving
-  if (socket && socket.connected) {
-    isLeavingGame = true;
-    socket.emit('leaveGame');
-  }
+    updateNavUserState();
 
-  // 🧹 Clear local game state
-  gameStarted = false;
-  gameOver = true;
-  roomId = null;
-  myRoomId = null;
-  isPrivateGame = false;
-  selectedPlayer = null;
-  successfulGuesses = [];
+    if (socket && socket.connected) {
+      isLeavingGame = true;
+      socket.emit('leaveGame');
+    }
 
-  // ✅ DO NOT reset isLeavingGame here!
-  // Let it stay true until you explicitly join or navigate away.
+    gameStarted = false;
+    gameOver = true;
+    roomId = null;
+    myRoomId = null;
+    isPrivateGame = false;
+    selectedPlayer = null;
+    successfulGuesses = [];
 
-  // Update welcome
-  const welcomeEl = document.getElementById('home-welcome');
-  if (welcomeEl && myUsername) {
-    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-  }
-}
-
-
-
-if (path === '/waiting') {
-  if (isLeavingGame) {
-    console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
-    return;  // 🛑 Prevent accidental waiting room navigation
-  }
-
-   // ✅ Always set a status message, with fallback
-  const waitingStatus = document.getElementById('waitingStatus');
-  if (waitingStatus) {
-    if (isPrivateGame) {
-      waitingStatus.textContent = 'Waiting for a friend to join...';
-    } else {
-      waitingStatus.textContent = 'Looking for an opponent...';
+    const welcomeEl = document.getElementById('home-welcome');
+    if (welcomeEl && myUsername) {
+      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
     }
   }
 
-  const codeEl = document.getElementById('displayRoomCode');
-  const inviteWrapper = document.getElementById('inviteLinkWrapper');
-  const inviteInput = document.getElementById('inviteLink');
+  if (path === '/waiting') {
+    if (isLeavingGame) {
+      console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
+      return;
+    }
 
-  if (codeEl) {
-    if (isPrivateGame && myRoomId) {
-      // Extract just the readable part after "room-"
-      const displayCode = myRoomId.replace('room-', '').substring(0, 8);
-      codeEl.textContent = displayCode;
-      codeEl.style.display = 'block';
-    } else {
-      codeEl.style.display = 'none';
+    const waitingStatus = document.getElementById('waitingStatus');
+    if (waitingStatus) {
+      waitingStatus.textContent = isPrivateGame
+        ? 'Waiting for a friend to join...'
+        : 'Looking for an opponent...';
+    }
+
+    const codeEl = document.getElementById('displayRoomCode');
+    const inviteWrapper = document.getElementById('inviteLinkWrapper');
+    const inviteInput = document.getElementById('inviteLink');
+
+    if (codeEl) {
+      if (isPrivateGame && myRoomId) {
+        const displayCode = myRoomId.replace('room-', '').substring(0, 8);
+        codeEl.textContent = displayCode;
+        codeEl.style.display = 'block';
+      } else {
+        codeEl.style.display = 'none';
+      }
+    }
+
+    if (inviteWrapper && inviteInput) {
+      if (isPrivateGame && myRoomId) {
+        const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
+        inviteInput.type = 'text'; // ✅ Fix 1: Ensure input is visible
+        inviteInput.value = inviteUrl; // ✅ Fix 2: Set the value correctly
+        inviteWrapper.style.display = 'block';
+      } else {
+        inviteWrapper.style.display = 'none';
+      }
     }
   }
 
- if (inviteWrapper && inviteInput) {
-    if (isPrivateGame && myRoomId) {
-      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
-      inviteInput.value = inviteUrl;
-      inviteWrapper.style.display = 'block';
-    } else {
-      inviteWrapper.style.display = 'none';
-    }
-  }
-}
-
-
-  // Guess container visibility
   const guessContainer = document.getElementById('successful-guesses-container');
   if (guessContainer) {
     guessContainer.style.display = (path === '/play' || path === '/gameover') ? 'block' : 'none';
   }
 
-  // Scoreboard visibility
   const scoreboard = document.getElementById('scoreboardSection');
   if (scoreboard) {
     if (path === '/play' || path === '/gameover') {
@@ -1230,6 +1217,7 @@ if (path === '/waiting') {
     }
   }
 }
+
 
 
 
