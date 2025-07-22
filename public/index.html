@@ -430,7 +430,8 @@ function leaveRoom() {
 
 
 
-function startPrivateGame() {
+async function startPrivateGame() {
+  await ensureUserSession();
   console.log('[DEBUG] startPrivateGame called');
   leaveRoom();
 
@@ -484,6 +485,7 @@ function startPrivateGame() {
 
 
 async function joinPublicGame() {
+  await ensureUserSession();
   console.log('[DEBUG] joinPublicGame called');
   leaveRoom();
 
@@ -968,6 +970,18 @@ function showAutocompleteSuggestions(suggestions) {
     list.appendChild(suggestionEl);
   });
 }
+
+async function ensureUserSession() {
+  const { data, error } = await supabase.auth.getSession();
+  if (data?.session?.user) {
+    myUserId = data.session.user.id;
+    myUsername = data.session.user.email; // or .user_metadata.username
+    console.debug('[ensureUserSession] Refetched user:', myUsername, myUserId);
+  } else {
+    console.warn('[ensureUserSession] No valid session!');
+  }
+}
+
 
 
 function renderSuccessfulGuesses() {
