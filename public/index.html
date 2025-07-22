@@ -1689,29 +1689,6 @@ socket.on('disconnect', (reason) => {
 });
 
 
-socket.on('gameStarted', async (data) => {
-    if (isLeavingGame) {
-      console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
-      return;
-    }
-
-    // ✅ Prevent processing if game is already started
-  if (gameStarted && !gameOver) {
-    console.log('[DEBUG] Game already started, ignoring duplicate gameStarted event');
-    return;
-  }
-
-  // ✅ Add a timestamp check to prevent rapid duplicates
-  const now = Date.now();
-  if (window.lastGameStartTime && (now - window.lastGameStartTime) < 1000) {
-    console.log('[DEBUG] Ignoring rapid duplicate gameStarted event');
-    return;
-  }
-  window.lastGameStartTime = now;
-
-    console.log('[CLIENT] Received gameStarted event:', data);
-  });
-
 
 socket.on('playersUpdate', (count) => {
   console.log('[DEBUG] playersUpdate received:', count);
