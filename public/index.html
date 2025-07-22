@@ -1237,6 +1237,15 @@ if (resetBtn) {
   console.warn('[WARN] resetBtn not found - may not be on reset route');
 }
 
+// Update password button (not a form)
+const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+if (updatePasswordBtn) {
+  updatePasswordBtn.addEventListener('click', updatePassword);
+  console.log('[DEBUG] updatePasswordBtn listener attached');
+} else {
+  console.warn('[WARN] updatePasswordBtn not found - may not be on update-password route');
+}
+
   // Update password form
   const updatePasswordForm = document.getElementById('updatePasswordForm');
   if (updatePasswordForm) {
