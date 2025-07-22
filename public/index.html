@@ -434,6 +434,10 @@ function startPrivateGame() {
   console.log('[DEBUG] startPrivateGame called');
   leaveRoom();
 
+  isPrivateGame = true;
+  isLeavingGame = false;
+  console.log('[DEBUG] Reset isLeavingGame to false for private game');
+
   if (!myUsername) {
     alert('Missing username');
     return;
@@ -443,9 +447,6 @@ function startPrivateGame() {
     alert('Finish your current game first.');
     return;
   }
-
-  isPrivateGame = true;
-  isLeavingGame = false;
 
   // Generate new room and clear stale room data
   myRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
