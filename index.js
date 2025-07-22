@@ -1086,19 +1086,21 @@ async function handlePlayerDisconnect(socket) {
       });
 
       // Reset game state but preserve userIds
-      const preservedUserIds = { ...game.userIds };
+      // const preservedUserIds = { ...game.userIds };
       for (const remainingSocketId of game.players) {
         playersInGame.delete(remainingSocketId);
         console.log(`✅ Removed remaining player ${remainingSocketId} from playersInGame Set`);
       }
-      game.players = [];
-      game.usernames = {};
-      game.currentTurn = 0;
-      game.currentPlayerName = null;
-      game.teammates = [];
-      game.successfulGuesses = [];
-      game.rematchVotes = new Set();
-      game.userIds = preservedUserIds;
+      // game.players = [];
+      // game.usernames = {};
+      // game.currentTurn = 0;
+      // game.currentPlayerName = null;
+      // game.teammates = [];
+      // game.successfulGuesses = [];
+      // game.rematchVotes = new Set();
+      // game.userIds = preservedUserIds;
+      delete games[room];
+      console.log(`🗑️ Completely deleted game for room ${room}`);
 
       break;
     }
