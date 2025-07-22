@@ -427,7 +427,7 @@ function startPrivateGame() {
     }
      myUserId = userId;
     localStorage.setItem('userId', myUserId);
-    socket.emit('joinGame', { roomId: myRoomId, username: myUsername, userId });
+    safeEmit('joinGame', { roomId: myRoomId, username: myUsername, userId });
 
     statusDiv.textContent = `Started private room: ${myRoomId}`;
     document.getElementById('displayRoomCode').textContent = myRoomId;
