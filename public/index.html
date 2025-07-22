@@ -2229,42 +2229,67 @@ socket.on('rematchStarted', () => {
 
   console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
 
-  if (
-    (urlHash.includes('access_token') &&
-      (urlHash.includes('type=signup') || urlHash.includes('type=recovery') || urlHash.includes('type=email_confirm')))
-    || (typeParam === 'signup' || typeParam === 'recovery' || typeParam === 'email_confirm')
-  ) {
-    console.log('[DEBUG] Found email confirmation or recovery in URL');
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('[ERROR] Email confirmation failed:', error.message);
-      } else {
-        console.log('[DEBUG] Email confirmed for:', user?.email);
-
-        myUsername = user.user_metadata?.username || user.email;
-        myUserId = user.id;  // ✅ Save userId
-        localStorage.setItem('username', myUsername);
-        localStorage.setItem('userId', myUserId);
-
-        const { data: { session } } = await supabase.auth.getSession();
-
-        await navigateTo('/confirmed');
-        await updateNavUserState(session);
-      }
-    } catch (e) {
-      console.error('[ERROR] Exception during email confirmation:', e);
+  // Handle password recovery separately
+if (
+  (urlHash.includes('access_token') && urlHash.includes('type=recovery'))
+  || (typeParam === 'recovery')
+) {
+  console.log('[DEBUG] Found password recovery in URL');
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('[ERROR] Password recovery failed:', error.message);
+      navigateTo('/signup');
+    } else {
+      console.log('[DEBUG] Password recovery successful for:', user?.email);
+      // Go directly to update password page
+      await navigateTo('/update-password');
     }
-    if (!socket) {
-      socket = io();
-      setupSocketHandlers();
-    }
-    return;
+  } catch (e) {
+    console.error('[ERROR] Exception during password recovery:', e);
+    navigateTo('/signup');
   }
+  if (!socket) {
+    socket = io();
+    setupSocketHandlers();
+  }
+  return;
+}
 
-  // --- 2️⃣ Connect socket early ---
-  socket = io();
-  setupSocketHandlers();
+// Handle email confirmation (signup/email_confirm only)
+if (
+  (urlHash.includes('access_token') &&
+    (urlHash.includes('type=signup') || urlHash.includes('type=email_confirm')))
+  || (typeParam === 'signup' || typeParam === 'email_confirm')
+) {
+  console.log('[DEBUG] Found email confirmation in URL');
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('[ERROR] Email confirmation failed:', error.message);
+    } else {
+      console.log('[DEBUG] Email confirmed for:', user?.email);
+
+      myUsername = user.user_metadata?.username || user.email;
+      myUserId = user.id;
+      localStorage.setItem('username', myUsername);
+      localStorage.setItem('userId', myUserId);
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      await navigateTo('/confirmed');
+      await updateNavUserState(session);
+    }
+  } catch (e) {
+    console.error('[ERROR] Exception during email confirmation:', e);
+  }
+  if (!socket) {
+    socket = io();
+    setupSocketHandlers();
+  }
+  return;
+}
+
 
   // --- 3️⃣ Get current Supabase session ---
   const { data } = await supabase.auth.getSession();
