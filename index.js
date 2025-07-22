@@ -1019,15 +1019,14 @@ async function handlePlayerDisconnect(socket) {
         delete game.timer;
       }
 
-      // Check if this was an active game (not just waiting/lobby)
-      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.currentTurn > 0;
+      // ✅ FIX: Check if this was an active game (timer running = game started)
+      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.timer;
       
-      // ✅ FIX: Use wasActiveGame instead of undefined gameStarted
       if (wasActiveGame && game.userIds) {
         const leavingUserId = game.userIds[socket.id];
         
         if (leavingUserId) {
-          console.log(`📊 Updating stats: ${username} (${leavingUserId}) gets a loss for leaving`);
+          console.log(`📊 Updating stats: ${username} (${leavingUserId}) gets a loss for leaving active game`);
           
           try {
             // Give the leaving player a loss
@@ -1071,6 +1070,8 @@ async function handlePlayerDisconnect(socket) {
             console.error('❌ Error in stats update:', error);
           }
         }
+      } else {
+        console.log(`ℹ️ No stats update needed - game was not active (wasActiveGame: ${wasActiveGame})`);
       }
 
       // Notify remaining players
@@ -1106,6 +1107,7 @@ async function handlePlayerDisconnect(socket) {
     }
   }
 }
+
 
 
 function cleanupTimer(roomId) {
