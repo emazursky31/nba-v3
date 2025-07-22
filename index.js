@@ -1033,7 +1033,6 @@ async function handlePlayerDisconnect(socket) {
           console.log(`📊 Updating stats: ${username} (${leavingUserId}) gets a loss for leaving active game`);
           
           try {
-            // ✅ FIX: Use 'client' instead of 'supabase'
             // Give the leaving player a loss
             const lossQuery = `
               UPDATE user_stats 
@@ -1085,20 +1084,13 @@ async function handlePlayerDisconnect(socket) {
         }
       });
 
-      // Reset game state but preserve userIds
-      // const preservedUserIds = { ...game.userIds };
+      // Clean up remaining players from playersInGame Set
       for (const remainingSocketId of game.players) {
         playersInGame.delete(remainingSocketId);
         console.log(`✅ Removed remaining player ${remainingSocketId} from playersInGame Set`);
       }
-      // game.players = [];
-      // game.usernames = {};
-      // game.currentTurn = 0;
-      // game.currentPlayerName = null;
-      // game.teammates = [];
-      // game.successfulGuesses = [];
-      // game.rematchVotes = new Set();
-      // game.userIds = preservedUserIds;
+      
+      // Completely delete the game instead of resetting it
       delete games[room];
       console.log(`🗑️ Completely deleted game for room ${room}`);
 
@@ -1106,6 +1098,7 @@ async function handlePlayerDisconnect(socket) {
     }
   }
 }
+
 
 
 
