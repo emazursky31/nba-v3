@@ -2196,8 +2196,13 @@ socket.on('rematchStarted', () => {
 
 
 // 4. DOMContentLoaded (minimal, focused)
-  document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('[DEBUG] DOMContentLoaded');
+
+  // ✅ INITIALIZE SOCKET FIRST - Before any routing logic
+  console.log('[DOMContentLoaded] Initializing socket connection...');
+  socket = io();
+  setupSocketHandlers();
 
   let justConfirmed = false;
 
@@ -2222,11 +2227,11 @@ socket.on('rematchStarted', () => {
   waitingRoom = document.getElementById('waitingRoom');
   gameArea = document.getElementById('gameArea');
   inviteLinkContainer = document.getElementById('inviteLinkContainer');
-    // Set initial default image
-    if (currentPlayerHeadshotEl) {
-      currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
-    }
   
+  // Set initial default image
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
+  }
 
   supabase.auth.onAuthStateChange((_event, session) => {
     updateNavUserState(session);
@@ -2239,66 +2244,57 @@ socket.on('rematchStarted', () => {
   console.log('[DEBUG] On load: urlHash:', urlHash, 'typeParam:', typeParam);
 
   // Handle password recovery separately
-if (
-  (urlHash.includes('access_token') && urlHash.includes('type=recovery'))
-  || (typeParam === 'recovery')
-) {
-  console.log('[DEBUG] Found password recovery in URL');
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error('[ERROR] Password recovery failed:', error.message);
+  if (
+    (urlHash.includes('access_token') && urlHash.includes('type=recovery'))
+    || (typeParam === 'recovery')
+  ) {
+    console.log('[DEBUG] Found password recovery in URL');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('[ERROR] Password recovery failed:', error.message);
+        navigateTo('/signup');
+      } else {
+        console.log('[DEBUG] Password recovery successful for:', user?.email);
+        // Go directly to update password page
+        await navigateTo('/update-password');
+      }
+    } catch (e) {
+      console.error('[ERROR] Exception during password recovery:', e);
       navigateTo('/signup');
-    } else {
-      console.log('[DEBUG] Password recovery successful for:', user?.email);
-      // Go directly to update password page
-      await navigateTo('/update-password');
     }
-  } catch (e) {
-    console.error('[ERROR] Exception during password recovery:', e);
-    navigateTo('/signup');
+    return;
   }
-  if (!socket) {
-    socket = io();
-    setupSocketHandlers();
-  }
-  return;
-}
 
-// Handle email confirmation (signup/email_confirm only)
-if (
-  (urlHash.includes('access_token') &&
-    (urlHash.includes('type=signup') || urlHash.includes('type=email_confirm')))
-  || (typeParam === 'signup' || typeParam === 'email_confirm')
-) {
-  console.log('[DEBUG] Found email confirmation in URL');
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error('[ERROR] Email confirmation failed:', error.message);
-    } else {
-      console.log('[DEBUG] Email confirmed for:', user?.email);
+  // Handle email confirmation (signup/email_confirm only)
+  if (
+    (urlHash.includes('access_token') &&
+      (urlHash.includes('type=signup') || urlHash.includes('type=email_confirm')))
+    || (typeParam === 'signup' || typeParam === 'email_confirm')
+  ) {
+    console.log('[DEBUG] Found email confirmation in URL');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('[ERROR] Email confirmation failed:', error.message);
+      } else {
+        console.log('[DEBUG] Email confirmed for:', user?.email);
 
-      myUsername = user.user_metadata?.username || user.email;
-      myUserId = user.id;
-      localStorage.setItem('username', myUsername);
-      localStorage.setItem('userId', myUserId);
+        myUsername = user.user_metadata?.username || user.email;
+        myUserId = user.id;
+        localStorage.setItem('username', myUsername);
+        localStorage.setItem('userId', myUserId);
 
-      const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
 
-      await navigateTo('/confirmed');
-      await updateNavUserState(session);
+        await navigateTo('/confirmed');
+        await updateNavUserState(session);
+      }
+    } catch (e) {
+      console.error('[ERROR] Exception during email confirmation:', e);
     }
-  } catch (e) {
-    console.error('[ERROR] Exception during email confirmation:', e);
+    return;
   }
-  if (!socket) {
-    socket = io();
-    setupSocketHandlers();
-  }
-  return;
-}
-
 
   // --- 3️⃣ Get current Supabase session ---
   const { data } = await supabase.auth.getSession();
@@ -2364,39 +2360,41 @@ if (
 
   // --- 5️⃣ Determine initial route ---
   // ✅ Wait for session to be fully loaded before routing
-const { data: currentSession } = await supabase.auth.getSession();
-if (currentSession?.session?.user && !myUsername) {
-  // User is authenticated but myUsername wasn't set - fix it
-  const user = currentSession.session.user;
-  myUsername = user.user_metadata?.username || user.email;
-  myUserId = user.id;
-  localStorage.setItem('username', myUsername);
-  localStorage.setItem('userId', myUserId);
-  console.log('[DEBUG] Fixed missing username from session:', myUsername);
-}
+  const { data: currentSession } = await supabase.auth.getSession();
+  if (currentSession?.session?.user && !myUsername) {
+    // User is authenticated but myUsername wasn't set - fix it
+    const user = currentSession.session.user;
+    myUsername = user.user_metadata?.username || user.email;
+    myUserId = user.id;
+    localStorage.setItem('username', myUsername);
+    localStorage.setItem('userId', myUserId);
+    console.log('[DEBUG] Fixed missing username from session:', myUsername);
+  }
 
-if (!myUsername && !currentSession?.session?.user) {
-  navigateTo('/signup');
-} else if (isLeavingGame) {
-  console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-  navigateTo('/home');
-} else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-  // ✅ Ensure we have both username and userId before joining
-  if (myUsername && myUserId) {
-    socket.emit('joinGame', {
-      roomId: myRoomId,
-      username: myUsername,
-      userId: myUserId
-    });
-    navigateTo('/waiting');
+  if (!myUsername && !currentSession?.session?.user) {
+    navigateTo('/signup');
+  } else if (isLeavingGame) {
+    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+    navigateTo('/home');
+  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+    // ✅ Ensure we have both username and userId before joining
+    if (myUsername && myUserId) {
+      // ✅ Use safeEmit instead of direct socket.emit
+      safeEmit('joinGame', {
+        roomId: myRoomId,
+        username: myUsername,
+        userId: myUserId
+      });
+      navigateTo('/waiting');
+    } else {
+      console.warn('[DEBUG] Missing username or userId, redirecting to home');
+      navigateTo('/home');
+    }
   } else {
-    console.warn('[DEBUG] Missing username or userId, redirecting to home');
     navigateTo('/home');
   }
-} else {
-  navigateTo('/home');
-}
 });
+
 
 </script>
 
