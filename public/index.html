@@ -2363,21 +2363,39 @@ if (
   });
 
   // --- 5️⃣ Determine initial route ---
-  if (!myUsername) {
-    navigateTo('/signup');
-  } else if (isLeavingGame) {
-    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-    navigateTo('/home');
-  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+  // ✅ Wait for session to be fully loaded before routing
+const { data: currentSession } = await supabase.auth.getSession();
+if (currentSession?.session?.user && !myUsername) {
+  // User is authenticated but myUsername wasn't set - fix it
+  const user = currentSession.session.user;
+  myUsername = user.user_metadata?.username || user.email;
+  myUserId = user.id;
+  localStorage.setItem('username', myUsername);
+  localStorage.setItem('userId', myUserId);
+  console.log('[DEBUG] Fixed missing username from session:', myUsername);
+}
+
+if (!myUsername && !currentSession?.session?.user) {
+  navigateTo('/signup');
+} else if (isLeavingGame) {
+  console.log('[DEBUG] Routing to /home because isLeavingGame=true');
+  navigateTo('/home');
+} else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
+  // ✅ Ensure we have both username and userId before joining
+  if (myUsername && myUserId) {
     socket.emit('joinGame', {
       roomId: myRoomId,
       username: myUsername,
-      userId: myUserId   // ✅ Always emit userId
+      userId: myUserId
     });
     navigateTo('/waiting');
   } else {
+    console.warn('[DEBUG] Missing username or userId, redirecting to home');
     navigateTo('/home');
   }
+} else {
+  navigateTo('/home');
+}
 });
 
 </script>
