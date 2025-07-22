@@ -1016,6 +1016,9 @@ async function handlePlayerDisconnect(socket) {
       // Remove player from game
       game.players.splice(playerIndex, 1);
       delete game.usernames[socket.id];
+
+      playersInGame.delete(socket.id);
+      console.log(`✅ Removed ${socket.id} from playersInGame Set`);
       
       // Clear any timers AFTER checking if game was active
       if (game.timer) {
