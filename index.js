@@ -993,106 +993,120 @@ async function handleJoinGame(socket, roomId, username, userId) {
 
 
 async function handlePlayerDisconnect(socket) {
-  console.log(`🛑 handlePlayerDisconnect: ${socket.id} (${socket.data.username || 'unknown user'})`);
+  const username = socket.data?.username || 'Unknown';
+  console.log(`🛑 handlePlayerDisconnect: ${socket.id} (${username})`);
 
-  // 1️⃣ Remove from waiting queue if present
-  const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
-  if (waitingIndex !== -1) {
-    waitingPlayers.splice(waitingIndex, 1);
-    console.log(`✅ Removed from waitingPlayers: ${socket.data.username || 'unnamed player'}`);
-  }
-
-  // 2️⃣ Always clean up maps
-  playersInGame.delete(socket.id);
-
+  // Remove from socketRoomMap
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
     delete socketRoomMap[socket.id];
     console.log(`✅ Removed from socketRoomMap for room: ${roomId}`);
   }
 
-  // 3️⃣ Remove from any active game
+  // Find and handle active game
   for (const [room, game] of Object.entries(games)) {
-    const idx = game.players.indexOf(socket.id);
-    if (idx === -1) continue;
-
-    const disconnectedUsername = game.usernames[socket.id] || `Socket ${socket.id}`;
-
-    // Remove player
-    game.players.splice(idx, 1);
-    delete game.usernames[socket.id];
-    if (game.userIds) {
-      delete game.userIds[socket.id];
-    }
-    playersInGame.delete(socket.id);
-    delete socketRoomMap[socket.id];
-
-    console.log(`✅ Removed ${disconnectedUsername} from active game in room ${room}`);
-    io.to(room).emit('playersUpdate', game.players.length);
-
-   // 4️⃣ If exactly one player remains, notify them AND update stats
-if (game.players.length === 1) {
-  const remainingId = game.players[0];
-  const remainingUsername = game.usernames[remainingId] || `Socket ${remainingId}`;
-
-  console.log(`ℹ️ Notifying ${remainingUsername} that ${disconnectedUsername} left the match`);
-
-  // ✅ ADD: Update stats when player leaves during active game
-  if (gameStarted && !gameOver && game.userIds) {
-    const remainingUserId = game.userIds[remainingId];
-    const disconnectedUserId = game.userIds[socket.id];
-    
-    console.log('[DISCONNECT] Updating stats for game abandonment:', { 
-      remainingUserId, 
-      disconnectedUserId,
-      remainingUsername,
-      disconnectedUsername 
-    });
-    
-    if (remainingUserId && disconnectedUserId) {
-      try {
-        await updateUserStats(remainingUserId, 'win');
-        await updateUserStats(disconnectedUserId, 'loss');
-        console.log('[DISCONNECT] Stats updated successfully');
-      } catch (err) {
-        console.error('[DISCONNECT] Error updating stats:', err);
-      }
-    } else {
-      console.warn('[DISCONNECT] Missing userIds, skipping stats update:', { 
-        remainingUserId, 
-        disconnectedUserId 
-      });
-    }
-  }
-
-  io.to(remainingId).emit('gameOver', {
-    reason: 'opponent_left',
-    message: `${disconnectedUsername} left the match.`,
-    winnerName: remainingUsername,
-    loserName: disconnectedUsername,
-    role: 'winner',
-    canRematch: false
-  });
-}
-
-    // 5️⃣ If no players left, or after notifying remaining player, fully reset the game object
-    if (game.players.length < 2) {
-      console.log(`🧹 Deleting game in room ${room} due to insufficient players`);
-
-      // Clear any remaining timer
+    const playerIndex = game.players.indexOf(socket.id);
+    if (playerIndex !== -1) {
+      console.log(`✅ Removed ${username} from active game in room ${room}`);
+      
+      // Remove player from game
+      game.players.splice(playerIndex, 1);
+      delete game.usernames[socket.id];
+      
+      // Clear any timers
       if (game.timer) {
-        cleanupTimer(room);
+        clearInterval(game.timer);
+        delete game.timer;
       }
 
-      // Completely delete the game object instead of resetting it
-      delete games[room];
+      // Check if this was an active game (not just waiting/lobby)
+      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.currentTurn > 0;
+      
+      // ✅ FIX: Use wasActiveGame instead of undefined gameStarted
+      if (wasActiveGame && game.userIds) {
+        const leavingUserId = game.userIds[socket.id];
+        
+        if (leavingUserId) {
+          console.log(`📊 Updating stats: ${username} (${leavingUserId}) gets a loss for leaving`);
+          
+          try {
+            // Give the leaving player a loss
+            const { error: lossError } = await supabase
+              .from('user_stats')
+              .update({ 
+                losses: supabase.raw('losses + 1'),
+                games_played: supabase.raw('games_played + 1')
+              })
+              .eq('user_id', leavingUserId);
 
-      console.log(`✅ Game in room ${room} completely deleted`);
+            if (lossError) {
+              console.error('❌ Error updating leaver stats:', lossError);
+            } else {
+              console.log(`✅ Updated stats for leaving player ${username}`);
+            }
+
+            // Give remaining player(s) a win
+            for (const remainingSocketId of game.players) {
+              const remainingUserId = game.userIds[remainingSocketId];
+              if (remainingUserId) {
+                const remainingUsername = game.usernames[remainingSocketId] || 'Unknown';
+                console.log(`📊 Updating stats: ${remainingUsername} (${remainingUserId}) gets a win`);
+                
+                const { error: winError } = await supabase
+                  .from('user_stats')
+                  .update({ 
+                    wins: supabase.raw('wins + 1'),
+                    games_played: supabase.raw('games_played + 1')
+                  })
+                  .eq('user_id', remainingUserId);
+
+                if (winError) {
+                  console.error('❌ Error updating winner stats:', winError);
+                } else {
+                  console.log(`✅ Updated stats for remaining player ${remainingUsername}`);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error in stats update:', error);
+          }
+        }
+      }
+
+      // Notify remaining players
+      game.players.forEach(playerSocketId => {
+        const playerSocket = io.sockets.sockets.get(playerSocketId);
+        if (playerSocket && playerSocket.connected) {
+          const remainingUsername = game.usernames[playerSocketId] || 'Player';
+          console.log(`ℹ️ Notifying ${remainingUsername} that ${username} left the match`);
+          
+          playerSocket.emit('gameOver', {
+            reason: 'opponent_left',
+            message: `${username} left the game.`,
+            winnerName: remainingUsername,
+            loserName: username,
+            role: 'winner',
+            canRematch: false,
+          });
+        }
+      });
+
+      // Reset game state but preserve userIds
+      const preservedUserIds = { ...game.userIds };
+      game.players = [];
+      game.usernames = {};
+      game.currentTurn = 0;
+      game.currentPlayerName = null;
+      game.teammates = [];
+      game.successfulGuesses = [];
+      game.rematchVotes = new Set();
+      game.userIds = preservedUserIds;
+
+      break;
     }
-
-    break; // Stop looping once we handled this socket
   }
 }
+
 
 function cleanupTimer(roomId) {
   const game = games[roomId];
