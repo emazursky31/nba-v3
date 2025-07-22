@@ -1009,19 +1009,20 @@ async function handlePlayerDisconnect(socket) {
     if (playerIndex !== -1) {
       console.log(`✅ Removed ${username} from active game in room ${room}`);
       
+      // ✅ FIX: Check if game was active BEFORE clearing timer
+      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.timer;
+      console.log(`🔍 Game state check: teammates=${game.teammates?.length}, timer=${!!game.timer}, wasActiveGame=${wasActiveGame}`);
+      
       // Remove player from game
       game.players.splice(playerIndex, 1);
       delete game.usernames[socket.id];
       
-      // Clear any timers
+      // Clear any timers AFTER checking if game was active
       if (game.timer) {
         clearInterval(game.timer);
         delete game.timer;
       }
 
-      // ✅ FIX: Check if this was an active game (timer running = game started)
-      const wasActiveGame = game.teammates && game.teammates.length > 0 && game.timer;
-      
       if (wasActiveGame && game.userIds) {
         const leavingUserId = game.userIds[socket.id];
         
@@ -1107,6 +1108,7 @@ async function handlePlayerDisconnect(socket) {
     }
   }
 }
+
 
 
 
