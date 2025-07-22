@@ -1228,6 +1228,15 @@ function setupFormListeners() {
     console.warn('[WARN] resetForm not found - may not be on reset route');
   }
 
+  // Reset password button (not a form)
+  const resetBtn = document.getElementById('resetBtn');
+if (resetBtn) {
+  resetBtn.addEventListener('click', resetPassword);
+  console.log('[DEBUG] resetBtn listener attached');
+} else {
+  console.warn('[WARN] resetBtn not found - may not be on reset route');
+}
+
   // Update password form
   const updatePasswordForm = document.getElementById('updatePasswordForm');
   if (updatePasswordForm) {
