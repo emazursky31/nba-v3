@@ -27,7 +27,6 @@
 <nav>
   <span id="nav-username" style="display: none;"></span>
   <a href="#" id="nav-home-link" style="display: none;">🏠 Home</a>
-  <button id="nav-signin-btn" style="display: none;">Sign In</button>
   <button id="nav-signout-btn" style="display: none;">Sign Out</button>
 </nav>
 
@@ -261,6 +260,46 @@ const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwA
 
 
 // 2. Function definitions (outside DOMContentLoaded)
+
+async function validateAndCleanupSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const storedUsername = localStorage.getItem('username');
+  const storedUserId = localStorage.getItem('userId');
+  
+  // The key insight: session is either valid or null
+  // There's no "invalid session object"
+  
+  if (!session) {
+    // No session = definitely not authenticated
+    if (storedUsername || storedUserId) {
+      // Clean up stale localStorage
+      console.log('Cleaning up stale localStorage data');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userId');
+      myUsername = null;
+      myUserId = null;
+    }
+    return false; // Not authenticated
+  }
+  
+  // Session exists and is valid
+  // Ensure localStorage matches
+  const expectedUsername = session.user.user_metadata?.username || session.user.email;
+  const expectedUserId = session.user.id;
+  
+  if (storedUsername !== expectedUsername || storedUserId !== expectedUserId) {
+    // Fix localStorage to match session
+    localStorage.setItem('username', expectedUsername);
+    localStorage.setItem('userId', expectedUserId);
+    myUsername = expectedUsername;
+    myUserId = expectedUserId;
+  }
+  
+  return true; // Valid and consistent
+}
+
+
+
  // ✅ Sign Up handler
   async function signUp(e) {
     e.preventDefault(); // 🛑 Stop default form submit
@@ -1078,66 +1117,59 @@ function renderSuccessfulGuesses() {
 function setupGlobalNavListeners() {
   // Home navigation with game leave logic
   const navHomeLink = document.getElementById('nav-home-link');
-if (navHomeLink) {
-  navHomeLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    
-    // Tell server we're leaving if in an active game
-    if (socket && socket.connected && gameStarted && !gameOver) {
-      safeEmit('leaveGame');
-    }
-    
-    // Clean up all client state
-    resetAllGameState();
-    
-    navigateTo('/home');
-  });
-}
-
-
+  if (navHomeLink) {
+    navHomeLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      // Tell server we're leaving if in an active game
+      if (socket && socket.connected && gameStarted && !gameOver) {
+        safeEmit('leaveGame');
+      }
+      
+      // Clean up all client state
+      resetAllGameState();
+      
+      navigateTo('/home');
+    });
+  }
 
   // Sign out button
   const navSignoutBtn = document.getElementById('nav-signout-btn');
-if (navSignoutBtn) {
-  navSignoutBtn.addEventListener('click', async () => {
-    resetAllGameState();
-    // Check if user is in an active game
-    if (gameStarted && !gameOver && socket && socket.connected) {
-      // Emit a specific sign-out event to give opponent the win
-      socket.emit('playerSignedOut', { 
-        roomId: myRoomId || roomId,
-        username: myUsername,
-        reason: 'signed_out'
-      });
-    }
-    
-    // Set leaving game flag to prevent reconnection attempts
-    isLeavingGame = true;
-    localStorage.setItem('isLeavingGame', 'true');
-    
-    // Sign out from Supabase
-    await window.supabase.auth.signOut();
-    
-    // Clear game state
-    gameStarted = false;
-    gameOver = true;
-    myRoomId = null;
-    roomId = null;
-    
-    // Update UI and navigate
-    updateNavUserState();
-    navigateTo('/signup');
-  });
-}
-
-  // Sign in button
-  const navSigninBtn = document.getElementById('nav-signin-btn');
-  if (navSigninBtn) {
-    navSigninBtn.addEventListener('click', () => {
-      window.location.href = '/signin.html';
+  if (navSignoutBtn) {
+    navSignoutBtn.addEventListener('click', async () => {
+      resetAllGameState();
+      // Check if user is in an active game
+      if (gameStarted && !gameOver && socket && socket.connected) {
+        // Emit a specific sign-out event to give opponent the win
+        socket.emit('playerSignedOut', { 
+          roomId: myRoomId || roomId,
+          username: myUsername,
+          reason: 'signed_out'
+        });
+      }
+      
+      // Set leaving game flag to prevent reconnection attempts
+      isLeavingGame = true;
+      localStorage.setItem('isLeavingGame', 'true');
+      
+      // Sign out from Supabase
+      await window.supabase.auth.signOut();
+      
+      // Clear game state
+      gameStarted = false;
+      gameOver = true;
+      myRoomId = null;
+      roomId = null;
+      
+      // Update UI and navigate
+      updateNavUserState();
+      navigateTo('/signup');
     });
   }
+
+ 
 }
+
 
 function showRouteSection(path) {
   const allSections = document.querySelectorAll('section[data-route]');
@@ -1487,38 +1519,33 @@ async function signOut() {
 
 async function updateNavUserState(session) {
   const usernameDiv = document.getElementById('nav-username');
-  const signinBtn = document.getElementById('nav-signin-btn');
   const signoutBtn = document.getElementById('nav-signout-btn');
   const homeLink = document.getElementById('nav-home-link');
 
-  if (!usernameDiv || !signinBtn || !signoutBtn || !homeLink) return;
+  if (!usernameDiv || !signoutBtn || !homeLink) return;
 
-  if (!session || !session.user) {
-    // Not logged in
+  // If no session provided, get current session
+  if (!session) {
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+  }
+
+  const hasValidSession = session?.user && myUsername && myUserId;
+
+  if (!hasValidSession) {
+    // Not logged in - hide all nav elements
     usernameDiv.style.display = 'none';
     signoutBtn.style.display = 'none';
     homeLink.style.display = 'none';
-    
-    // Only show sign in button if NOT on signup/signin pages
-    if (currentRoute === '/signup' || window.location.pathname === '/signup' || 
-        currentRoute === '/signin' || window.location.pathname === '/signin' ||
-        currentRoute === '/reset' || currentRoute === '/verify' || 
-        currentRoute === '/confirmed' || currentRoute === '/reset-confirmed' ||
-        currentRoute === '/update-password') {
-      signinBtn.style.display = 'none';
-    } else {
-      signinBtn.style.display = 'inline-block';
-    }
   } else {
-    // Logged in
-    const user = session.user;
-    usernameDiv.textContent = `Hello, ${user.user_metadata?.username || user.email}`;
+    // Logged in - show user info, home link, and sign out
+    usernameDiv.textContent = `Hello, ${myUsername}`;
     usernameDiv.style.display = 'inline-block';
-    signinBtn.style.display = 'none';
     signoutBtn.style.display = 'inline-block';
     homeLink.style.display = 'inline-block';
   }
 }
+
 
 
 async function resetPassword() {
