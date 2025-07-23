@@ -1187,9 +1187,14 @@ function updateUIForRoute(path) {
   }
 
  if (path === '/waiting') {
-  if (isLeavingGame) {
+  if (isLeavingGame && !isPrivateGame) {
     console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
     return;
+  }
+  
+  // ✅ Ensure isLeavingGame is false for waiting room
+  if (isPrivateGame) {
+    isLeavingGame = false;
   }
 
   // Fix: Use correct element ID
