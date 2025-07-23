@@ -935,6 +935,11 @@ async function handleJoinGame(socket, roomId, username, userId) {
     return;
   }
 
+  if (games[roomId] && games[roomId].gameEnded) {
+  console.log(`Cleaning up ended game for room: ${roomId}`);
+  delete games[roomId];
+}
+
   if (!games[roomId]) {
     console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
     games[roomId] = {

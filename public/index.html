@@ -392,48 +392,13 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 }
 
 
-/**
- * Clean up client state and leave current game/room
- */
-function leaveRoom() {
-    console.log('[DEBUG] leaveRoom called');
-    
-    // Clear any running timers
-    if (window.gameTimer) {
-        clearInterval(window.gameTimer);
-        window.gameTimer = null;
-    }
-    
-    // Reset game state variables
-    window.currentRoomId = null;
-    window.gameInProgress = false;
-    window.isMyTurn = false;
-    
-    // Clear game UI elements
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-        gameContainer.innerHTML = '';
-    }
-    
-    // Reset successful guesses
-    if (window.successfulGuesses) {
-        window.successfulGuesses = [];
-    }
-    
-    // Use your existing server handler
-    safeEmit('leaveGame');  // ✅ Uses your existing server logic
-    
-    console.log('[DEBUG] Client cleanup completed, leaveGame emitted');
-}
-
-
 
 
 
 async function startPrivateGame() {
   await ensureUserSession();
   console.log('[DEBUG] startPrivateGame called');
-  leaveRoom();
+  resetAllGameState();
 
   isPrivateGame = true;
   isLeavingGame = false;
@@ -487,7 +452,8 @@ async function startPrivateGame() {
 async function joinPublicGame() {
   await ensureUserSession();
   console.log('[DEBUG] joinPublicGame called');
-  leaveRoom();
+  
+  resetAllGameState();
 
    const { data: { session }, error } = await supabase.auth.getSession();
   if (error || !session?.user) {
@@ -757,7 +723,11 @@ function attachRouteListeners(route) {
 
 function navigateTo(path, options = {}) {
   return new Promise((resolve) => {
-    // Track the intended route immediately
+    if (path === '/home') {
+      isLeavingGame = false;
+      localStorage.removeItem('isLeavingGame');
+    }
+
     currentRoute = path;
 
     if (!options.skipPush) {
@@ -982,6 +952,32 @@ async function ensureUserSession() {
   }
 }
 
+function resetAllGameState() {
+  roomId = null;
+  myRoomId = null;
+  selectedPlayer = null;
+  gameStarted = false;
+  gameOver = true;
+  leadoffPlayerName = null;
+  opponentName = null;
+  successfulGuesses = [];
+  isPrivateGame = false;
+  isLeavingGame = false;
+  
+  localStorage.removeItem('privateRoomId');
+  localStorage.removeItem('isLeavingGame');
+  
+  // Reset UI elements
+  if (currentPlayerNameEl) currentPlayerNameEl.textContent = '';
+  if (timerEl) timerEl.textContent = '';
+  if (currentPlayerHeadshotEl) currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
+  
+  const cardDeck = document.getElementById('card-deck');
+  if (cardDeck) cardDeck.innerHTML = '';
+  
+  resetCardSpread();
+}
+
 
 
 function renderSuccessfulGuesses() {
@@ -1074,17 +1070,26 @@ function setupGlobalNavListeners() {
 if (navHomeLink) {
   navHomeLink.addEventListener('click', (e) => {
     e.preventDefault();
-    isLeavingGame = true;
-    leaveRoom();        // ✅ Clean client + emit 'leaveGame'
+    
+    // Tell server we're leaving if in an active game
+    if (socket && socket.connected && gameStarted && !gameOver) {
+      safeEmit('leaveGame');
+    }
+    
+    // Clean up all client state
+    resetAllGameState();
+    
     navigateTo('/home');
   });
 }
+
 
 
   // Sign out button
   const navSignoutBtn = document.getElementById('nav-signout-btn');
 if (navSignoutBtn) {
   navSignoutBtn.addEventListener('click', async () => {
+    resetAllGameState();
     // Check if user is in an active game
     if (gameStarted && !gameOver && socket && socket.connected) {
       // Emit a specific sign-out event to give opponent the win
@@ -1304,6 +1309,8 @@ if (updatePasswordBtn) {
 
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
+
+  resetAllGameState();
 
   // ✅ Mark that you’re intentionally leaving — and persist it!
   isLeavingGame = true;
@@ -1665,7 +1672,7 @@ socket.on('disconnect', (reason) => {
   
   // If this was an intentional sign-out, handle it immediately
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
-    // ✅ FIXED: Replace the missing handlePlayerLeaving function
+    resetAllGameState();
     if (gameStarted && !gameOver && myRoomId && myUsername) {
       socket.emit('playerSignedOut', { 
         roomId: myRoomId,
@@ -2384,8 +2391,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (!myUsername && !currentSession?.session?.user) {
+    resetAllGameState();
     navigateTo('/signup');
   } else if (isLeavingGame) {
+    resetAllGameState();
     console.log('[DEBUG] Routing to /home because isLeavingGame=true');
     navigateTo('/home');
   } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
