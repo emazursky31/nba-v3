@@ -135,11 +135,14 @@
   <p id="waitingStatus">Waiting for another player to join...</p>
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
-    <p>Invite a friend to join using this link:</p>
-    <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
-    <button id="copyInviteBtn">Copy Link</button>
-  <div id="copyToast" style="display:none; color: green; margin-top: 0.5rem;">Link copied!</div>
+  <p>Invite a friend to join using this link:</p>
+  <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
+  <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; justify-content: center;">
+    <button id="copyInviteBtn">📋 Copy Link</button>
+    <button id="shareInviteBtn" style="display: none;">📱 Share</button>
   </div>
+  <div id="copyToast" style="display:none; color: green; margin-top: 0.5rem;">Link copied!</div>
+</div>
 </section>
 
 <!-- Scoreboard UI -->
@@ -1364,31 +1367,70 @@ function handleGoHome() {
 
 function setupCopyInviteListeners() {
   const copyInviteBtn = document.getElementById('copyInviteBtn');
+  const shareInviteBtn = document.getElementById('shareInviteBtn');
   const copyToast = document.getElementById('copyToast');
   const inviteInput = document.getElementById('inviteLink');
 
   if (!copyInviteBtn || !copyToast || !inviteInput) {
-    // Elements don't exist on this route, skip setup
     return;
   }
 
+  // Show share button if Web Share API is supported
+  if (shareInviteBtn && navigator.share) {
+    shareInviteBtn.style.display = 'inline-block';
+  }
+
+  // Copy functionality
   copyInviteBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(inviteInput.value)
       .then(() => {
+        copyToast.textContent = 'Link copied!';
         copyToast.style.display = 'block';
-        copyInviteBtn.disabled = true; // Disable to prevent spamming
+        copyInviteBtn.disabled = true;
 
-        // Hide toast after 2 seconds
         setTimeout(() => {
           copyToast.style.display = 'none';
-          copyInviteBtn.disabled = false; // Re-enable button
+          copyInviteBtn.disabled = false;
         }, 2000);
       })
       .catch(err => {
-        alert('Failed to copy link. Please copy it manually.');
-        console.error('Clipboard copy failed:', err);
+        // Fallback for older browsers
+        inviteInput.select();
+        inviteInput.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        copyToast.textContent = 'Link copied!';
+        copyToast.style.display = 'block';
+        setTimeout(() => copyToast.style.display = 'none', 2000);
       });
   });
+
+  // Native share functionality
+  if (shareInviteBtn) {
+    shareInviteBtn.addEventListener('click', async () => {
+      const shareData = {
+        title: 'Join my NBA Teammate Game!',
+        text: 'Can you guess NBA teammates? Join my private game!',
+        url: inviteInput.value
+      };
+
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+          copyToast.textContent = 'Shared successfully!';
+          copyToast.style.display = 'block';
+          setTimeout(() => copyToast.style.display = 'none', 2000);
+        }
+      } catch (err) {
+        // User cancelled or error occurred
+        if (err.name !== 'AbortError') {
+          console.log('Share failed, falling back to copy');
+          // Fallback to copy
+          copyInviteBtn.click();
+        }
+      }
+    });
+  }
 }
 
 
