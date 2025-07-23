@@ -739,13 +739,9 @@ function navigateTo(path, options = {}) {
 
     showRouteSection(path);
 
-    // Wrap updateUIForRoute with a guard
-    if (currentRoute === path) {
-      updateUIForRoute(path);
-      attachRouteListeners(path);
-    } else {
-      console.debug('[navigateTo] Skipped updateUIForRoute — stale path', path);
-    }
+    // ✅ Fix: Always call updateUIForRoute since we just set currentRoute
+    updateUIForRoute(path);
+    attachRouteListeners(path);
 
     // Use rAF for next paint
     requestAnimationFrame(() => {
@@ -753,6 +749,7 @@ function navigateTo(path, options = {}) {
     });
   });
 }
+
 
 function setupMobileInputFocus() {
   const guessInput = document.getElementById('guessInput');
