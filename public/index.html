@@ -418,36 +418,44 @@ async function startPrivateGame() {
   myRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
   console.log(`[DEBUG] Generated new private room: ${myRoomId}`);
 
-  window.supabase.auth.getUser().then(({ data }) => {
-    const userId = data?.user?.id;
-    if (!userId) {
-      alert('Could not get your user ID. Please sign in again.');
-      return;
-    }
-    myUserId = userId;
-    localStorage.setItem('userId', myUserId);
-    safeEmit('joinGame', { roomId: myRoomId, username: myUsername, userId });
-
+  const { data } = await window.supabase.auth.getUser();
+  const userId = data?.user?.id;
+  if (!userId) {
+    alert('Could not get your user ID. Please sign in again.');
+    return;
+  }
+  
+  myUserId = userId;
+  localStorage.setItem('userId', myUserId);
+  
+  // ✅ Set up waiting room UI BEFORE navigation
+  const statusDiv = document.getElementById('status');
+  if (statusDiv) {
     statusDiv.textContent = `Started private room: ${myRoomId}`;
-    document.getElementById('displayRoomCode').textContent = myRoomId;
+  }
+  
+  const displayRoomCode = document.getElementById('displayRoomCode');
+  if (displayRoomCode) {
+    displayRoomCode.textContent = myRoomId;
+  }
 
-    // **Don't overwrite the container innerHTML!**
-    const inviteInput = document.getElementById('inviteLink');
-    if (inviteInput) {
-      inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
-    }
+  const inviteInput = document.getElementById('inviteLink');
+  if (inviteInput) {
+    inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
+  }
 
-    // Ensure waiting room is visible before navigating
-    const waitingRoom = document.getElementById('waitingRoom');
-    if (waitingRoom) {
-      waitingRoom.classList.remove('hidden');
-    }
+  // Ensure waiting room is visible
+  const waitingRoom = document.getElementById('waitingRoom');
+  if (waitingRoom) {
+    waitingRoom.classList.remove('hidden');
+  }
 
-    // Setup copy button listeners
-    setupCopyInviteListeners();
+  // Setup copy button listeners
+  setupCopyInviteListeners();
 
-    navigateTo('/waiting');
-  });
+  // ✅ Navigate and then emit
+  await navigateTo('/waiting');
+  safeEmit('joinGame', { roomId: myRoomId, username: myUsername, userId });
 }
 
 
