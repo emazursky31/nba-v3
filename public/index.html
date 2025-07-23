@@ -437,8 +437,11 @@ async function startPrivateGame() {
       inviteInput.value = `${window.location.origin}?room=${myRoomId}`;
     }
 
-    // Show the waiting room section
-    waitingRoom.classList.remove('hidden');
+    // Ensure waiting room is visible before navigating
+    const waitingRoom = document.getElementById('waitingRoom');
+    if (waitingRoom) {
+      waitingRoom.classList.remove('hidden');
+    }
 
     // Setup copy button listeners
     setupCopyInviteListeners();
@@ -1183,44 +1186,58 @@ function updateUIForRoute(path) {
     }
   }
 
-  if (path === '/waiting') {
-    if (isLeavingGame) {
-      console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
-      return;
-    }
+ if (path === '/waiting') {
+  if (isLeavingGame) {
+    console.log('[DEBUG] updateUIForRoute: Skipping /waiting because isLeavingGame is true');
+    return;
+  }
 
-    const waitingStatus = document.getElementById('waitingStatus');
-    if (waitingStatus) {
-      waitingStatus.textContent = isPrivateGame
-        ? 'Waiting for a friend to join...'
-        : 'Looking for an opponent...';
-    }
+  // Fix: Use correct element ID
+  const waitingStatus = document.getElementById('waitingStatus');
+  if (waitingStatus) {
+    waitingStatus.textContent = isPrivateGame
+      ? 'Waiting for a friend to join...'
+      : 'Looking for an opponent...';
+  }
 
-    const codeEl = document.getElementById('displayRoomCode');
-    const inviteWrapper = document.getElementById('inviteLinkWrapper');
-    const inviteInput = document.getElementById('inviteLink');
+  // Fix: Ensure status div is updated
+  const statusDiv = document.getElementById('status');
+  if (statusDiv && isPrivateGame && myRoomId) {
+    statusDiv.textContent = `Started private room: ${myRoomId}`;
+  }
 
-    if (codeEl) {
-      if (isPrivateGame && myRoomId) {
-        const displayCode = myRoomId.replace('room-', '').substring(0, 8);
-        codeEl.textContent = displayCode;
-        codeEl.style.display = 'block';
-      } else {
-        codeEl.style.display = 'none';
-      }
-    }
+  const codeEl = document.getElementById('displayRoomCode');
+  const inviteWrapper = document.getElementById('inviteLinkWrapper');
+  const inviteInput = document.getElementById('inviteLink');
 
-    if (inviteWrapper && inviteInput) {
-      if (isPrivateGame && myRoomId) {
-        const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
-        inviteInput.type = 'text'; // ✅ Fix 1: Ensure input is visible
-        inviteInput.value = inviteUrl; // ✅ Fix 2: Set the value correctly
-        inviteWrapper.style.display = 'block';
-      } else {
-        inviteWrapper.style.display = 'none';
-      }
+  if (codeEl) {
+    if (isPrivateGame && myRoomId) {
+      const displayCode = myRoomId.replace('room-', '').substring(0, 8);
+      codeEl.textContent = displayCode;
+      codeEl.style.display = 'block';
+    } else {
+      codeEl.style.display = 'none';
     }
   }
+
+  if (inviteWrapper && inviteInput) {
+    if (isPrivateGame && myRoomId) {
+      const inviteUrl = `${window.location.origin}?room=${myRoomId}`;
+      inviteInput.type = 'text';
+      inviteInput.value = inviteUrl;
+      inviteWrapper.style.display = 'block';
+    } else {
+      inviteWrapper.style.display = 'none';
+    }
+  }
+
+  // Fix: Ensure waiting room is visible
+  const waitingRoom = document.getElementById('waitingRoom');
+  if (waitingRoom) {
+    waitingRoom.classList.remove('hidden');
+  }
+}
+
 
   const guessContainer = document.getElementById('successful-guesses-container');
   if (guessContainer) {
