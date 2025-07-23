@@ -953,7 +953,7 @@ async function ensureUserSession() {
   const { data, error } = await supabase.auth.getSession();
   if (data?.session?.user) {
     myUserId = data.session.user.id;
-    myUsername = data.session.user.email; // or .user_metadata.username
+    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
     console.debug('[ensureUserSession] Refetched user:', myUsername, myUserId);
   } else {
     console.warn('[ensureUserSession] No valid session!');
