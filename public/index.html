@@ -874,9 +874,9 @@ function resetGameUI() {
   currentPlayerNameEl.textContent = 'Loading...';
   timerEl.textContent = '30';
 
-  // Show/hide game areas as needed
-  waitingRoom.style.display = 'none';
-  gameArea.style.display = 'block';
+  // ✅ Use CSS classes instead of inline styles
+  waitingRoom.classList.add('hidden');     // Instead of style.display = 'none'
+  gameArea.classList.remove('hidden');     // Instead of style.display = 'block'
   document.getElementById('turnSection').style.display = 'block';
 
   // Hide game over container
