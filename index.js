@@ -960,6 +960,11 @@ async function handleJoinGame(socket, roomId, username, userId) {
     delete games[roomId];
   }
 
+  // ✅ CRITICAL: ALWAYS join the Socket.IO room first, regardless of game state
+  socket.join(roomId);
+  socketRoomMap[socket.id] = roomId;
+  console.log(`[handleJoinGame] Socket ${socket.id} joined room ${roomId}`);
+
   // ✅ CRITICAL: Check if game already exists
   if (games[roomId]) {
     console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
@@ -977,8 +982,6 @@ async function handleJoinGame(socket, roomId, username, userId) {
       
       socket.data.userId = userId;
       socket.username = finalUsername;
-      socket.join(roomId);
-      socketRoomMap[socket.id] = roomId;
       
       if (!game.ready) game.ready = new Set();
       game.ready.add(socket.id);
@@ -1008,6 +1011,14 @@ async function handleJoinGame(socket, roomId, username, userId) {
           game.starting = false;
         }
       }
+    } else {
+      // Player already exists, just update their data
+      const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
+      game.usernames[socket.id] = finalUsername;
+      game.userIds[socket.id] = userId;
+      socket.data.userId = userId;
+      socket.username = finalUsername;
+      console.log(`[handleJoinGame] Updated existing player ${username} in room ${roomId}`);
     }
     return;
   }
@@ -1015,7 +1026,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
   // ✅ CRITICAL: Check if someone else is already creating this game
   if (gameCreationLocks.has(roomId)) {
     console.log(`[handleJoinGame] Game creation already in progress for room ${roomId}, waiting...`);
-    // Wait and try again
+    // Socket is already joined to room above, just wait and retry
     setTimeout(() => {
       handleJoinGame(socket, roomId, username, userId);
     }, 150);
@@ -1055,8 +1066,6 @@ async function handleJoinGame(socket, roomId, username, userId) {
     
     socket.data.userId = userId;
     socket.username = finalUsername;
-    socket.join(roomId);
-    socketRoomMap[socket.id] = roomId;
     
     io.to(roomId).emit('playersUpdate', game.players.length);
     
@@ -1066,6 +1075,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
     gameCreationLocks.delete(roomId);
   }
 }
+
 
 
 
