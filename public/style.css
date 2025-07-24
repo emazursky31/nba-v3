@@ -313,10 +313,11 @@ button:disabled {
 
 /* Game Area */
 #gameArea {
-  margin-top: 0;
-  position: relative;
+  display: block;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
-
 #playersDisplay {
   text-align: center;
   margin: 0.5rem 0;  /* Reduced from 1.5rem 0 */
