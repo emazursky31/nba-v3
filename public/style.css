@@ -580,7 +580,6 @@ button:disabled {
 }
 
 #shareInviteBtn {
-  display: none;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
@@ -1367,12 +1366,6 @@ button:disabled {
     font-size: 1rem;
   }
 
-  #shareInviteBtn{
-    display: inline-block;
-    width: 100%;
-    padding: 1rem;
-    font-size: 1rem;
-  }
 
 }
 
@@ -1589,5 +1582,20 @@ button:disabled {
     height: 220px !important;
     min-width: 160px;
   }
+
+  /* Hide on desktop and larger */
+@media (min-width: 769px) {
+  #shareInviteBtn {
+    display: none !important;
+  }
+}
+
+/* Show only on mobile/tablet */
+@media (max-width: 768px) {
+  #shareInviteBtn {
+    display: inline-block !important;
+  }
+}
+
 
 }
