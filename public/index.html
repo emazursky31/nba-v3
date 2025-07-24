@@ -25,9 +25,8 @@
 
 <body>
 <nav>
-  <span id="nav-username" style="display: none;"></span>
-  <a href="#" id="nav-home-link" style="display: none;">🏠 Home</a>
-  <button id="nav-signout-btn" style="display: none;">Sign Out</button>
+  <span id="nav-title">Who He Played With</span>
+  <a href="#" id="nav-home-link" style="display: none;">Home</a>
 </nav>
 
 
@@ -1176,39 +1175,39 @@ function setupGlobalNavListeners() {
     });
   }
 
-  // Sign out button
-  const navSignoutBtn = document.getElementById('nav-signout-btn');
-  if (navSignoutBtn) {
-    navSignoutBtn.addEventListener('click', async () => {
-      resetAllGameState();
-      // Check if user is in an active game
-      if (gameStarted && !gameOver && socket && socket.connected) {
-        // Emit a specific sign-out event to give opponent the win
-        socket.emit('playerSignedOut', { 
-          roomId: myRoomId || roomId,
-          username: myUsername,
-          reason: 'signed_out'
-        });
-      }
+  // // Sign out button
+  // const navSignoutBtn = document.getElementById('nav-signout-btn');
+  // if (navSignoutBtn) {
+  //   navSignoutBtn.addEventListener('click', async () => {
+  //     resetAllGameState();
+  //     // Check if user is in an active game
+  //     if (gameStarted && !gameOver && socket && socket.connected) {
+  //       // Emit a specific sign-out event to give opponent the win
+  //       socket.emit('playerSignedOut', { 
+  //         roomId: myRoomId || roomId,
+  //         username: myUsername,
+  //         reason: 'signed_out'
+  //       });
+  //     }
       
-      // Set leaving game flag to prevent reconnection attempts
-      isLeavingGame = true;
-      localStorage.setItem('isLeavingGame', 'true');
+  //     // Set leaving game flag to prevent reconnection attempts
+  //     isLeavingGame = true;
+  //     localStorage.setItem('isLeavingGame', 'true');
       
-      // Sign out from Supabase
-      await window.supabase.auth.signOut();
+  //     // Sign out from Supabase
+  //     await window.supabase.auth.signOut();
       
-      // Clear game state
-      gameStarted = false;
-      gameOver = true;
-      myRoomId = null;
-      roomId = null;
+  //     // Clear game state
+  //     gameStarted = false;
+  //     gameOver = true;
+  //     myRoomId = null;
+  //     roomId = null;
       
-      // Update UI and navigate
-      updateNavUserState();
-      navigateTo('/signup');
-    });
-  }
+  //     // Update UI and navigate
+  //     updateNavUserState();
+  //     navigateTo('/signup');
+  //   });
+  // }
 
  
 }
@@ -1655,11 +1654,10 @@ async function signOut() {
 
 
 async function updateNavUserState(session) {
-  const usernameDiv = document.getElementById('nav-username');
-  const signoutBtn = document.getElementById('nav-signout-btn');
+  const navTitle = document.getElementById('nav-title');
   const homeLink = document.getElementById('nav-home-link');
 
-  if (!usernameDiv || !signoutBtn || !homeLink) return;
+  if (!navTitle || !homeLink) return;
 
   // If no session provided, get current session
   if (!session) {
@@ -1670,18 +1668,16 @@ async function updateNavUserState(session) {
   const hasValidSession = session?.user && myUsername && myUserId;
 
   if (!hasValidSession) {
-    // Not logged in - hide all nav elements
-    usernameDiv.style.display = 'none';
-    signoutBtn.style.display = 'none';
+    // Not logged in - hide nav elements
+    navTitle.style.display = 'none';
     homeLink.style.display = 'none';
   } else {
-    // Logged in - show user info, home link, and sign out
-    usernameDiv.textContent = `Hello, ${myUsername}`;
-    usernameDiv.style.display = 'inline-block';
-    signoutBtn.style.display = 'inline-block';
+    // Logged in - show title and home link
+    navTitle.style.display = 'inline-block';
     homeLink.style.display = 'inline-block';
   }
 }
+
 
 
 
