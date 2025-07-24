@@ -1360,7 +1360,7 @@ button:disabled {
     gap: 0.75rem;
   }
   
-  #copyInviteBtn{
+  #copyInviteBtn, #shareInviteBtn {
     width: 100%;
     padding: 1rem;
     font-size: 1rem;
@@ -1583,19 +1583,6 @@ button:disabled {
     min-width: 160px;
   }
 
-  /* Hide on desktop and larger */
-@media (min-width: 769px) {
-  #shareInviteBtn {
-    display: none !important;
-  }
-}
-
-/* Show only on mobile/tablet */
-@media (max-width: 768px) {
-  #shareInviteBtn {
-    display: inline-block !important;
-  }
-}
 
 
 }

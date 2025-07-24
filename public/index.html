@@ -438,7 +438,14 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 
 
 async function startPrivateGame() {
-  await ensureUserSession();
+   // Validate session before starting
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) {
+    console.log('[startPrivateGame] No valid session, redirecting');
+    navigateTo('/signup');
+    return;
+  }
+
   console.log('[DEBUG] startPrivateGame called');
   resetAllGameState();
 
@@ -503,17 +510,17 @@ async function startPrivateGame() {
 
 
 async function joinPublicGame() {
-  await ensureUserSession();
-  console.log('[DEBUG] joinPublicGame called');
-  
-  resetAllGameState();
-
-   const { data: { session }, error } = await supabase.auth.getSession();
-  if (error || !session?.user) {
-    console.warn('[joinPublicGame] No valid session, redirecting to signup');
+  // Validate session before joining
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) {
+    console.log('[joinPublicGame] No valid session, redirecting');
     navigateTo('/signup');
     return;
   }
+
+  console.log('[DEBUG] joinPublicGame called');
+  resetAllGameState();
+
 
   if (socket && socket.connected && session.user) {
     socket.emit('userSignedIn', { 
@@ -992,15 +999,27 @@ function showAutocompleteSuggestions(suggestions) {
 }
 
 async function ensureUserSession() {
-  const { data, error } = await supabase.auth.getSession();
-  if (data?.session?.user) {
-    myUserId = data.session.user.id;
-    myUsername = data.session.user.user_metadata?.username || data.session.user.email;
-    console.debug('[ensureUserSession] Refetched user:', myUsername, myUserId);
-  } else {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error || !session?.user) {
     console.warn('[ensureUserSession] No valid session!');
+    myUsername = null;
+    myUserId = null;
+    return false;
   }
+  
+  const user = session.user;
+  myUserId = user.id;
+  myUsername = user.user_metadata?.username || user.email;
+  
+  // Sync localStorage
+  localStorage.setItem('username', myUsername);
+  localStorage.setItem('userId', myUserId);
+  
+  console.debug('[ensureUserSession] Session validated:', myUsername, myUserId);
+  return true;
 }
+
 
 function resetAllGameState() {
   roomId = null;
@@ -1407,9 +1426,35 @@ function setupCopyInviteListeners() {
     return;
   }
 
-  // Show share button if Web Share API is supported
-  if (shareInviteBtn && navigator.share) {
+  // Enhanced mobile/tablet detection
+  function isMobileOrTablet() {
+    // Check for touch capability
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Check screen size (mobile/tablet range)
+    const isMobileSize = window.innerWidth <= 1024; // Tablets typically ≤ 1024px
+    
+    // Check user agent for mobile/tablet indicators
+    const userAgent = navigator.userAgent.toLowerCase();
+    const mobileKeywords = [
+      'mobile', 'android', 'iphone', 'ipad', 'ipod', 
+      'blackberry', 'windows phone', 'tablet'
+    ];
+    const hasMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+    
+    // Device must have touch AND (be mobile-sized OR have mobile user agent)
+    return hasTouch && (isMobileSize || hasMobileUA);
+  }
+
+  // Show share button only on mobile/tablet with Web Share API support
+  if (shareInviteBtn && navigator.share && isMobileOrTablet()) {
     shareInviteBtn.style.display = 'inline-block';
+    console.log('[Share] Share button enabled for mobile/tablet device');
+  } else {
+    if (shareInviteBtn) {
+      shareInviteBtn.style.display = 'none';
+    }
+    console.log('[Share] Share button hidden - desktop or no Web Share API');
   }
 
   // Copy functionality
@@ -1463,6 +1508,17 @@ function setupCopyInviteListeners() {
       }
     });
   }
+
+  // Re-check on window resize (for device rotation)
+  window.addEventListener('resize', () => {
+    if (shareInviteBtn && navigator.share) {
+      if (isMobileOrTablet()) {
+        shareInviteBtn.style.display = 'inline-block';
+      } else {
+        shareInviteBtn.style.display = 'none';
+      }
+    }
+  });
 }
 
 
@@ -1503,6 +1559,31 @@ async function handleAuthSuccess() {
   history.replaceState(null, '', window.location.pathname);
 
   navigateTo('/home');
+}
+
+async function forceSignOut() {
+  console.log('[forceSignOut] Cleaning up invalid session...');
+  
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.warn('[forceSignOut] Supabase signout error:', error);
+  }
+  
+  // Clear everything
+  localStorage.clear();
+  
+  myUsername = null;
+  myUserId = null;
+  myRoomId = null;
+  roomId = null;
+  isPrivateGame = false;
+  gameStarted = false;
+  gameOver = true;
+  
+  resetAllGameState();
+  await updateNavUserState(null);
+  navigateTo('/signup');
 }
 
 
@@ -2411,52 +2492,81 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // --- 3️⃣ Get current Supabase session ---
-  const { data } = await supabase.auth.getSession();
-  await updateNavUserState(data.session);
+  // --- 3️⃣ Validate session state FIRST ---
+  console.log('[DEBUG] Starting session validation...');
 
-  if (data.session?.user) {
-    const user = data.session.user;
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('[DEBUG] Session error:', error);
+      await forceSignOut();
+      return;
+    }
+    
+    if (!session || !session.user) {
+      console.log('[DEBUG] No valid session found');
+      // Clear any stale localStorage
+      localStorage.removeItem('username');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('privateRoomId');
+      localStorage.removeItem('isLeavingGame');
+      
+      myUsername = null;
+      myUserId = null;
+      
+      await updateNavUserState(null);
+      navigateTo('/signup');
+      return;
+    }
+    
+    // Valid session exists - set up user data
+    const user = session.user;
     myUsername = user.user_metadata?.username || user.email;
-    myUserId = user.id;  // ✅ Save userId
+    myUserId = user.id;
+    
+    // Sync localStorage
     localStorage.setItem('username', myUsername);
     localStorage.setItem('userId', myUserId);
-    console.log('[DEBUG] Username set from session:', myUsername);
-    console.log('[DEBUG] User ID set from session:', myUserId);
-  } else {
-    myUsername = localStorage.getItem('username') || null;
-    myUserId = localStorage.getItem('userId') || null;  // ✅ Fallback
-    console.log('[DEBUG] Username from localStorage:', myUsername);
-    console.log('[DEBUG] User ID from localStorage:', myUserId);
-  }
-
-  // --- 4️⃣ Load room info ---
-  const params = new URLSearchParams(window.location.search);
-  const roomFromUrl = params.get('room');
-  if (roomFromUrl) {
-    console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-    localStorage.setItem('privateRoomId', roomFromUrl);
-  } else {
-    const savedRoom = localStorage.getItem('privateRoomId');
-    if (savedRoom) {
-      console.log('[DEBUG] Found saved private room:', savedRoom);
-      myRoomId = savedRoom;
-      roomId = savedRoom;
+    
+    console.log('[DEBUG] Valid session confirmed:', {
+      myUsername,
+      myUserId,
+      email: user.email
+    });
+    
+    // Update nav state
+    await updateNavUserState(session);
+    
+    // Now handle room logic for authenticated users
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    
+    if (roomFromUrl) {
+      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
+      myRoomId = roomFromUrl;
+      roomId = roomFromUrl;
       isPrivateGame = true;
+      localStorage.setItem('privateRoomId', roomFromUrl);
+      
+      // Join the private room
+      safeEmit('joinGame', {
+        roomId: myRoomId,
+        username: myUsername,
+        userId: myUserId
+      });
+      navigateTo('/waiting');
+    } else {
+      // No room invite, go to home
+      navigateTo('/home');
     }
+    
+  } catch (error) {
+    console.error('[DEBUG] Session validation failed:', error);
+    await forceSignOut();
   }
 
-  console.log('[DEBUG] Final state before routing:', {
-    myUsername,
-    myUserId,  // ✅ Add to debug
-    myRoomId,
-    isPrivateGame,
-    isLeavingGame,
-  });
-
+  // Event listeners for page lifecycle
   window.addEventListener('popstate', () => {
     navigateTo(window.location.pathname, { skipPush: true });
   });
@@ -2467,49 +2577,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       socket.emit('playerSignedOut', {
         roomId: myRoomId || roomId,
         username: myUsername,
-        userId: myUserId,  // ✅ Include if helpful
+        userId: myUserId,
         reason: 'page_closed'
       });
     }
   });
-
-  // --- 5️⃣ Determine initial route ---
-  // ✅ Wait for session to be fully loaded before routing
-  const { data: currentSession } = await supabase.auth.getSession();
-  if (currentSession?.session?.user && !myUsername) {
-    // User is authenticated but myUsername wasn't set - fix it
-    const user = currentSession.session.user;
-    myUsername = user.user_metadata?.username || user.email;
-    myUserId = user.id;
-    localStorage.setItem('username', myUsername);
-    localStorage.setItem('userId', myUserId);
-    console.log('[DEBUG] Fixed missing username from session:', myUsername);
-  }
-
-  if (!myUsername && !currentSession?.session?.user) {
-    resetAllGameState();
-    navigateTo('/signup');
-  } else if (isLeavingGame) {
-    resetAllGameState();
-    console.log('[DEBUG] Routing to /home because isLeavingGame=true');
-    navigateTo('/home');
-  } else if (myRoomId && !isLeavingGame && localStorage.getItem('isLeavingGame') !== 'true') {
-    // ✅ Ensure we have both username and userId before joining
-    if (myUsername && myUserId) {
-      // ✅ Use safeEmit instead of direct socket.emit
-      safeEmit('joinGame', {
-        roomId: myRoomId,
-        username: myUsername,
-        userId: myUserId
-      });
-      navigateTo('/waiting');
-    } else {
-      console.warn('[DEBUG] Missing username or userId, redirecting to home');
-      navigateTo('/home');
-    }
-  } else {
-    navigateTo('/home');
-  }
 });
 
 
