@@ -879,6 +879,37 @@ button:disabled {
   text-decoration: underline;
 }
 
+/* Signout button styles */
+.signout-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+}
+
+.signout-btn:hover {
+  background-color: #c82333;
+}
+
+.signout-btn:active {
+  background-color: #bd2130;
+}
+
+/* Ensure home section has relative positioning for absolute button */
+#homeSelection {
+  position: relative;
+}
+
+
+
 /* Utility Classes */
 .hidden {
   display: none !important;
@@ -1183,7 +1214,7 @@ button:disabled {
 html {
     scroll-behavior: smooth; /* Smooth scrolling */
   }
-      
+
 html, body {
         margin: 0;
         padding: 0;

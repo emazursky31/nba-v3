@@ -105,13 +105,15 @@
 
 
 <!-- Home Screen -->
-<section id="homeSelection" data-route="/home" class="hidden" style="text-align: center; margin-top: 2rem;">
+<section id="homeSelection" data-route="/home" class="hidden" style="text-align: center; margin-top: 2rem; position: relative;">
+  <!-- Add signout button in top-right corner -->
+  <button id="signoutBtn" class="signout-btn">Sign Out</button>
+  
   <h2 id="home-welcome"></h2>
-  <h2>🏠 Home</h2>
 
   <div id="gameModeSelection" style="margin-top: 1rem;">
-    <button id="privateGameBtn">🔒 Start Private Game</button>
-    <button id="findGameBtn">🌐 Join Public Game</button>
+    <button id="privateGameBtn">Start Private Game</button>
+    <button id="findGameBtn">Join Public Game</button>
   </div>
 
   <div id="playerStats" style="margin-top: 2rem;">
@@ -734,6 +736,7 @@ function attachRouteListeners(route) {
     case '/home':
       const privateGameBtn = document.getElementById('privateGameBtn');
       const findGameBtn = document.getElementById('findGameBtn');
+      const signoutBtn = document.getElementById('signoutBtn');
       
       if (privateGameBtn) {
         privateGameBtn.addEventListener('click', () => {
@@ -755,6 +758,10 @@ function attachRouteListeners(route) {
           isLeavingGame = false;
           joinPublicGame();
         });
+      }
+
+      if (signoutBtn) {
+        signoutBtn.addEventListener('click', signOut);
       }
 
       loadPlayerStats();
@@ -1644,14 +1651,52 @@ async function forceSignOut() {
 
 
 async function signOut() {
-  const { error } = await window.supabase.auth.signOut();
-  if (error) {
-    alert('Sign out error: ' + error.message);
-    return;
+  try {
+    // Check if user is in an active game
+    if (gameStarted && !gameOver && socket && socket.connected) {
+      // Emit a specific sign-out event to give opponent the win
+      socket.emit('playerSignedOut', { 
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        reason: 'signed_out'
+      });
+    }
+    
+    // Set leaving game flag to prevent reconnection attempts
+    isLeavingGame = true;
+    localStorage.setItem('isLeavingGame', 'true');
+    
+    // Sign out from Supabase
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error.message);
+      alert('Sign out error: ' + error.message);
+      return;
+    }
+    
+    // Clear all game state and localStorage
+    resetAllGameState();
+    localStorage.clear();
+    
+    // Reset global variables
+    myUsername = null;
+    myUserId = null;
+    myRoomId = null;
+    roomId = null;
+    gameStarted = false;
+    gameOver = true;
+    
+    // Update UI and navigate
+    updateNavUserState(null);
+    navigateTo('/signup');
+    
+    console.log('Successfully signed out');
+  } catch (error) {
+    console.error('Unexpected sign out error:', error);
+    alert('An unexpected error occurred during sign out.');
   }
-  alert('Signed out!');
-  showUser();
 }
+
 
 
 async function updateNavUserState(session) {
