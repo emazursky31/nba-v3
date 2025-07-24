@@ -580,6 +580,7 @@ button:disabled {
 }
 
 #shareInviteBtn {
+  display: none;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
@@ -1360,12 +1361,19 @@ button:disabled {
     gap: 0.75rem;
   }
   
-  #copyInviteBtn, #shareInviteBtn {
+  #copyInviteBtn{
     width: 100%;
     padding: 1rem;
     font-size: 1rem;
   }
-  
+
+  #shareInviteBtn{
+    display: inline-block;
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+  }
+
 }
 
 
