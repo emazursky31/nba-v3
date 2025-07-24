@@ -318,6 +318,7 @@ button:disabled {
   overflow-y: auto;
   overflow-x: hidden;
 }
+
 #playersDisplay {
   text-align: center;
   margin: 0.5rem 0;  /* Reduced from 1.5rem 0 */
@@ -1179,6 +1180,10 @@ button:disabled {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+html {
+    scroll-behavior: smooth; /* Smooth scrolling */
+  }
+      
 html, body {
         margin: 0;
         padding: 0;
@@ -1272,6 +1277,15 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;  /* Keep on one line, truncate if too long */
+  }
+
+   #gameArea {
+    min-height: auto; /* Remove fixed height constraint */
+    padding-bottom: 4rem; /* Ensure bottom content is accessible */
+  }
+  
+   #successful-guesses-container {
+    margin-bottom: 2rem; /* Extra space at bottom */
   }
   
   #guessControls {
