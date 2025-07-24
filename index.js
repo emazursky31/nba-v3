@@ -811,8 +811,8 @@ async function startGame(roomId) {
     return;
   }
   
-  // ✅ CRITICAL: Check if already starting
-  if (game.starting) {
+  // ✅ FIXED: Only block if ACTUALLY starting (not just flagged)
+  if (game.starting && game.leadoffPlayer) {
     console.log(`⚠️ Game already starting for room ${roomId}`);
     return;
   }
@@ -911,6 +911,7 @@ async function startGame(roomId) {
 
 
 
+
 async function getRandomPlayer() {
   const query = `
     WITH player_seasons AS (
@@ -1000,7 +1001,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
         gameCreationLocks.add(roomId);
         
         console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
-        game.starting = true;
+        
         
         // Start game with lock protection
         try {
@@ -1008,7 +1009,6 @@ async function handleJoinGame(socket, roomId, username, userId) {
         } finally {
           // Always remove lock and reset starting flag
           gameCreationLocks.delete(roomId);
-          game.starting = false;
         }
       }
     } else {
