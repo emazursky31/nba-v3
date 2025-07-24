@@ -803,9 +803,15 @@ function attachRouteListeners(route) {
 
 function navigateTo(path, options = {}) {
   return new Promise((resolve) => {
+    // ✅ Don't reset leaving game flag when navigating to waiting room
     if (path === '/home') {
       isLeavingGame = false;
       localStorage.removeItem('isLeavingGame');
+    } else if (path === '/waiting' && isPrivateGame && myRoomId) {
+      // Preserve room state when going to waiting room
+      isLeavingGame = false;
+      localStorage.removeItem('isLeavingGame');
+      console.log('[DEBUG] Preserving room state for waiting room navigation');
     }
 
     currentRoute = path;
@@ -815,17 +821,15 @@ function navigateTo(path, options = {}) {
     }
 
     showRouteSection(path);
-
-    // ✅ Fix: Always call updateUIForRoute since we just set currentRoute
     updateUIForRoute(path);
     attachRouteListeners(path);
 
-    // Use rAF for next paint
     requestAnimationFrame(() => {
       resolve();
     });
   });
 }
+
 
 
 function setupMobileInputFocus() {
@@ -1272,8 +1276,10 @@ function updateUIForRoute(path) {
   }
   
   // ✅ Ensure isLeavingGame is false for waiting room
-  if (isPrivateGame) {
+    if (isPrivateGame && myRoomId) {
     isLeavingGame = false;
+    localStorage.removeItem('isLeavingGame');
+    console.log('[DEBUG] Cleared isLeavingGame flag for private room:', myRoomId);
   }
 
   // Fix: Use correct element ID
@@ -1889,9 +1895,21 @@ socket.on('connect', () => {
     socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
   }
 
+  // ✅ If we have a room and we're not intentionally leaving, rejoin
+  if (myRoomId && !isLeavingGame && myUsername && myUserId) {
+    console.log('[DEBUG] Reconnecting to room after socket connect:', myRoomId);
+    setTimeout(() => {
+      safeEmit('joinGame', {
+        roomId: myRoomId,
+        username: myUsername,
+        userId: myUserId
+      });
+    }, 100);
+  }
 
   flushEmitQueue();
 });
+
 
 
 socket.on('disconnect', (reason) => {
@@ -2543,7 +2561,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // --- 3️⃣ Validate session state FIRST ---
- console.log('[DEBUG] Starting session validation...');
+console.log('[DEBUG] Starting session validation...');
 
 // ✅ FIRST: Check for room invite in URL and preserve it
 const params = new URLSearchParams(window.location.search);
@@ -2551,7 +2569,6 @@ const roomFromUrl = params.get('room');
 
 if (roomFromUrl) {
   console.log('[DEBUG] Found room invite in URL:', roomFromUrl);
-  // Store the room invite for after authentication
   localStorage.setItem('pendingRoomInvite', roomFromUrl);
 }
 
@@ -2566,26 +2583,16 @@ try {
   
   if (!session || !session.user) {
     console.log('[DEBUG] No valid session found');
-    // Clear any stale localStorage except pending room invite
     localStorage.removeItem('username');
     localStorage.removeItem('userId');
     localStorage.removeItem('privateRoomId');
     localStorage.removeItem('isLeavingGame');
-    // DON'T remove pendingRoomInvite - we need it after auth
     
     myUsername = null;
     myUserId = null;
     
     await updateNavUserState(null);
-    
-    // If there's a room invite, show it in the signup page
-    if (roomFromUrl) {
-      console.log('[DEBUG] Redirecting to signup with room invite preserved');
-      // Keep the room parameter in the URL for visual feedback
-      navigateTo('/signup');
-    } else {
-      navigateTo('/signup');
-    }
+    navigateTo('/signup');
     return;
   }
   
@@ -2594,7 +2601,6 @@ try {
   myUsername = user.user_metadata?.username || user.email;
   myUserId = user.id;
   
-  // Sync localStorage
   localStorage.setItem('username', myUsername);
   localStorage.setItem('userId', myUserId);
   
@@ -2604,51 +2610,49 @@ try {
     email: user.email
   });
   
-  // Update nav state
   await updateNavUserState(session);
   
-  // ✅ PRIORITY: Check for pending room invite first
+  // ✅ Handle room invites with proper state management
   const pendingRoomInvite = localStorage.getItem('pendingRoomInvite');
+  const currentRoomInvite = roomFromUrl;
+  const targetRoom = pendingRoomInvite || currentRoomInvite;
   
-  if (pendingRoomInvite) {
-    console.log('[DEBUG] Found pending room invite after authentication:', pendingRoomInvite);
+  if (targetRoom) {
+    console.log('[DEBUG] Processing room invite:', targetRoom);
     
-    // Clear the pending invite and set up the room
+    // Clear pending invite
     localStorage.removeItem('pendingRoomInvite');
-    myRoomId = pendingRoomInvite;
-    roomId = pendingRoomInvite;
+    
+    // Set up room state BEFORE navigation
+    myRoomId = targetRoom;
+    roomId = targetRoom;
     isPrivateGame = true;
-    localStorage.setItem('privateRoomId', pendingRoomInvite);
+    isLeavingGame = false; // ✅ Critical: Ensure we're not leaving
     
-    // Clean up URL
-    const newUrl = window.location.pathname;
-    history.replaceState({}, '', newUrl);
+    localStorage.setItem('privateRoomId', targetRoom);
+    localStorage.removeItem('isLeavingGame'); // ✅ Clear any stale leaving flags
     
-    // Join the private room
-    safeEmit('joinGame', {
-      roomId: myRoomId,
-      username: myUsername,
-      userId: myUserId
-    });
-    navigateTo('/waiting');
-    return;
-  }
-  
-  // Check for current room invite in URL (for already authenticated users)
-  if (roomFromUrl) {
-    console.log('[DEBUG] Found current room invite for authenticated user:', roomFromUrl);
-    myRoomId = roomFromUrl;
-    roomId = roomFromUrl;
-    isPrivateGame = true;
-    localStorage.setItem('privateRoomId', roomFromUrl);
+    // Clean up URL without triggering navigation
+    if (currentRoomInvite) {
+      const newUrl = window.location.pathname;
+      history.replaceState({}, '', newUrl);
+    }
     
-    // Join the private room
-    safeEmit('joinGame', {
-      roomId: myRoomId,
-      username: myUsername,
-      userId: myUserId
-    });
-    navigateTo('/waiting');
+    console.log('[DEBUG] Room state set, navigating to waiting...');
+    
+    // Navigate first, then join
+    await navigateTo('/waiting');
+    
+    // ✅ Add delay to ensure navigation completes
+    setTimeout(() => {
+      console.log('[DEBUG] Emitting joinGame for room:', targetRoom);
+      safeEmit('joinGame', {
+        roomId: targetRoom,
+        username: myUsername,
+        userId: myUserId
+      });
+    }, 100);
+    
     return;
   }
   
