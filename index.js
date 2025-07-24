@@ -16,15 +16,16 @@ const io = new Server(server);
 const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
 const activeTimers = new Map();
+const gameCreationLocks = new Set();
 
 const defaultPlayerImage = 
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
-// Serve static files first - make sure this points to your frontend build folder
+// Serve static files first
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Your API and other routes can go here (if any)...
+
 
 
 
@@ -798,96 +799,112 @@ async function getCareer(playerName) {
 // Starts the game in a room: picks random first player & teammates
 async function startGame(roomId) {
   const game = games[roomId];
+  
   if (!game) {
-    console.log('❌ No game object found');
+    console.log(`❌ No game object found for room ${roomId}`);
     return;
   }
 
+  // ✅ CRITICAL: Prevent duplicate game starts
   if (game.leadoffPlayer) {
     console.log(`⚠️ Game already started for room ${roomId}`);
     return;
   }
-
-  // ✅ RESET STATS TRACKING FOR NEW GAME
-  game.statsUpdated = false;
-  console.log(`[GAME_START] Reset statsUpdated flag for room ${roomId}`);
-
-  // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
-  const leadoffPlayer = await getRandomPlayer();
-  game.leadoffPlayer = leadoffPlayer; // full object
-
-  // Get teammates for the leadoff player (pass player_name)
-  game.teammates = await getTeammates(leadoffPlayer.player_name);
-
-  // Fully reset state for rematch, include headshot_url in the first guess entry
-  game.successfulGuesses = [{
-    name: leadoffPlayer.player_name,
-    guesser: 'Leadoff',
-    isLeadoff: true,
-    sharedTeams: [],
-    headshot_url: leadoffPlayer.headshot_url || defaultPlayerImage
-  }];
-
-  game.rematchVotes = new Set();
-  if (game.timer) clearInterval(game.timer);
-  game.timeLeft = 30;
-
-  // Pick first player to guess
-  const startIndex = Math.floor(Math.random() * game.players.length);
-  game.currentTurn = startIndex;
-  game.activePlayerSocketId = game.players[game.currentTurn];
-
-  // NBA player currently being guessed
-  game.currentPlayerName = leadoffPlayer.player_name;
-
-  // Username of the player whose turn it is
-  game.currentGuesserUsername = game.usernames[game.activePlayerSocketId];
-
-  // Map sockets to room again (for safety)
-  game.players.forEach((socketId) => {
-    socketRoomMap[socketId] = roomId;
-  });
-
-  // Logging for debug
+  
+  // ✅ CRITICAL: Check if already starting
+  if (game.starting) {
+    console.log(`⚠️ Game already starting for room ${roomId}`);
+    return;
+  }
+  
+  // ✅ Mark as starting immediately to prevent race conditions
+  game.starting = true;
+  
   console.log(`[STARTGAME] room ${roomId} starting with:`);
-  console.log(`→ leadoffPlayer: ${JSON.stringify(leadoffPlayer)}`);
-  console.log(`→ teammates: ${JSON.stringify(game.teammates)}`);
-  console.log(`→ players: ${game.players}`);
-  console.log(`→ currentTurn: ${game.currentTurn}`);
-  console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
-  console.log(`→ currentPlayerName (NBA player): ${game.currentPlayerName}`);
-  console.log(`→ currentGuesserUsername: ${game.currentGuesserUsername}`);
-  console.log(`→ statsUpdated: ${game.statsUpdated}`); // ✅ ADD DEBUG LOG
 
-  // Notify each player individually
-  game.players.forEach((socketId) => {
-    const opponentSocketId = game.players.find(id => id !== socketId);
-    const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
+  try {
+    // ✅ RESET STATS TRACKING FOR NEW GAME
+    game.statsUpdated = false;
+    console.log(`[GAME_START] Reset statsUpdated flag for room ${roomId}`);
 
-    io.to(socketId).emit('gameStarted', {
-      firstPlayerId: game.activePlayerSocketId,
+    // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
+    const leadoffPlayer = await getRandomPlayer();
+    
+    // ✅ Double-check that game wasn't started by another process while we were getting random player
+    if (game.leadoffPlayer) {
+      console.log(`⚠️ Game was started by another process while getting random player for room ${roomId}`);
+      return;
+    }
+    
+    game.leadoffPlayer = leadoffPlayer; // full object
 
-      // NBA player to guess
-      currentPlayerName: game.currentPlayerName,
+    // Get teammates for the leadoff player (pass player_name)
+    game.teammates = await getTeammates(leadoffPlayer.player_name);
 
-      // User whose turn it is
-      currentPlayerUsername: game.currentGuesserUsername,
+    // Fully reset state for rematch, include headshot_url in the first guess entry
+    game.successfulGuesses = [{
+      name: leadoffPlayer.player_name,
+      guesser: 'Leadoff',
+      isLeadoff: true,
+      sharedTeams: [],
+      headshot_url: leadoffPlayer.headshot_url || defaultPlayerImage
+    }];
 
-      // NBA player headshot URL (fallback if missing)
-      currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || defaultPlayerImage,
+    game.rematchVotes = new Set();
+    if (game.timer) clearInterval(game.timer);
+    game.timeLeft = 30;
 
-      timeLeft: game.timeLeft,
+    // Pick first player to guess
+    const startIndex = Math.floor(Math.random() * game.players.length);
+    game.currentTurn = startIndex;
+    game.activePlayerSocketId = game.players[game.currentTurn];
 
-      // Full leadoffPlayer object (player_name, headshot_url)
-      leadoffPlayer: game.leadoffPlayer,
+    // NBA player currently being guessed
+    game.currentPlayerName = leadoffPlayer.player_name;
 
-      opponentName: opponentUsername
+    // Username of the player whose turn it is
+    game.currentGuesserUsername = game.usernames[game.activePlayerSocketId];
+
+    // Map sockets to room again (for safety)
+    game.players.forEach((socketId) => {
+      socketRoomMap[socketId] = roomId;
     });
-  });
 
-  // Start turn timer
-  startTurnTimer(roomId);
+    // Logging for debug
+    console.log(`→ leadoffPlayer: ${JSON.stringify(leadoffPlayer)}`);
+    console.log(`→ teammates: ${JSON.stringify(game.teammates)}`);
+    console.log(`→ players: ${game.players}`);
+    console.log(`→ currentTurn: ${game.currentTurn}`);
+    console.log(`→ activePlayerSocketId: ${game.activePlayerSocketId}`);
+    console.log(`→ currentPlayerName (NBA player): ${game.currentPlayerName}`);
+    console.log(`→ currentGuesserUsername: ${game.currentGuesserUsername}`);
+    console.log(`→ statsUpdated: ${game.statsUpdated}`);
+
+    // Notify each player individually
+    game.players.forEach((socketId) => {
+      const opponentSocketId = game.players.find(id => id !== socketId);
+      const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
+
+      io.to(socketId).emit('gameStarted', {
+        firstPlayerId: game.activePlayerSocketId,
+        currentPlayerName: game.currentPlayerName,
+        currentPlayerUsername: game.currentGuesserUsername,
+        currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || defaultPlayerImage,
+        timeLeft: game.timeLeft,
+        leadoffPlayer: game.leadoffPlayer,
+        opponentName: opponentUsername
+      });
+    });
+
+    // Start turn timer
+    startTurnTimer(roomId);
+    
+  } finally {
+    // ✅ Always reset starting flag
+    game.starting = false;
+  }
 }
+
 
 
 
@@ -924,6 +941,8 @@ async function getRandomPlayer() {
 
 
 async function handleJoinGame(socket, roomId, username, userId) {
+  console.log(`[handleJoinGame] ${username} attempting to join room: ${roomId}`);
+  
   if (!userId || typeof userId !== 'string') {
     console.error('[handleJoinGame] Invalid userId:', userId, 'for user:', username);
     socket.emit('message', 'Authentication error. Please refresh and sign in again.');
@@ -935,16 +954,85 @@ async function handleJoinGame(socket, roomId, username, userId) {
     return;
   }
 
+  // Clean up ended games
   if (games[roomId] && games[roomId].gameEnded) {
-  console.log(`Cleaning up ended game for room: ${roomId}`);
-  delete games[roomId];
-}
+    console.log(`Cleaning up ended game for room: ${roomId}`);
+    delete games[roomId];
+  }
 
-  if (!games[roomId]) {
-    console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
+  // ✅ CRITICAL: Check if game already exists
+  if (games[roomId]) {
+    console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
+    
+    const game = games[roomId];
+    
+    // Add player to existing game if not already in it
+    if (!game.players.includes(socket.id)) {
+      game.players.push(socket.id);
+      
+      const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
+      game.usernames[socket.id] = finalUsername;
+      game.userIds = game.userIds || {};
+      game.userIds[socket.id] = userId;
+      
+      socket.data.userId = userId;
+      socket.username = finalUsername;
+      socket.join(roomId);
+      socketRoomMap[socket.id] = roomId;
+      
+      if (!game.ready) game.ready = new Set();
+      game.ready.add(socket.id);
+      
+      io.to(roomId).emit('playersUpdate', game.players.length);
+      
+      // Check if we now have enough players to start
+      if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer && !game.starting) {
+        // ✅ CRITICAL: Check if game is already being created
+        if (gameCreationLocks.has(roomId)) {
+          console.log(`[handleJoinGame] Game creation already in progress for room ${roomId}`);
+          return;
+        }
+        
+        // Lock this room during game creation
+        gameCreationLocks.add(roomId);
+        
+        console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
+        game.starting = true;
+        
+        // Start game with lock protection
+        try {
+          await startGame(roomId);
+        } finally {
+          // Always remove lock and reset starting flag
+          gameCreationLocks.delete(roomId);
+          game.starting = false;
+        }
+      }
+    }
+    return;
+  }
+  
+  // ✅ CRITICAL: Check if someone else is already creating this game
+  if (gameCreationLocks.has(roomId)) {
+    console.log(`[handleJoinGame] Game creation already in progress for room ${roomId}, waiting...`);
+    // Wait and try again
+    setTimeout(() => {
+      handleJoinGame(socket, roomId, username, userId);
+    }, 150);
+    return;
+  }
+  
+  // Create new game
+  console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
+  
+  // ✅ Lock during creation
+  gameCreationLocks.add(roomId);
+  
+  try {
     games[roomId] = {
-      players: [],
+      players: [socket.id],
       usernames: {},
+      userIds: {},
       currentTurn: 0,
       currentPlayerName: null,
       timer: null,
@@ -955,43 +1043,30 @@ async function handleJoinGame(socket, roomId, username, userId) {
       leadoffPlayer: null,
       activePlayerSocketId: null,
       ready: new Set(),
+      starting: false,
     };
-  } else {
-    console.log(`[handleJoinGame] Game already exists for room ${roomId}`);
-    if (!games[roomId].ready) {
-      games[roomId].ready = new Set();
-    }
+
+    const game = games[roomId];
+    const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
+    
+    game.usernames[socket.id] = finalUsername;
+    game.userIds[socket.id] = userId;
+    game.ready.add(socket.id);
+    
+    socket.data.userId = userId;
+    socket.username = finalUsername;
+    socket.join(roomId);
+    socketRoomMap[socket.id] = roomId;
+    
+    io.to(roomId).emit('playersUpdate', game.players.length);
+    
+    console.log(`[handleJoinGame] Successfully created game for room ${roomId}`);
+  } finally {
+    // ✅ Always remove creation lock
+    gameCreationLocks.delete(roomId);
   }
-
-  const game = games[roomId];
-
-  if (!game.players.includes(socket.id)) {
-    game.players.push(socket.id);
-  }
-
-  const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
-  game.usernames[socket.id] = finalUsername;
-  game.userIds = game.userIds || {};
-  game.userIds[socket.id] = userId;
-
-  socket.data.userId = userId;
-
-  socket.username = finalUsername;
-
-  socket.join(roomId);
-  socketRoomMap[socket.id] = roomId;
-
-  io.to(roomId).emit('playersUpdate', game.players.length);
-
-  game.ready.add(socket.id);
-
-  if (game.players.length === 2 && game.ready.size === 2 && !game.leadoffPlayer && !game.starting) {
-  console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
-  game.starting = true; // Prevent duplicate starts
-  await startGame(roomId);
-  game.starting = false; // Reset after start
 }
-}
+
 
 
 async function handlePlayerDisconnect(socket) {
@@ -1094,15 +1169,13 @@ async function handlePlayerDisconnect(socket) {
       
       // Completely delete the game instead of resetting it
       delete games[room];
+      gameCreationLocks.delete(room);
       console.log(`🗑️ Completely deleted game for room ${room}`);
 
       break;
     }
   }
 }
-
-
-
 
 
 
@@ -1122,6 +1195,21 @@ function cleanupTimer(roomId) {
   
   console.log(`[CLEANUP] Timer cleaned up for room ${roomId}`);
 }
+
+
+function cleanupGameCreationLocks() {
+  for (const roomId of gameCreationLocks) {
+    // If a room has been locked for more than 10 seconds, something went wrong
+    if (!games[roomId] || games[roomId].players.length < 2) {
+      console.log(`[CLEANUP] Removing stale creation lock for room ${roomId}`);
+      gameCreationLocks.delete(roomId);
+    }
+  }
+}
+
+// Run cleanup every 15 seconds
+setInterval(cleanupGameCreationLocks, 15000);
+
 
 
 async function updateUserStats(userId, result) {
