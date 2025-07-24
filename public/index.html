@@ -372,9 +372,29 @@ async function validateAndCleanupSession() {
     console.log('[DEBUG] Username set to:', myUsername);
     console.log('[DEBUG] UserId set to:', myUserId);
 
-    // ✅ ADD: Notify server about authentication
     if (socket && socket.connected) {
       socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
+    }
+
+    const pendingRoomInvite = localStorage.getItem('pendingRoomInvite');
+    if (pendingRoomInvite) {
+      console.log('[DEBUG] Found pending room invite after sign in:', pendingRoomInvite);
+
+      // Clear the pending invite and set up the room
+      localStorage.removeItem('pendingRoomInvite');
+      myRoomId = pendingRoomInvite;
+      roomId = pendingRoomInvite;
+      isPrivateGame = true;
+      localStorage.setItem('privateRoomId', pendingRoomInvite);
+
+      // Join the private room
+      safeEmit('joinGame', {
+        roomId: myRoomId,
+        username: myUsername,
+        userId: myUserId
+      });
+      navigateTo('/waiting');
+      return;
     }
     
     navigateTo('/home'); 
@@ -1558,11 +1578,35 @@ async function handleAuthSuccess() {
   // Clear URL hash to remove confirmation tokens
   history.replaceState(null, '', window.location.pathname);
 
+  const pendingRoomInvite = localStorage.getItem('pendingRoomInvite');
+  if (pendingRoomInvite) {
+    console.log('[DEBUG] Found pending room invite after email confirmation:', pendingRoomInvite);
+
+    // Clear the pending invite and set up the room
+    localStorage.removeItem('pendingRoomInvite');
+    myRoomId = pendingRoomInvite;
+    roomId = pendingRoomInvite;
+    isPrivateGame = true;
+    localStorage.setItem('privateRoomId', pendingRoomInvite);
+
+    // Join the private room
+    safeEmit('joinGame', {
+      roomId: myRoomId,
+      username: myUsername,
+      userId: myUserId
+    });
+    navigateTo('/waiting');
+    return;
+  }
+
   navigateTo('/home');
 }
 
 async function forceSignOut() {
   console.log('[forceSignOut] Cleaning up invalid session...');
+  
+  // ✅ Preserve pending room invite
+  const pendingRoomInvite = localStorage.getItem('pendingRoomInvite');
   
   try {
     await supabase.auth.signOut();
@@ -1572,6 +1616,11 @@ async function forceSignOut() {
   
   // Clear everything
   localStorage.clear();
+  
+  // ✅ Restore pending room invite if it existed
+  if (pendingRoomInvite) {
+    localStorage.setItem('pendingRoomInvite', pendingRoomInvite);
+  }
   
   myUsername = null;
   myUserId = null;
@@ -1585,6 +1634,7 @@ async function forceSignOut() {
   await updateNavUserState(null);
   navigateTo('/signup');
 }
+
 
 
 async function signOut() {
@@ -2493,78 +2543,122 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // --- 3️⃣ Validate session state FIRST ---
-  console.log('[DEBUG] Starting session validation...');
+ console.log('[DEBUG] Starting session validation...');
 
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error('[DEBUG] Session error:', error);
-      await forceSignOut();
-      return;
-    }
-    
-    if (!session || !session.user) {
-      console.log('[DEBUG] No valid session found');
-      // Clear any stale localStorage
-      localStorage.removeItem('username');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('privateRoomId');
-      localStorage.removeItem('isLeavingGame');
-      
-      myUsername = null;
-      myUserId = null;
-      
-      await updateNavUserState(null);
-      navigateTo('/signup');
-      return;
-    }
-    
-    // Valid session exists - set up user data
-    const user = session.user;
-    myUsername = user.user_metadata?.username || user.email;
-    myUserId = user.id;
-    
-    // Sync localStorage
-    localStorage.setItem('username', myUsername);
-    localStorage.setItem('userId', myUserId);
-    
-    console.log('[DEBUG] Valid session confirmed:', {
-      myUsername,
-      myUserId,
-      email: user.email
-    });
-    
-    // Update nav state
-    await updateNavUserState(session);
-    
-    // Now handle room logic for authenticated users
-    const params = new URLSearchParams(window.location.search);
-    const roomFromUrl = params.get('room');
-    
-    if (roomFromUrl) {
-      console.log('[DEBUG] Found invite link for room:', roomFromUrl);
-      myRoomId = roomFromUrl;
-      roomId = roomFromUrl;
-      isPrivateGame = true;
-      localStorage.setItem('privateRoomId', roomFromUrl);
-      
-      // Join the private room
-      safeEmit('joinGame', {
-        roomId: myRoomId,
-        username: myUsername,
-        userId: myUserId
-      });
-      navigateTo('/waiting');
-    } else {
-      // No room invite, go to home
-      navigateTo('/home');
-    }
-    
-  } catch (error) {
-    console.error('[DEBUG] Session validation failed:', error);
+// ✅ FIRST: Check for room invite in URL and preserve it
+const params = new URLSearchParams(window.location.search);
+const roomFromUrl = params.get('room');
+
+if (roomFromUrl) {
+  console.log('[DEBUG] Found room invite in URL:', roomFromUrl);
+  // Store the room invite for after authentication
+  localStorage.setItem('pendingRoomInvite', roomFromUrl);
+}
+
+try {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error('[DEBUG] Session error:', error);
     await forceSignOut();
+    return;
   }
+  
+  if (!session || !session.user) {
+    console.log('[DEBUG] No valid session found');
+    // Clear any stale localStorage except pending room invite
+    localStorage.removeItem('username');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('privateRoomId');
+    localStorage.removeItem('isLeavingGame');
+    // DON'T remove pendingRoomInvite - we need it after auth
+    
+    myUsername = null;
+    myUserId = null;
+    
+    await updateNavUserState(null);
+    
+    // If there's a room invite, show it in the signup page
+    if (roomFromUrl) {
+      console.log('[DEBUG] Redirecting to signup with room invite preserved');
+      // Keep the room parameter in the URL for visual feedback
+      navigateTo('/signup');
+    } else {
+      navigateTo('/signup');
+    }
+    return;
+  }
+  
+  // Valid session exists - set up user data
+  const user = session.user;
+  myUsername = user.user_metadata?.username || user.email;
+  myUserId = user.id;
+  
+  // Sync localStorage
+  localStorage.setItem('username', myUsername);
+  localStorage.setItem('userId', myUserId);
+  
+  console.log('[DEBUG] Valid session confirmed:', {
+    myUsername,
+    myUserId,
+    email: user.email
+  });
+  
+  // Update nav state
+  await updateNavUserState(session);
+  
+  // ✅ PRIORITY: Check for pending room invite first
+  const pendingRoomInvite = localStorage.getItem('pendingRoomInvite');
+  
+  if (pendingRoomInvite) {
+    console.log('[DEBUG] Found pending room invite after authentication:', pendingRoomInvite);
+    
+    // Clear the pending invite and set up the room
+    localStorage.removeItem('pendingRoomInvite');
+    myRoomId = pendingRoomInvite;
+    roomId = pendingRoomInvite;
+    isPrivateGame = true;
+    localStorage.setItem('privateRoomId', pendingRoomInvite);
+    
+    // Clean up URL
+    const newUrl = window.location.pathname;
+    history.replaceState({}, '', newUrl);
+    
+    // Join the private room
+    safeEmit('joinGame', {
+      roomId: myRoomId,
+      username: myUsername,
+      userId: myUserId
+    });
+    navigateTo('/waiting');
+    return;
+  }
+  
+  // Check for current room invite in URL (for already authenticated users)
+  if (roomFromUrl) {
+    console.log('[DEBUG] Found current room invite for authenticated user:', roomFromUrl);
+    myRoomId = roomFromUrl;
+    roomId = roomFromUrl;
+    isPrivateGame = true;
+    localStorage.setItem('privateRoomId', roomFromUrl);
+    
+    // Join the private room
+    safeEmit('joinGame', {
+      roomId: myRoomId,
+      username: myUsername,
+      userId: myUserId
+    });
+    navigateTo('/waiting');
+    return;
+  }
+  
+  // No room invite, go to home
+  navigateTo('/home');
+  
+} catch (error) {
+  console.error('[DEBUG] Session validation failed:', error);
+  await forceSignOut();
+}
 
   // Event listeners for page lifecycle
   window.addEventListener('popstate', () => {
