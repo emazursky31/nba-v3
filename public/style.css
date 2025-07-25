@@ -390,9 +390,11 @@ button:disabled {
 /* Game Area */
 #gameArea {
   display: block;
-  min-height: 100vh;
-  overflow-y: auto;
+  min-height: auto; /* Changed from 100vh */
+  height: auto;
+  overflow-y: visible; /* Changed from auto */
   overflow-x: hidden;
+  padding-bottom: 2rem; /* Add bottom padding for desktop too */
 }
 
 #playersDisplay {
@@ -1358,15 +1360,17 @@ button:disabled {
 /* Responsive Design */
 @media (max-width: 768px) {
 html {
-    scroll-behavior: smooth; /* Smooth scrolling */
+    height: auto;
+    min-height: 100vh;
   }
 
-html, body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        /* Prevent horizontal scroll */
-    }
+ body {
+    min-height: 100vh;
+    height: auto; /* Allow body to grow */
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+  }
 
     nav {
         padding: 0 1rem;
@@ -1408,6 +1412,9 @@ html, body {
  section[data-route] {
     padding: 1rem 1.5rem;  /* Even more compact on mobile */
     margin-bottom: 1rem;
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
   }
 
   .turn-prompt {
@@ -1458,6 +1465,9 @@ html, body {
   #turnSection {
     margin-bottom: 1rem;
     padding: 1rem;
+    min-height: auto;
+    height: auto;
+    max-height: none;
   }
 
   .turn-player-name {
@@ -1473,13 +1483,18 @@ html, body {
     white-space: nowrap;  /* Keep on one line, truncate if too long */
   }
 
-   #gameArea {
-    min-height: auto; /* Remove fixed height constraint */
-    padding-bottom: 4rem; /* Ensure bottom content is accessible */
+  #gameArea {
+    min-height: auto !important; /* Remove any fixed height constraints */
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important; /* Allow natural scrolling */
+    overflow-x: hidden;
+    padding-bottom: 6rem !important; /* Increase bottom padding significantly */
   }
   
    #successful-guesses-container {
-    margin-bottom: 2rem; /* Extra space at bottom */
+    margin-bottom: 4rem !important; /* Extra space at bottom */
+    padding-bottom: 2rem;
   }
   
   #guessControls {
@@ -1576,6 +1591,7 @@ html, body {
   width: 280px;
   height: 200px;
   margin: 1.5rem auto;
+  margin-bottom: 3rem !important;
 }
 
 .player-card {
@@ -1704,6 +1720,15 @@ html, body {
     padding: 1rem;
   }
 
+  #gameArea {
+    padding-bottom: 8rem !important; /* Even more bottom padding */
+  }
+
+  #successful-guesses-container {
+    margin-bottom: 5rem !important;
+    padding-bottom: 3rem;
+  }
+
   #timer-container {
     margin: 0.25rem 0;
   }
@@ -1810,6 +1835,7 @@ html, body {
   width: 240px;
   height: 180px;
   margin: 1rem auto;
+  margin-bottom: 4rem !important;
 }
 
 .player-card {
