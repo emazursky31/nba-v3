@@ -209,9 +209,6 @@
 
   <div id="messageContainer"></div>
 
-  <!-- Shared Turn History List -->
-
-
 </section>
 
 
@@ -1989,9 +1986,10 @@ socket.on('connect', () => {
     socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
   }
 
-  // ✅ If we have a room and we're not intentionally leaving, rejoin
-  if (myRoomId && !isLeavingGame && myUsername && myUserId) {
-    console.log('[DEBUG] Reconnecting to room after socket connect:', myRoomId);
+  // ✅ SAFE: Only auto-rejoin if game is actively in progress
+  // This preserves rematch while preventing unwanted auto-starts
+  if (myRoomId && !isLeavingGame && gameStarted && !gameOver && myUsername && myUserId) {
+    console.log('[DEBUG] Reconnecting to active game after socket connect:', myRoomId);
     setTimeout(() => {
       safeEmit('joinGame', {
         roomId: myRoomId,
@@ -1999,10 +1997,16 @@ socket.on('connect', () => {
         userId: myUserId
       });
     }, 100);
+  } else if (gameOver || !gameStarted) {
+    // ✅ Clear localStorage persistence but keep myRoomId for rematch
+    console.log('[DEBUG] Game not active - clearing localStorage persistence');
+    localStorage.removeItem('privateRoomId');
+    // Note: myRoomId is preserved for rematch functionality
   }
 
   flushEmitQueue();
 });
+
 
 
 
@@ -2226,6 +2230,9 @@ socket.on('gameOver', (data) => {
   }
 
   gameOver = true;
+
+  // ✅ PREVENT AUTO-REJOIN: Clear room persistence when game ends
+  localStorage.removeItem('privateRoomId');
 
   // Stop input & timer
   guessInput.disabled = true;
@@ -2712,35 +2719,26 @@ try {
   const currentRoomInvite = roomFromUrl;
   const targetRoom = pendingRoomInvite || currentRoomInvite;
   
-  if (targetRoom) {
-    console.log('[DEBUG] Processing room invite:', targetRoom);
-    
-    // Clear pending invite
-    localStorage.removeItem('pendingRoomInvite');
-    
+ if (targetRoom) {
+  console.log('[DEBUG] Processing room invite:', targetRoom);
+  
+  // Clear pending invite
+  localStorage.removeItem('pendingRoomInvite');
+  
+  // ✅ ONLY set up room state if we're not in a game over state
+  if (!gameOver) {
     // Set up room state BEFORE navigation
     myRoomId = targetRoom;
     roomId = targetRoom;
     isPrivateGame = true;
-    isLeavingGame = false; // ✅ Critical: Ensure we're not leaving
+    isLeavingGame = false;
     
     localStorage.setItem('privateRoomId', targetRoom);
-    localStorage.removeItem('isLeavingGame'); // ✅ Clear any stale leaving flags
+    localStorage.removeItem('isLeavingGame');
     
-    // Clean up URL without triggering navigation
-    if (currentRoomInvite) {
-      const newUrl = window.location.pathname;
-      history.replaceState({}, '', newUrl);
-    }
-    
-    console.log('[DEBUG] Room state set, navigating to waiting...');
-    
-    // Navigate first, then join
+    // Navigate and join
     await navigateTo('/waiting');
-    
-    // ✅ Add delay to ensure navigation completes
     setTimeout(() => {
-      console.log('[DEBUG] Emitting joinGame for room:', targetRoom);
       safeEmit('joinGame', {
         roomId: targetRoom,
         username: myUsername,
@@ -2749,7 +2747,10 @@ try {
     }, 100);
     
     return;
+  } else {
+    console.log('[DEBUG] Ignoring room invite - game is over');
   }
+}
   
   // No room invite, go to home
   navigateTo('/home');
