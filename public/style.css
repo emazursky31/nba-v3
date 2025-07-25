@@ -487,13 +487,13 @@ button:disabled {
 }
 
 /* Timer */
-/* Basketball Shot Clock Timer */
 #timer-container {
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 0.5rem 0;
 }
+
 
 #timer {
   font-size: 2.5rem;
@@ -505,63 +505,51 @@ button:disabled {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 3px solid #fbbf24;
-  box-shadow: 
-    0 0 20px rgba(251, 191, 36, 0.4),
-    inset 0 0 15px rgba(0, 0, 0, 0.5);
-  text-shadow: 
-    0 0 8px rgba(251, 191, 36, 0.8),
-    2px 2px 4px rgba(0, 0, 0, 0.8);
   display: inline-block;
   min-width: 90px;
+  width: 90px; /* Fixed width to prevent shrinking */
+  height: 60px; /* Fixed height for consistency */
   letter-spacing: 0.05em;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, border-color 0.3s ease; /* Only animate colors, not size */
   line-height: 1;
+  display: flex; /* Use flexbox for perfect centering */
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box; /* Include padding and border in size calculations */
 }
 
-/* Critical time styling (5 seconds or less) */
+/* Critical time styling (5 seconds or less) - No glow */
 #timer.critical-time {
   color: #ef4444;
   border-color: #ef4444;
-  box-shadow: 
-    0 0 25px rgba(239, 68, 68, 0.6),
-    inset 0 0 15px rgba(0, 0, 0, 0.5);
-  text-shadow: 
-    0 0 10px rgba(239, 68, 68, 0.9),
-    2px 2px 4px rgba(0, 0, 0, 0.8);
+  /* Removed box-shadow and text-shadow */
   animation: critical-pulse 0.5s infinite;
 }
 
-/* Low time styling (10 seconds or less) */
+/* Low time styling (10 seconds or less) - No glow */
 #timer.low-time {
   color: #f59e0b;
   border-color: #f59e0b;
-  box-shadow: 
-    0 0 22px rgba(245, 158, 11, 0.5),
-    inset 0 0 15px rgba(0, 0, 0, 0.5);
-  text-shadow: 
-    0 0 9px rgba(245, 158, 11, 0.8),
-    2px 2px 4px rgba(0, 0, 0, 0.8);
+  /* Removed box-shadow and text-shadow */
   animation: warning-pulse 1s infinite;
 }
 
 /* Pulsing animations */
 @keyframes critical-pulse {
   0%, 100% { 
-    transform: scale(1);
     opacity: 1;
   }
   50% { 
-    transform: scale(1.05);
     opacity: 0.9;
   }
 }
 
 @keyframes warning-pulse {
   0%, 100% { 
-    transform: scale(1);
+    opacity: 1;
   }
   50% { 
-    transform: scale(1.02);
+    opacity: 0.95;
   }
 }
 
@@ -1455,12 +1443,13 @@ html {
     margin: 0.25rem 0; 
   }
 
-  #timer {
+#timer {
     font-size: 2rem;
     padding: 0.4rem 0.8rem;
     min-width: 70px;
+    width: 70px; /* Fixed width for mobile */
+    height: 50px; /* Fixed height for mobile */
   }
-
 
   #turnSection {
     margin-bottom: 1rem;
@@ -1737,6 +1726,8 @@ html, body {
     font-size: 1.75rem;
     padding: 0.3rem 0.6rem;
     min-width: 60px;
+    width: 60px; /* Fixed width for smallest screens */
+    height: 45px; /* Fixed height for smallest screens */
     border-width: 2px;
   }
 

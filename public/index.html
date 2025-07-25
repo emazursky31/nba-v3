@@ -2234,7 +2234,7 @@ socket.on('gameOver', (data) => {
     clearInterval(window.timerInterval);
     window.timerInterval = null;
   }
-  timerEl.textContent = '';
+  timerEl.textContent = ':--';
 
   // Ensure myUsername & opponentName
   if (!myUsername && data.winnerName && data.loserName) {
@@ -2497,8 +2497,8 @@ function renderPlayScreen() {
     currentPlayerHeadshotEl.alt = `${currentPlayerName} Headshot`;
   }
   if (timerEl) {
-    timerEl.textContent = timeLeft;
-  }
+  timerEl.textContent = `:${timeLeft}`;
+}
 }
 
 
@@ -2506,7 +2506,7 @@ function renderPlayScreen() {
 
 
 socket.on('timerTick', (data) => {
-  timerEl.textContent = data.timeLeft;
+  timerEl.textContent = `:${data.timeLeft}`;
   updateTimerStyle(data.timeLeft);
 });
 
