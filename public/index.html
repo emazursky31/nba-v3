@@ -189,7 +189,7 @@
 
 
    <div id="timer-container">
-  <span id="timer">30</span>
+  <span id="timer">:30</span>
 </div>
 
     <div id="guessControls" style="position: relative;">
@@ -1100,7 +1100,7 @@ function resetGameUI() {
   renderSuccessfulGuesses();
 
   currentPlayerNameEl.textContent = 'Loading...';
-  timerEl.textContent = '30';
+  timerEl.textContent = ':30';
 
   // ✅ Use CSS classes instead of inline styles
   waitingRoom.classList.add('hidden');     // Instead of style.display = 'none'
@@ -2193,7 +2193,7 @@ socket.on('gameStarted', async (data) => {
     playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
   }
 
-  timerEl.textContent = data.timeLeft || 15;
+  timerEl.textContent = `:${data.timeLeft || 30}`;
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
   console.log('[DEBUG] Navigating to /play...');
@@ -2336,7 +2336,7 @@ socket.on('yourTurn', (data) => {
   console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
 }
 
-  timerEl.textContent = data.timeLeft || 15;
+  timerEl.textContent = `:${data.timeLeft || 30}`;
 
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';

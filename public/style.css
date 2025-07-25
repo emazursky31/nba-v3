@@ -490,7 +490,7 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 1rem 0;
+  margin: 0.5rem 0;
 }
 
 #timer {
@@ -500,7 +500,7 @@ button:disabled {
   color: #fbbf24;
   font-family: 'Arial Black', sans-serif;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  padding: 0.75rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 3px solid #fbbf24;
   box-shadow: 
@@ -510,9 +510,10 @@ button:disabled {
     0 0 8px rgba(251, 191, 36, 0.8),
     2px 2px 4px rgba(0, 0, 0, 0.8);
   display: inline-block;
-  min-width: 80px;
+  min-width: 90px;
   letter-spacing: 0.05em;
   transition: all 0.3s ease;
+  line-height: 1;
 }
 
 /* Critical time styling (5 seconds or less) */
@@ -1443,9 +1444,13 @@ html, body {
   }
 
   
+ #timer-container {
+    margin: 0.25rem 0; 
+  }
+
   #timer {
     font-size: 2rem;
-    padding: 0.6rem 1rem;
+    padding: 0.4rem 0.8rem;
     min-width: 70px;
   }
 
@@ -1698,10 +1703,14 @@ html, body {
   section[data-route] {
     padding: 1rem;
   }
+
+  #timer-container {
+    margin: 0.25rem 0;
+  }
   
   #timer {
     font-size: 1.75rem;
-    padding: 0.5rem 0.8rem;
+    padding: 0.3rem 0.6rem;
     min-width: 60px;
     border-width: 2px;
   }
