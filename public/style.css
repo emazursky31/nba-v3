@@ -579,6 +579,11 @@ button:disabled {
   margin-bottom: 1.5rem;
   align-items: stretch;
   position: relative;
+  /* Remove any height constraints */
+  min-height: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 #guessControls input {
@@ -616,8 +621,7 @@ button:disabled {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
-  max-height: 250px;
-  overflow-y: auto;
+  overflow: visible;
   box-shadow: var(--shadow-lg);
   margin-top: 0.25rem;
   /* Ensure it's not clipped by parent containers */
@@ -1509,6 +1513,11 @@ html {
     overflow-x: hidden;
     padding-bottom: 6rem !important; /* Increase bottom padding significantly */
   }
+
+  #gameArea * {
+  max-height: none !important;
+  overflow: visible !important;
+}
   
    #successful-guesses-container {
     margin-bottom: 4rem !important; /* Extra space at bottom */
