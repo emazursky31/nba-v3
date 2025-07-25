@@ -398,7 +398,7 @@ button:disabled {
 }
 
 /* Game Area */
-#gameArea {
+#gameArea, #waitingRoom {
   display: block;
   min-height: auto;
   height: auto;
