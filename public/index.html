@@ -25,9 +25,22 @@
 
 <body>
 <nav>
-  <span id="nav-title">🏀 Who He Played With</span>
-  <a href="#" id="nav-home-link" style="display: none;">Home</a>
+  <a href="#" id="nav-title-link" style="text-decoration: none; color: inherit;">
+    <span id="nav-title">🏀 Who He Played With</span>
+  </a>
+  
+  <div class="nav-dropdown" id="nav-dropdown" style="display: none;">
+    <button class="nav-dropdown-btn" id="nav-dropdown-btn">
+      <span id="nav-username">Menu</span>
+      <span class="dropdown-arrow">▼</span>
+    </button>
+    <div class="nav-dropdown-content" id="nav-dropdown-content">
+      <a href="#" id="nav-dropdown-home">🏠 Home</a>
+      <a href="#" id="nav-dropdown-signout">🚪 Sign Out</a>
+    </div>
+  </div>
 </nav>
+
 
 
 <!-- <h1>Who He Played With</h1> -->
@@ -401,6 +414,124 @@ async function validateAndCleanupSession() {
     
     navigateTo('/home'); 
   }
+
+
+  function setupNavDropdown() {
+  const dropdown = document.getElementById('nav-dropdown');
+  const dropdownBtn = document.getElementById('nav-dropdown-btn');
+  const dropdownContent = document.getElementById('nav-dropdown-content');
+  const navTitleLink = document.getElementById('nav-title-link');
+  const navDropdownHome = document.getElementById('nav-dropdown-home');
+  const navDropdownSignout = document.getElementById('nav-dropdown-signout');
+
+  if (!dropdown || !dropdownBtn) return;
+
+  // Toggle dropdown on button click
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  // Title link navigation
+  if (navTitleLink) {
+    navTitleLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      dropdown.classList.remove('open');
+      
+      // Navigate based on auth state
+      if (myUsername && myUserId) {
+        navigateTo('/home');
+      } else {
+        navigateTo('/signup');
+      }
+    });
+  }
+
+  // Dropdown home link
+  if (navDropdownHome) {
+    navDropdownHome.addEventListener('click', (e) => {
+      e.preventDefault();
+      dropdown.classList.remove('open');
+      
+      if (myUsername && myUserId) {
+        // Tell server we're leaving if in an active game
+        if (socket && socket.connected && gameStarted && !gameOver) {
+          safeEmit('leaveGame');
+        }
+        
+        // Clean up all client state
+        resetAllGameState();
+        navigateTo('/home');
+      } else {
+        navigateTo('/signup');
+      }
+    });
+  }
+
+  // Dropdown signout link
+  if (navDropdownSignout) {
+    navDropdownSignout.addEventListener('click', async (e) => {
+      e.preventDefault();
+      dropdown.classList.remove('open');
+      await signOut();
+    });
+  }
+}
+
+async function signOut() {
+  try {
+    // Check if user is in an active game
+    if (gameStarted && !gameOver && socket && socket.connected) {
+      // Emit a specific sign-out event to give opponent the win
+      socket.emit('playerSignedOut', { 
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        reason: 'signed_out'
+      });
+    }
+    
+    // Set leaving game flag to prevent reconnection attempts
+    isLeavingGame = true;
+    localStorage.setItem('isLeavingGame', 'true');
+    
+    // Sign out from Supabase
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error.message);
+      alert('Sign out error: ' + error.message);
+      return;
+    }
+    
+    // Clear all game state and localStorage
+    resetAllGameState();
+    localStorage.clear();
+    
+    // Reset global variables
+    myUsername = null;
+    myUserId = null;
+    myRoomId = null;
+    roomId = null;
+    gameStarted = false;
+    gameOver = true;
+    
+    // Update UI and navigate
+    updateNavUserState(null);
+    navigateTo('/signup');
+    
+    console.log('Successfully signed out');
+  } catch (error) {
+    console.error('Unexpected sign out error:', error);
+    alert('An unexpected error occurred during sign out.');
+  }
+}
+
 
 
 function updateSplitScoreboard(stats, player1, player2) {
@@ -1164,62 +1295,6 @@ function renderSuccessfulGuesses() {
 
 
 
-function setupGlobalNavListeners() {
-  // Home navigation with game leave logic
-  const navHomeLink = document.getElementById('nav-home-link');
-  if (navHomeLink) {
-    navHomeLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Tell server we're leaving if in an active game
-      if (socket && socket.connected && gameStarted && !gameOver) {
-        safeEmit('leaveGame');
-      }
-      
-      // Clean up all client state
-      resetAllGameState();
-      
-      navigateTo('/home');
-    });
-  }
-
-  // // Sign out button
-  // const navSignoutBtn = document.getElementById('nav-signout-btn');
-  // if (navSignoutBtn) {
-  //   navSignoutBtn.addEventListener('click', async () => {
-  //     resetAllGameState();
-  //     // Check if user is in an active game
-  //     if (gameStarted && !gameOver && socket && socket.connected) {
-  //       // Emit a specific sign-out event to give opponent the win
-  //       socket.emit('playerSignedOut', { 
-  //         roomId: myRoomId || roomId,
-  //         username: myUsername,
-  //         reason: 'signed_out'
-  //       });
-  //     }
-      
-  //     // Set leaving game flag to prevent reconnection attempts
-  //     isLeavingGame = true;
-  //     localStorage.setItem('isLeavingGame', 'true');
-      
-  //     // Sign out from Supabase
-  //     await window.supabase.auth.signOut();
-      
-  //     // Clear game state
-  //     gameStarted = false;
-  //     gameOver = true;
-  //     myRoomId = null;
-  //     roomId = null;
-      
-  //     // Update UI and navigate
-  //     updateNavUserState();
-  //     navigateTo('/signup');
-  //   });
-  // }
-
- 
-}
-
 
 function showRouteSection(path) {
   const allSections = document.querySelectorAll('section[data-route]');
@@ -1650,60 +1725,15 @@ async function forceSignOut() {
 
 
 
-async function signOut() {
-  try {
-    // Check if user is in an active game
-    if (gameStarted && !gameOver && socket && socket.connected) {
-      // Emit a specific sign-out event to give opponent the win
-      socket.emit('playerSignedOut', { 
-        roomId: myRoomId || roomId,
-        username: myUsername,
-        reason: 'signed_out'
-      });
-    }
-    
-    // Set leaving game flag to prevent reconnection attempts
-    isLeavingGame = true;
-    localStorage.setItem('isLeavingGame', 'true');
-    
-    // Sign out from Supabase
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Sign out error:', error.message);
-      alert('Sign out error: ' + error.message);
-      return;
-    }
-    
-    // Clear all game state and localStorage
-    resetAllGameState();
-    localStorage.clear();
-    
-    // Reset global variables
-    myUsername = null;
-    myUserId = null;
-    myRoomId = null;
-    roomId = null;
-    gameStarted = false;
-    gameOver = true;
-    
-    // Update UI and navigate
-    updateNavUserState(null);
-    navigateTo('/signup');
-    
-    console.log('Successfully signed out');
-  } catch (error) {
-    console.error('Unexpected sign out error:', error);
-    alert('An unexpected error occurred during sign out.');
-  }
-}
 
 
 
 async function updateNavUserState(session) {
   const navTitle = document.getElementById('nav-title');
-  const homeLink = document.getElementById('nav-home-link');
+  const navDropdown = document.getElementById('nav-dropdown');
+  const navUsername = document.getElementById('nav-username');
 
-  if (!navTitle || !homeLink) return;
+  if (!navTitle || !navDropdown) return;
 
   // If no session provided, get current session
   if (!session) {
@@ -1714,13 +1744,17 @@ async function updateNavUserState(session) {
   const hasValidSession = session?.user && myUsername && myUserId;
 
   if (!hasValidSession) {
-    // Not logged in - hide nav elements
-    navTitle.style.display = 'none';
-    homeLink.style.display = 'none';
-  } else {
-    // Logged in - show title and home link
+    // Not logged in - hide dropdown
     navTitle.style.display = 'inline-block';
-    homeLink.style.display = 'inline-block';
+    navDropdown.style.display = 'none';
+  } else {
+    // Logged in - show dropdown with username
+    navTitle.style.display = 'inline-block';
+    navDropdown.style.display = 'block';
+    
+    if (navUsername) {
+      navUsername.textContent = myUsername || 'Menu';
+    }
   }
 }
 
@@ -2518,7 +2552,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupAuthTabs();
   initializeAuthStateListener();
   updateNavUserState();
-  setupGlobalNavListeners();
+  setupNavDropdown();
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
