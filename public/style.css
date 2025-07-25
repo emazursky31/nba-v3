@@ -840,17 +840,26 @@ button:disabled {
   box-shadow: var(--shadow-xl);
   position: relative;
   margin-bottom: 1rem;
+  max-width: 800px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 /* Remove separate container styling for game over message */
 #gameOverContainer > div:first-child {
-  background: none !important;  /* Remove separate background */
-  padding: 0 !important;        /* Remove separate padding */
-  border-radius: 0 !important;  /* Remove separate border radius */
-  margin-bottom: 1.5rem !important;  /* Keep spacing */
-  border: none !important;      /* Remove separate border */
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  margin-bottom: 1.5rem !important;
+  border: none !important;
   font-weight: 700 !important;
-  font-size: 1.5rem;           /* Make message prominent */
+  font-size: 1.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 /* Style the message text directly based on content */
@@ -889,8 +898,10 @@ button:disabled {
   background: var(--bg-secondary) !important;
   padding: 1rem 1.5rem;
   border-radius: var(--radius-md);
-  margin: 1.5rem 0 1rem 0;  /* Better spacing */
-  border: 1px solid var(--border-color);  /* Subtle border */
+  margin: 1.5rem 0 1rem 0;
+  border: 1px solid var(--border-color);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 #gameOverResults p {
@@ -1583,13 +1594,29 @@ html {
     max-height: none !important;
     overflow-y: visible !important; /* Allow natural scrolling */
     overflow-x: hidden;
-    padding-bottom: 6rem !important; /* Increase bottom padding significantly */
+    padding-bottom: 3rem !important; /* Increase bottom padding significantly */
   }
 
   #gameArea * {
   max-height: none !important;
   overflow: visible !important;
 }
+
+ #gameOverContainer {
+    margin: 1rem;
+    padding: 1.5rem;
+    max-width: calc(100vw - 2rem); /* Prevent screen overflow */
+    width: calc(100vw - 2rem);
+  }
+  
+  #gameOverContainer > div:first-child {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    /* Force text wrapping on mobile */
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
   
    #successful-guesses-container {
     margin-bottom: 4rem !important; /* Extra space at bottom */
@@ -1824,7 +1851,7 @@ html, body {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    padding-bottom: 8rem !important;
+    padding-bottom: 4rem !important;
   }
 
   #successful-guesses-container {
@@ -1881,6 +1908,21 @@ html, body {
     gap: 0.25rem;
     padding: 0.5rem;
     font-size: 0.85rem;
+  }
+
+  #gameOverContainer {
+    margin: 0.5rem;
+    padding: 1rem;
+    max-width: calc(100vw - 1rem);
+    width: calc(100vw - 1rem);
+  }
+  
+  #gameOverContainer > div:first-child {
+    font-size: 1.1rem;
+    line-height: 1.3;
+    /* Aggressive text wrapping for small screens */
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 
 
