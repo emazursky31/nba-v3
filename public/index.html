@@ -788,6 +788,22 @@ function flushEmitQueue() {
   }
 }
 
+function updateTimerStyle(timeLeft) {
+  const timerEl = document.getElementById('timer');
+  if (!timerEl) return;
+  
+  // Remove existing classes
+  timerEl.classList.remove('critical-time', 'low-time');
+  
+  // Add appropriate class based on time remaining
+  if (timeLeft <= 5) {
+    timerEl.classList.add('critical-time');
+  } else if (timeLeft <= 10) {
+    timerEl.classList.add('low-time');
+  }
+}
+
+
 
 function updateHeadshot(player) {
   if (currentPlayerHeadshotEl) {
@@ -2488,6 +2504,7 @@ function renderPlayScreen() {
 
 socket.on('timerTick', (data) => {
   timerEl.textContent = data.timeLeft;
+  updateTimerStyle(data.timeLeft);
 });
 
 
