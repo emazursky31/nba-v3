@@ -400,9 +400,7 @@ button:disabled {
 /* Game Area */
 #gameArea, #waitingRoom {
   display: block;
-  min-height: auto;
-  height: auto;
-  overflow-y: visible;
+  overflow: visible;
   overflow-x: hidden;
   padding-bottom: 2rem;
   max-width: 800px;
@@ -614,14 +612,16 @@ button:disabled {
   top: 100%;
   left: 0;
   right: 140px;
-  z-index: 9999;
-  background: var(--bg-card);  /* Changed to light background */
-  border: 2px solid var(--border-color);  /* Light border */
+  z-index: 9999; /* High z-index to appear above everything */
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   max-height: 250px;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   margin-top: 0.25rem;
+  /* Ensure it's not clipped by parent containers */
+  clip-path: none !important;
 }
 
 .autocomplete-item {
@@ -1484,7 +1484,8 @@ html {
     padding: 1rem;
     min-height: auto;
     height: auto;
-    max-height: none;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .turn-player-name {
@@ -1737,8 +1738,12 @@ html, body {
     padding: 1rem;
   }
 
-  #gameArea {
-    padding-bottom: 8rem !important; /* Even more bottom padding */
+ #gameArea {
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-bottom: 8rem !important;
   }
 
   #successful-guesses-container {
