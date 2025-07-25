@@ -1379,20 +1379,11 @@ button:disabled {
 
 /* Responsive Design */
 
-/* DESKTOP ONLY - Remove ALL height constraints and scrollbars */
+/* DESKTOP ONLY - Remove height constraints ONLY when game is active */
 @media (min-width: 769px) {
   
-  /* Body and HTML - no height constraints on desktop */
-  html, body {
-    height: auto !important;
-    min-height: 100vh !important;
-    max-height: none !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important; /* Allow page scroll but not container scroll */
-  }
-  
-  /* Game area - absolutely no constraints */
-  #gameArea {
+  /* Only apply to visible game area (when not hidden) */
+  #gameArea:not(.hidden) {
     display: block !important;
     overflow: visible !important;
     height: auto !important;
@@ -1406,21 +1397,19 @@ button:disabled {
     padding-right: 1.5rem;
   }
   
-  /* All sections within game area */
-  #gameArea section,
-  #gameArea div,
-  #turnSection,
-  #guessControls,
-  #successful-guesses-container,
-  #timer-container {
+  /* Only apply to sections within visible game area */
+  #gameArea:not(.hidden) #turnSection,
+  #gameArea:not(.hidden) #guessControls,
+  #gameArea:not(.hidden) #successful-guesses-container,
+  #gameArea:not(.hidden) #timer-container {
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
     overflow: visible !important;
   }
   
-  /* Autocomplete - no height limits whatsoever */
-  #autocomplete-list {
+  /* Autocomplete - only when game area is visible */
+  #gameArea:not(.hidden) #autocomplete-list {
     position: absolute;
     top: 100%;
     left: 0;
@@ -1432,7 +1421,7 @@ button:disabled {
     box-shadow: var(--shadow-lg);
     margin-top: 0.25rem;
     
-    /* CRITICAL: No height or overflow constraints */
+    /* No height constraints only during active gameplay */
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
@@ -1441,39 +1430,21 @@ button:disabled {
     overflow-y: visible !important;
   }
   
-  /* Autocomplete items */
-  .autocomplete-item {
-    overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-  }
-  
-  /* Main content container */
-  .main-content {
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-  
-  /* Route sections */
-  section[data-route] {
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-  
-  /* Force remove any scrollbars from containers */
-  #gameArea::-webkit-scrollbar,
-  #autocomplete-list::-webkit-scrollbar,
-  #guessControls::-webkit-scrollbar,
-  #turnSection::-webkit-scrollbar {
+  /* Hide scrollbars only in active game area */
+  #gameArea:not(.hidden)::-webkit-scrollbar,
+  #gameArea:not(.hidden) #autocomplete-list::-webkit-scrollbar,
+  #gameArea:not(.hidden) #guessControls::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
   }
+}
+
+/* Ensure game area is properly hidden when not in use */
+#gameArea.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
 }
 
 
