@@ -1,5 +1,6 @@
 /* Modern NBA Teammate Game Styling */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@900&display=swap');
+
 
 :root {
   --primary-color: #2563eb;
@@ -500,22 +501,19 @@ button:disabled {
   font-weight: 900;
   text-align: center;
   color: #fbbf24;
-  font-family: 'Arial Black', sans-serif;
+  font-family: 'Orbitron', sans-serif;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   border: 3px solid #fbbf24;
-  display: inline-block;
-  min-width: 90px;
-  width: 90px; /* Fixed width to prevent shrinking */
-  height: 60px; /* Fixed height for consistency */
-  letter-spacing: 0.05em;
-  transition: color 0.3s ease, border-color 0.3s ease; /* Only animate colors, not size */
-  line-height: 1;
-  display: flex; /* Use flexbox for perfect centering */
+  display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box; /* Include padding and border in size calculations */
+  width: 90px;
+  height: 60px;
+  letter-spacing: 0.05em;
+  transition: color 0.3s ease, border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
 /* Critical time styling (5 seconds or less) - No glow */
