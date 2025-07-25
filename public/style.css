@@ -400,11 +400,24 @@ button:disabled {
 /* Game Area */
 #gameArea {
   display: block;
-  min-height: auto; /* Changed from 100vh */
+  min-height: auto;
   height: auto;
-  overflow-y: visible; /* Changed from auto */
+  overflow-y: visible;
   overflow-x: hidden;
-  padding-bottom: 2rem; /* Add bottom padding for desktop too */
+  padding-bottom: 2rem;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.game-content,
+.timer-container,
+.guess-section,
+#successful-guesses-container {
+  max-width: 100%;
+  width: 100%;
 }
 
 #playersDisplay {
