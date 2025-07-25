@@ -172,6 +172,7 @@
 
 
 <!-- In-Game UI -->
+
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
  <div id="playersDisplay">
   <span class="player-name you" id="playerYou">You</span>
@@ -188,10 +189,9 @@
 
 
 
-   <div id="timer-container">
+    <div id="timer-container">
   <span id="timer">:30</span>
 </div>
-
     <div id="guessControls" style="position: relative;">
       <input
         type="text"
@@ -208,8 +208,14 @@
   </div>
 
   <div id="messageContainer"></div>
-
 </section>
+
+this is the section that is at the bottom that I can't scroll down to:
+<div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
+  
+  <div id="card-deck" class="card-deck-container"></div>
+</div>
+
 
 
 
@@ -224,10 +230,6 @@
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
 </section>
 
-
-<div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
-  <div id="card-deck" class="card-deck-container"></div>
-</div>
 
 
 
