@@ -1245,6 +1245,15 @@ button:disabled {
   text-align: center;
 }
 
+section[data-route="/profile"] {
+  padding: 0 !important;
+  margin: 2rem auto !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
 .signout-button {
   background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%);
   color: white;
