@@ -596,7 +596,7 @@ button:disabled {
   stroke: #00cc99; /* Default color */
   stroke-width: 6;
   transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
-  transform: rotate(-90deg); /* Start at top */
+  transform: none;
   transform-origin: 50% 50%;
 }
 
