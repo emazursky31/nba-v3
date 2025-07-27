@@ -287,12 +287,12 @@
           stroke-width="6" 
           fill="transparent"/>
   <circle class="progress-ring-circle" 
-          cx="50" cy="50" r="45" 
-          stroke="#fbbf24" 
-          stroke-width="6" 
-          fill="transparent"
-          stroke-dasharray="282.74"
-          stroke-dashoffset="0"/>
+        cx="50" cy="50" r="45" 
+        stroke="#fbbf24" 
+        stroke-width="6" 
+        fill="transparent"
+        stroke-dasharray="0"
+        stroke-dashoffset="0"/>
 </svg>
   <div id="timer">30</div>
 </div>
@@ -972,17 +972,14 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   const screenWidth = window.innerWidth;
   
   if (screenWidth <= 480) {
-    // Small mobile: r=31
     radius = 31;
-    circumference = 2 * Math.PI * radius; // ≈ 194.78
+    circumference = 2 * Math.PI * 31; // = 194.78
   } else if (screenWidth <= 768) {
-    // Mobile: r=36
     radius = 36;
-    circumference = 2 * Math.PI * radius; // ≈ 226.19
+    circumference = 2 * Math.PI * 36; // = 226.19
   } else {
-    // Desktop: r=45
     radius = 45;
-    circumference = 2 * Math.PI * radius; // ≈ 282.74
+    circumference = 2 * Math.PI * 45; // = 282.74
   }
   
   // Calculate offset - start from top (12:00 position)
