@@ -34,10 +34,10 @@
       <span id="nav-username">Menu</span>
       <span class="dropdown-arrow">▼</span>
     </button>
-    <div class="nav-dropdown-content" id="nav-dropdown-content">
-      <a href="#" id="nav-dropdown-home">Home</a>
-      <a href="#" id="nav-dropdown-signout">Sign Out</a>
-    </div>
+   <div class="nav-dropdown-content" id="nav-dropdown-content">
+  <a href="#" id="nav-dropdown-profile">Profile</a>
+  <a href="#" id="nav-dropdown-signout">Sign Out</a>
+</div>
   </div>
 </nav>
 
@@ -132,6 +132,60 @@
     <p id="player-history">Games played, wins, and other stats will appear here.</p>
   </div>
 </section>
+
+
+<!-- Profile Section -->
+<section id="profileSection" data-route="/profile">
+  <h1>Your Profile</h1>
+  
+  <div class="profile-container">
+    <!-- User Info Card -->
+    <div class="profile-info-card">
+      <h2>Account Information</h2>
+      <div class="profile-field">
+        <label>Username:</label>
+        <span id="profile-username">Loading...</span>
+      </div>
+      <div class="profile-field">
+        <label>Email:</label>
+        <span id="profile-email">Loading...</span>
+      </div>
+      <div class="profile-field">
+        <label>Member Since:</label>
+        <span id="profile-member-since">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Stats Card -->
+    <div class="profile-stats-card">
+      <h2>Game Statistics</h2>
+      <div class="profile-stats">
+        <div class="stat-card">
+          <div class="stat-number" id="profile-total-games">0</div>
+          <div class="stat-label">Games Played</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="profile-games-won">0</div>
+          <div class="stat-label">Games Won</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="profile-win-rate">0%</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="profile-avg-guesses">0</div>
+          <div class="stat-label">Avg Guesses</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="profile-actions">
+      <button id="profile-signout-btn" class="signout-button">Sign Out</button>
+    </div>
+  </div>
+</section>
+
 
 
 <!-- Invite link container (used only in private games) -->
@@ -421,7 +475,7 @@ async function validateAndCleanupSession() {
   const dropdownBtn = document.getElementById('nav-dropdown-btn');
   const dropdownContent = document.getElementById('nav-dropdown-content');
   const navTitleLink = document.getElementById('nav-title-link');
-  const navDropdownHome = document.getElementById('nav-dropdown-home');
+  const navDropdownProfile = document.getElementById('nav-dropdown-profile');
   const navDropdownSignout = document.getElementById('nav-dropdown-signout');
 
   if (!dropdown || !dropdownBtn) return;
@@ -454,26 +508,18 @@ async function validateAndCleanupSession() {
     });
   }
 
-  // Dropdown home link
-  if (navDropdownHome) {
-    navDropdownHome.addEventListener('click', (e) => {
-      e.preventDefault();
-      dropdown.classList.remove('open');
-      
-      if (myUsername && myUserId) {
-        // Tell server we're leaving if in an active game
-        if (socket && socket.connected && gameStarted && !gameOver) {
-          safeEmit('leaveGame');
-        }
-        
-        // Clean up all client state
-        resetAllGameState();
-        navigateTo('/home');
-      } else {
-        navigateTo('/signup');
-      }
-    });
-  }
+  // Dropdown profile link
+if (navDropdownProfile) {
+  navDropdownProfile.addEventListener('click', (e) => {
+    e.preventDefault();
+    dropdown.classList.remove('open');
+    
+    if (myUsername && myUserId) {
+      navigateTo('/profile');
+    } else {
+      navigateTo('/signup');
+    }
+  });
 
   // Dropdown signout link
   if (navDropdownSignout) {
@@ -531,6 +577,75 @@ async function signOut() {
     alert('An unexpected error occurred during sign out.');
   }
 }
+
+async function loadProfileData() {
+  // Update profile information
+  const profileUsername = document.getElementById('profile-username');
+  const profileEmail = document.getElementById('profile-email');
+  const profileMemberSince = document.getElementById('profile-member-since');
+  
+  if (profileUsername) {
+    profileUsername.textContent = myUsername || 'Guest';
+  }
+  
+  // Get user session for email
+  const { data: { session } } = await supabase.auth.getSession();
+  if (profileEmail && session?.user?.email) {
+    profileEmail.textContent = session.user.email;
+  }
+  
+  if (profileMemberSince) {
+    if (session?.user?.created_at) {
+      const createdDate = new Date(session.user.created_at);
+      profileMemberSince.textContent = createdDate.toLocaleDateString();
+    } else {
+      profileMemberSince.textContent = new Date().toLocaleDateString();
+    }
+  }
+  
+  // Load real stats from database
+  await loadRealProfileStats();
+}
+
+async function loadRealProfileStats() {
+  if (!myUserId) {
+    // Set default values if no user
+    document.getElementById('profile-total-games').textContent = '0';
+    document.getElementById('profile-games-won').textContent = '0';
+    document.getElementById('profile-win-rate').textContent = '0%';
+    document.getElementById('profile-avg-guesses').textContent = '0';
+    return;
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('user_stats')
+      .select('games_played, wins, losses')
+      .eq('user_id', myUserId)
+      .single();
+      
+    if (data) {
+      document.getElementById('profile-total-games').textContent = data.games_played || 0;
+      document.getElementById('profile-games-won').textContent = data.wins || 0;
+      
+      const winRate = data.games_played > 0 
+        ? Math.round((data.wins / data.games_played) * 100) 
+        : 0;
+      document.getElementById('profile-win-rate').textContent = `${winRate}%`;
+      
+      // Calculate average guesses (you may need to add this to your database)
+      document.getElementById('profile-avg-guesses').textContent = '0'; // Placeholder
+    }
+  } catch (error) {
+    console.error('Error loading profile stats:', error);
+    // Set default values on error
+    document.getElementById('profile-total-games').textContent = '0';
+    document.getElementById('profile-games-won').textContent = '0';
+    document.getElementById('profile-win-rate').textContent = '0%';
+    document.getElementById('profile-avg-guesses').textContent = '0';
+  }
+}
+
 
 
 
@@ -912,6 +1027,15 @@ function attachRouteListeners(route) {
       }
 
       loadPlayerStats();
+      break;
+
+    case '/profile':
+      loadProfileData();
+
+      const profileSignoutBtn = document.getElementById('profile-signout-btn');
+      if (profileSignoutBtn) {
+        profileSignoutBtn.addEventListener('click', signOut);
+      }
       break;
 
     case '/play':
