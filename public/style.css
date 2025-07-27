@@ -1599,13 +1599,20 @@ section[data-route="/profile"] {
 /* DESKTOP ONLY - Remove height constraints ONLY when game is active */
 @media (min-width: 769px) {
 
-      #gameOverContainer {
-    max-width: 800px !important;
-    width: 100% !important;
-    margin: 1rem auto !important;
-    padding: 2rem !important;
-    box-sizing: border-box !important;
-  }
+   #gameOverContainer {
+  display: block !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  padding-bottom: 2rem;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
   
   /* Only apply to visible game area (when not hidden) */
   #gameArea:not(.hidden) {
