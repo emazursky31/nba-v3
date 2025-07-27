@@ -1846,9 +1846,9 @@ html {
     stroke-dasharray: 226 !important;
   }
   
-  .progress-ring-circle {
-    stroke-dasharray: 226 !important;
+ .progress-ring-circle {
     stroke-dashoffset: 0 !important;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease !important;
   }
   
   #timer {
@@ -2241,9 +2241,9 @@ html, body {
     stroke-dasharray: 195 !important;
   }
   
-  .progress-ring-circle {
-    stroke-dasharray: 195 !important;
+ .progress-ring-circle {
     stroke-dashoffset: 0 !important;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease !important;
   }
   
   #timer {

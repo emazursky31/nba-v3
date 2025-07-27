@@ -967,12 +967,24 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Calculate progress (0 to 1, where 1 is full time remaining)
   const progress = timeLeft / totalTime;
   
-  // Get the radius from the SVG element (responsive)
-  const radius = parseFloat(progressRing.getAttribute('r'));
-  const circumference = 2 * Math.PI * radius;
+  // Get the correct circumference based on screen size
+  let circumference;
+  const screenWidth = window.innerWidth;
+  
+  if (screenWidth <= 480) {
+    // Small mobile: r=31, circumference = 2 * π * 31 ≈ 195
+    circumference = 195;
+  } else if (screenWidth <= 768) {
+    // Mobile: r=36, circumference = 2 * π * 36 ≈ 226
+    circumference = 226;
+  } else {
+    // Desktop: r=45, circumference = 2 * π * 45 ≈ 283
+    circumference = 283;
+  }
+  
   const offset = circumference * (1 - progress);
   
-  // Update the progress ring
+  // Update the progress ring with correct values
   progressRing.style.strokeDasharray = circumference;
   progressRing.style.strokeDashoffset = offset;
   
@@ -989,6 +1001,7 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Update the number display with colon
   timerEl.textContent = `:${timeLeft}`;
 }
+
 
 
 
