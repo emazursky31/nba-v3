@@ -1954,7 +1954,7 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 0.5rem; /* ✅ Reduce from 0.75rem to 0.5rem */
+  padding: 0.875rem 1rem;
   font-size: 1rem;
   min-height: 60px;
 }
@@ -2322,7 +2322,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0.25rem; /* ✅ Reduce from 0.5rem to 0.25rem */
+  padding: 0.875rem 1rem;
   font-size: 0.9rem;
   min-height: 55px;
 }
