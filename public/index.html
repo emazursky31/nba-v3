@@ -48,7 +48,7 @@
 
 
 <!-- 🔑 Sign Up / Sign In -->
-  <section data-route="/signup" class="hidden">
+  <section data-route="/signup">
     <div class="auth-tabs-container">
       <div class="auth-tabs">
         <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
@@ -135,7 +135,7 @@
 
 
 <!-- Profile Section -->
-<section id="profileSection" data-route="/profile" class="hidden">
+<section id="profileSection" data-route="/profile">
   <h1>Your Profile</h1>
   
   <div class="profile-container">
@@ -508,8 +508,8 @@ async function validateAndCleanupSession() {
     });
   }
 
-  // Dropdown profile link
-if (navDropdownProfile) {
+  // Dropdown home link
+  if (navDropdownProfile) {
   navDropdownProfile.addEventListener('click', (e) => {
     e.preventDefault();
     dropdown.classList.remove('open');
@@ -520,6 +520,7 @@ if (navDropdownProfile) {
       navigateTo('/signup');
     }
   });
+}
 
   // Dropdown signout link
   if (navDropdownSignout) {
@@ -1029,14 +1030,14 @@ function attachRouteListeners(route) {
       loadPlayerStats();
       break;
 
-    case '/profile':
-      loadProfileData();
-
-      const profileSignoutBtn = document.getElementById('profile-signout-btn');
-      if (profileSignoutBtn) {
-        profileSignoutBtn.addEventListener('click', signOut);
-      }
-      break;
+      case '/profile':
+  loadProfileData();
+  
+  const profileSignoutBtn = document.getElementById('profile-signout-btn');
+  if (profileSignoutBtn) {
+    profileSignoutBtn.addEventListener('click', signOut);
+  }
+  break;
 
     case '/play':
       // Game-specific listeners
