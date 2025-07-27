@@ -1843,7 +1843,7 @@ html {
   }
   
   .progress-ring-track {
-    stroke-dasharray: 226 !important;
+    stroke-dasharray: 226;
   }
   
  .progress-ring-circle {
@@ -2238,7 +2238,7 @@ html, body {
   }
   
   .progress-ring-track {
-    stroke-dasharray: 195 !important;
+    stroke-dasharray: 195;
   }
   
  .progress-ring-circle {
