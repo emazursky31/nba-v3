@@ -967,20 +967,9 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Calculate progress (0 to 1, where 1 is full time remaining)
   const progress = timeLeft / totalTime;
   
-  // Get the correct radius and circumference based on screen size
-  let radius, circumference;
-  const screenWidth = window.innerWidth;
-  
-  if (screenWidth <= 480) {
-    radius = 31;
-    circumference = 2 * Math.PI * 31; // = 194.78
-  } else if (screenWidth <= 768) {
-    radius = 36;
-    circumference = 2 * Math.PI * 36; // = 226.19
-  } else {
-    radius = 45;
-    circumference = 2 * Math.PI * 45; // = 282.74
-  }
+  // ✅ FIX: Use consistent radius that matches SVG
+  const radius = 45;  // Match the SVG r="45"
+  const circumference = 2 * Math.PI * 45; // = 282.74
   
   // Calculate offset - start from top (12:00 position)
   const offset = circumference * (1 - progress);
@@ -1002,6 +991,7 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Update the number display
   timerEl.textContent = `:${timeLeft}`;
 }
+
 
 
 

@@ -1950,11 +1950,11 @@ html {
     right: 0;
   }
 
- .autocomplete-item {
+.autocomplete-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 0.75rem; /* Reduce left/right padding from 1rem to 0.75rem */
+  padding: 1.25rem 0.5rem; /* ✅ Reduce from 0.75rem to 0.5rem */
   font-size: 1rem;
   min-height: 60px;
 }
@@ -2318,11 +2318,11 @@ html, body {
     order: 1;  /* Put opponent last */
   }
 
- .autocomplete-item {
+.autocomplete-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0.5rem; /* Reduce left/right padding from 0.75rem to 0.5rem */
+  padding: 1rem 0.25rem; /* ✅ Reduce from 0.5rem to 0.25rem */
   font-size: 0.9rem;
   min-height: 55px;
 }
