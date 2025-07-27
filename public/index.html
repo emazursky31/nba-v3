@@ -2410,6 +2410,7 @@ socket.on('gameStarted', async (data) => {
   }
 
   timerEl.textContent = `:${data.timeLeft || 30}`;
+  updateTimerStyle(data.timeLeft || 30);
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
   console.log('[DEBUG] Navigating to /play...');
@@ -2556,6 +2557,7 @@ socket.on('yourTurn', (data) => {
 }
 
   timerEl.textContent = `:${data.timeLeft || 30}`;
+  updateTimerStyle(data.timeLeft || 30);
 
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
@@ -2624,6 +2626,7 @@ if (turnPromptText) {
 }
 
   timerEl.textContent = data.timeLeft || '';
+  if (data.timeLeft) updateTimerStyle(data.timeLeft);
 
   turnSection.style.display = 'block';
   messagesEl.style.display = 'block';
@@ -2717,6 +2720,7 @@ function renderPlayScreen() {
   }
   if (timerEl) {
   timerEl.textContent = `:${timeLeft}`;
+  updateTimerStyle(timeLeft);
 }
 }
 
