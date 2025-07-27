@@ -1661,6 +1661,13 @@ section[data-route="/profile"] {
     width: 0 !important;
     height: 0 !important;
   }
+
+  #gameOverContainer {
+    max-width: 800px !important; /* ✅ Match game area exactly */
+    width: 100% !important;
+    margin: 1rem auto !important;
+    padding: 2rem !important;
+  }
 }
 
 /* Ensure game area is properly hidden when not in use */
