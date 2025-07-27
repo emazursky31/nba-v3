@@ -469,7 +469,6 @@ button:disabled {
 }
 
 .game-content,
-.timer-container,
 .guess-section,
 #successful-guesses-container {
   max-width: 100%;
@@ -574,32 +573,35 @@ button:disabled {
   position: relative;
   width: 100px;
   height: 100px;
+  z-index: 1000;
 }
 
+/* Progress Ring SVG */
 .progress-ring {
   position: absolute;
   top: 0;
   left: 0;
-  transform: rotate(-90deg); /* Start from top */
+  transform: rotate(-90deg);
+  z-index: 1001;
 }
 
 .progress-ring-track {
-  stroke: #e5e7eb; /* Light gray background track */
+  stroke: #e5e7eb;
   stroke-width: 6;
   fill: transparent;
 }
 
 .progress-ring-circle {
-  stroke: #fbbf24; /* Default yellow */
+  stroke: #fbbf24;
   stroke-width: 6;
   fill: transparent;
-  stroke-dasharray: 283; /* 2 * π * 45 = circumference */
+  stroke-dasharray: 283;
   stroke-dashoffset: 0;
   transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-  stroke-linecap: round; /* Rounded ends */
+  stroke-linecap: round;
 }
 
-
+/* Timer Text */
 #timer {
   position: absolute;
   top: 50%;
@@ -611,20 +613,19 @@ button:disabled {
   font-family: 'Inter', sans-serif;
   background: none;
   border: none;
-  z-index: 10;
+  z-index: 1002;
 }
 
-/* Color transitions for different time states */
+/* Color States */
 .progress-ring-circle.low-time {
-  stroke: #f59e0b; /* Orange */
+  stroke: #f59e0b;
 }
 
 .progress-ring-circle.critical-time {
-  stroke: #ef4444; /* Red */
+  stroke: #ef4444;
   animation: critical-pulse 0.5s infinite;
 }
 
-/* Pulsing animations */
 @keyframes critical-pulse {
   0%, 100% { 
     stroke-width: 6;
@@ -1612,9 +1613,15 @@ section[data-route="/profile"] {
   /* Only apply to sections within visible game area */
   #gameArea:not(.hidden) #turnSection,
   #gameArea:not(.hidden) #guessControls,
-  #gameArea:not(.hidden) #successful-guesses-container,
-  #gameArea:not(.hidden) #timer-container {
+  #gameArea:not(.hidden) #successful-guesses-container {
     height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #gameArea:not(.hidden) #timer-container {
+    height: 100px !important;
     min-height: auto !important;
     max-height: none !important;
     overflow: visible !important;
@@ -1808,7 +1815,7 @@ html {
     cx: 40;
     cy: 40;
     r: 36;
-    stroke-dasharray: 226; /* 2 * π * 36 */
+    stroke-dasharray: 226;
   }
   
   #timer {
@@ -2179,7 +2186,7 @@ html, body {
     cx: 35;
     cy: 35;
     r: 31;
-    stroke-dasharray: 195; /* 2 * π * 31 */
+    stroke-dasharray: 195;
   }
   
   #timer {
