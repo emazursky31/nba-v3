@@ -332,40 +332,6 @@ h1 {
   color: var(--primary-color);
 }
 
-/* Stylized basketball icon */
-h1::before {
-  content: "🏀";
-  font-size: 1.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-  animation: bounce 2s infinite;
-}
-
-/* Subtle underline accent */
-h1::after {
-  content: "";
-  position: absolute;
-  bottom: -0.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
-  border-radius: 2px;
-  opacity: 0.6;
-}
-
-/* Subtle bounce animation for the basketball */
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-3px);
-  }
-  60% {
-    transform: translateY(-2px);
-  }
-}
 
 h2 {
   font-size: 1.875rem;
@@ -1080,25 +1046,33 @@ button:disabled {
 
 .auth-forms-row {
   display: flex;
+  gap: 2rem;
   justify-content: center;
+  align-items: flex-start;
 }
 
 .auth-form {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
-  padding: 2.5rem 2rem;
+  box-shadow: var(--shadow-md);
+  padding: 2rem 1.5rem;
   width: 100%;
-  max-width: 400px;
-  display: none;
+  max-width: 350px;
+  display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+  transform: scale(0.98);
 }
 
 .auth-form.active {
-  display: flex;
   border-color: var(--primary-color);
+  box-shadow: var(--shadow-xl);
+  opacity: 1;
+  transform: scale(1);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
 }
 
 .auth-form h2 {
@@ -1106,6 +1080,11 @@ button:disabled {
   color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 700;
+  text-align: center;
+}
+
+.auth-form.active h2 {
+  color: var(--primary-color);
 }
 
 .auth-form input {
@@ -1115,6 +1094,12 @@ button:disabled {
   border: 2px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.auth-form.active input {
+  border-color: var(--primary-color);
+  background: var(--bg-primary);
 }
 
 .auth-form input:focus {
@@ -1132,7 +1117,19 @@ button:disabled {
   font-size: 1.125rem;
   font-weight: 600;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  transition: all 0.2s ease;
 }
+
+.auth-form:not(.active) button {
+  background: var(--text-muted);
+  opacity: 0.8;
+}
+
+.auth-form.active button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 
 .auth-form p, .auth-form a {
   font-size: 0.95rem;
@@ -1141,7 +1138,7 @@ button:disabled {
 }
 
 .auth-form a {
-  color: #3b82f6;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
 }
@@ -1949,10 +1946,13 @@ html {
   }
   
   .auth-forms-row {
+    flex-direction: column;
+    gap: 1.5rem;
     padding: 0 1rem;
   }
   
   .auth-form {
+    max-width: 100%;
     padding: 2rem 1.5rem;
   }
   
