@@ -966,12 +966,13 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Calculate progress (0 to 1, where 1 is full time remaining)
   const progress = timeLeft / totalTime;
   
-  // Get the current radius from CSS (automatically responsive)
+  // Get the CURRENT radius from the SVG element (responsive)
   const radius = parseFloat(progressRing.getAttribute('r'));
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
   
   // Update the progress ring
+  progressRing.style.strokeDasharray = circumference; // Set correct dasharray
   progressRing.style.strokeDashoffset = offset;
   
   // Remove existing classes
@@ -984,8 +985,8 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
     progressRing.classList.add('low-time');
   }
   
-  // Update the number display
-  timerEl.textContent = timeLeft;
+  // Update the number display with colon
+  timerEl.textContent = `:${timeLeft}`;
 }
 
 

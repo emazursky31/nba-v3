@@ -569,7 +569,7 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0.5rem 0;
+  margin: 0 auto;
   position: relative;
   width: 100px;
   height: 100px;
@@ -619,6 +619,10 @@ button:disabled {
 /* Color States */
 .progress-ring-circle.low-time {
   stroke: #f59e0b;
+}
+
+.progress-ring-circle:not(.low-time):not(.critical-time) {
+  stroke: #fbbf24 !important;
 }
 
 .progress-ring-circle.critical-time {
