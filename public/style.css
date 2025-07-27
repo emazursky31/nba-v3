@@ -1834,13 +1834,7 @@ html {
     transform: rotate(-90deg) !important;
   }
   
-  .progress-ring-track,
-  .progress-ring-circle {
-    cx: 40 !important;
-    cy: 40 !important;
-    r: 36 !important;
-  }
-  
+
 
  .progress-ring-circle {
     stroke-width: 5;
@@ -1956,14 +1950,14 @@ html {
     right: 0;
   }
 
-  .autocomplete-item {
-    display: flex;
-    justify-content: space-between;  /* Keep side-by-side layout */
-    align-items: center;
-    padding: 1.25rem 1rem;
-    font-size: 1rem;
-    min-height: 60px;
-  }
+ .autocomplete-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0.75rem; /* Reduce left/right padding from 1rem to 0.75rem */
+  font-size: 1rem;
+  min-height: 60px;
+}
 
   /* More pronounced selection on mobile */
  .autocomplete-item:hover,
@@ -2226,13 +2220,6 @@ html, body {
     transform: rotate(-90deg) !important;
   }
   
-  .progress-ring-track,
-  .progress-ring-circle {
-    cx: 35 !important;
-    cy: 35 !important;
-    r: 31 !important;
-  }
-  
  
  .progress-ring-circle {
     stroke-width: 4;
@@ -2331,28 +2318,28 @@ html, body {
     order: 1;  /* Put opponent last */
   }
 
-  .autocomplete-item {
-    display: flex;
-    justify-content: space-between;  /* Keep side-by-side */
-    align-items: center;
-    padding: 1rem 0.75rem;
-    font-size: 0.9rem;
-    min-height: 55px;
-  }
+ .autocomplete-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0.5rem; /* Reduce left/right padding from 0.75rem to 0.5rem */
+  font-size: 0.9rem;
+  min-height: 55px;
+}
 
-  .autocomplete-item > span:first-child {
-    flex: 1;
-    margin-right: 0.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+ .autocomplete-item > span:first-child {
+  flex: 1;
+  margin-right: 0.25rem; /* Reduce from 0.5rem to 0.25rem */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-  .career-years {
-    font-size: 0.8rem;
-    margin-left: 5px;  /* Maintain inline spacing */
-    flex-shrink: 0;  /* Prevent career years from shrinking */
-  }
+ .career-years {
+  font-size: 0.8rem;
+  margin-left: 0.25rem; /* Reduce from 5px to 0.25rem for consistency */
+  flex-shrink: 0;
+}
 
   /* Adjust arrow position for stacked layout */
   .autocomplete-item:hover::after,
