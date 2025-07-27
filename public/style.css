@@ -1957,6 +1957,7 @@ html {
   padding: 0.875rem 1rem;
   font-size: 1rem;
   min-height: 60px;
+  text-align: left !important;
 }
 
   /* More pronounced selection on mobile */
@@ -1981,6 +1982,7 @@ html {
     font-size: 0.9rem;
     font-weight: 500;
     margin-left: 5px;  /* Keep inline spacing */
+    text-align: right !important; 
   }
   
   .auth-forms-row {
@@ -2325,6 +2327,7 @@ html, body {
   padding: 0.875rem 1rem;
   font-size: 0.9rem;
   min-height: 55px;
+  text-align: left !important;
 }
 
  .autocomplete-item > span:first-child {
@@ -2339,6 +2342,7 @@ html, body {
   font-size: 0.8rem;
   margin-left: 0.25rem; /* Reduce from 5px to 0.25rem for consistency */
   flex-shrink: 0;
+  text-align:right !important;
 }
 
   /* Adjust arrow position for stacked layout */
