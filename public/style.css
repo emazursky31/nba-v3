@@ -592,13 +592,12 @@ button:disabled {
 }
 
 .progress-ring-circle {
-  stroke: #fbbf24;
+  fill: none;
+  stroke: #00cc99; /* Default color */
   stroke-width: 6;
-  fill: transparent;
-  stroke-dasharray: 283;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
+  transform: rotate(-90deg); /* Start at top */
+  transform-origin: 50% 50%;
 }
 
 /* Timer Text */
@@ -1847,7 +1846,7 @@ html {
   }
   
  .progress-ring-circle {
-    stroke-dashoffset: 0 !important;
+    stroke-width: 5;
     transition: stroke-dashoffset 1s linear, stroke 0.3s ease !important;
   }
   
@@ -2242,7 +2241,7 @@ html, body {
   }
   
  .progress-ring-circle {
-    stroke-dashoffset: 0 !important;
+    stroke-width: 4;
     transition: stroke-dashoffset 1s linear, stroke 0.3s ease !important;
   }
   
