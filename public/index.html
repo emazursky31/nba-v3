@@ -47,31 +47,70 @@
 
 
 
+
 <!-- 🔑 Sign Up / Sign In -->
-  <section data-route="/signup">
-    <div class="auth-tabs-container">
-      <div class="auth-tabs">
-        <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
-        <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
-      </div>
-      <div class="auth-forms-row">
-        <form id="signupForm" class="auth-form active" autocomplete="off">
-          <h2>Sign Up</h2>
-          <input type="email" id="signup-email" placeholder="Email" required>
-          <input type="password" id="signup-password" placeholder="Password" required>
-          <input id="signup-username" placeholder="Username" required>
-          <button id="signupBtn" type="submit">Sign Up</button>
-        </form>
-        <form id="signinForm" class="auth-form" autocomplete="off">
-          <h2>Sign In</h2>
-          <input type="email" id="signin-email" placeholder="Email" required>
-          <input type="password" id="signin-password" placeholder="Password" required>
-          <button id="signinBtn" type="submit">Sign In</button>
-          <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
-        </form>
-      </div>
+<section data-route="/signup">
+  <!-- Game Title and Subtitle -->
+  <div class="game-intro">
+    <h1>Who He Played With</h1>
+    <p class="game-subtitle">Test your NBA knowledge by connecting players through their teammates</p>
+  </div>
+
+  <!-- How to Play Section -->
+ <div class="how-to-play">
+  <h3>How to Play</h3>
+  <div class="rules-grid">
+    <div class="rule-item">
+      <span class="rule-number">1</span>
+      <p>A random NBA player is chosen as the starting point</p>
     </div>
-  </section>
+    <div class="rule-item">
+      <span class="rule-number">2</span>
+      <p>Take turns naming a <strong>regular season teammate</strong> of the current player</p>
+    </div>
+    <div class="rule-item">
+      <span class="rule-number">3</span>
+      <p>Players must have been active on the same team for at least one regular season game at any point in their career (they don't need to have played together on court)</p>
+    </div>
+    <div class="rule-item">
+      <span class="rule-number">4</span>
+      <p>Each correct guess becomes the new current player</p>
+    </div>
+    <div class="rule-item">
+      <span class="rule-number">5</span>
+      <p>You have <strong>30 seconds per turn</strong> and can guess as many times as you want within the time limit</p>
+    </div>
+    <div class="rule-item">
+      <span class="rule-number">6</span>
+      <p>Don't run out of time - keep the chain going!</p>
+    </div>
+  </div>
+</div>
+
+  <div class="auth-tabs-container">
+    <div class="auth-tabs">
+      <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
+      <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
+    </div>
+    <div class="auth-forms-row">
+      <form id="signupForm" class="auth-form active" autocomplete="off">
+        <h2>Sign Up</h2>
+        <input type="email" id="signup-email" placeholder="Email" required>
+        <input type="password" id="signup-password" placeholder="Password" required>
+        <input id="signup-username" placeholder="Username" required>
+        <button id="signupBtn" type="submit">Sign Up</button>
+      </form>
+      <form id="signinForm" class="auth-form" autocomplete="off">
+        <h2>Sign In</h2>
+        <input type="email" id="signin-email" placeholder="Email" required>
+        <input type="password" id="signin-password" placeholder="Password" required>
+        <button id="signinBtn" type="submit">Sign In</button>
+        <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+
 
 
  <!-- 🔗 Check your email after sign up -->

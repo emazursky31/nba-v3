@@ -231,6 +231,98 @@ nav {
 }
 
 
+/* Game Introduction Styles */
+.game-intro {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.game-intro h1 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.game-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* How to Play Styles */
+.how-to-play {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.how-to-play h3 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.rule-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.rule-number {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.rule-item p {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+
 /* Typography */
 h1 {
   font-size: 1.75rem;
@@ -918,7 +1010,7 @@ button:disabled {
 /* Auth Forms */
 .auth-tabs-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 800px;
   margin: 2rem auto;
 }
 
@@ -1618,6 +1710,27 @@ html {
     padding: 6px 10px;
     font-size: 0.8rem;
   }
+
+   .game-intro h1 {
+    font-size: 2rem;
+  }
+  
+  .game-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .rules-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .rule-item {
+    padding: 0.875rem;
+  }
+  
+  .how-to-play {
+    padding: 1.5rem;
+  }
   
   h1 {
     font-size: 1.5rem;
@@ -2000,6 +2113,22 @@ html, body {
   
   .profile-stats {
     grid-template-columns: 1fr;
+  }
+
+  .game-intro {
+    padding: 1.5rem 1rem;
+  }
+  
+  .game-intro h1 {
+    font-size: 1.75rem;
+  }
+  
+  .game-subtitle {
+    font-size: 1rem;
+  }
+  
+  .how-to-play {
+    padding: 1rem;
   }
   
  h1 {
