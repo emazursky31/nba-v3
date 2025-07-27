@@ -1196,9 +1196,17 @@ button:disabled {
 .profile-container {
   max-width: 800px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
+}
+
+/* Keep actions always at the bottom and full width */
+.profile-actions {
+  grid-column: 1 / -1; /* Span all columns */
+  text-align: center;
+  margin-top: 1rem;
 }
 
 .profile-info-card,
@@ -1239,10 +1247,6 @@ button:disabled {
 .profile-field span {
   color: var(--text-primary);
   font-weight: 500;
-}
-
-.profile-actions {
-  text-align: center;
 }
 
 section[data-route="/profile"] {
@@ -1724,7 +1728,9 @@ html {
   }
 
    .profile-container {
-    padding: 0 1rem;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1rem; /* Reduced from 1.5rem for more screen space */
   }
   
   .profile-info-card,
