@@ -1807,15 +1807,19 @@ html {
  #timer-container {
     width: 80px;
     height: 80px;
-    margin: 0 auto; /* Center the entire container */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
   }
   
   .progress-ring {
     width: 80px;
     height: 80px;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
   
   .progress-ring-track,
@@ -1827,16 +1831,29 @@ html {
   }
   
   #timer {
-    font-size: 1.4rem; /* Increased font size */
-    /* Reset any mobile-specific positioning that's breaking it */
+    font-size: 1.4rem !important;
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
+    z-index: 1002 !important;
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    text-align: center !important;
     width: auto !important;
     height: auto !important;
-    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #turnSection {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
     text-align: center !important;
+    margin-bottom: 1rem;
+    padding: 1rem;
   }
 
   .home-tabs {
@@ -1865,20 +1882,6 @@ html {
   
   .stat-number {
     font-size: 1.5rem;
-  }
-
-  #turnSection {
-    margin-bottom: 1rem;
-    padding: 1rem;
-    min-height: auto;
-    height: auto;
-    max-height: none !important;
-    overflow: visible !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    text-align: center;
   }
 
   .turn-player-name {
@@ -2193,18 +2196,22 @@ html, body {
     padding-bottom: 3rem;
   }
 
-  #timer-container {
+ #timer-container {
     width: 70px;
     height: 70px;
-    margin: 0 auto; /* Center the entire container */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
   }
   
   .progress-ring {
     width: 70px;
     height: 70px;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
   
   .progress-ring-track,
@@ -2216,16 +2223,19 @@ html, body {
   }
   
   #timer {
-    font-size: 1.3rem; /* Increased font size */
-    /* Reset any mobile-specific positioning that's breaking it */
+    font-size: 1.3rem !important;
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
+    z-index: 1002 !important;
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    text-align: center !important;
     width: auto !important;
     height: auto !important;
-    display: block !important;
-    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
    .turn-prompt {
