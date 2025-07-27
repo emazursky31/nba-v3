@@ -279,9 +279,24 @@
 
 
 
-    <div id="timer-container">
-  <span id="timer">:30</span>
+   <div id="timer-container">
+  <svg class="progress-ring" width="100" height="100">
+    <circle class="progress-ring-track" 
+            cx="50" cy="50" r="45" 
+            stroke="#e5e7eb" 
+            stroke-width="6" 
+            fill="transparent"/>
+    <circle class="progress-ring-circle" 
+            cx="50" cy="50" r="45" 
+            stroke="#fbbf24" 
+            stroke-width="6" 
+            fill="transparent"
+            stroke-dasharray="283"
+            stroke-dashoffset="0"/>
+  </svg>
+  <span id="timer">30</span>
 </div>
+
     <div id="guessControls" style="position: relative;">
       <input
         type="text"
@@ -942,20 +957,38 @@ function flushEmitQueue() {
   }
 }
 
-function updateTimerStyle(timeLeft) {
+function updateTimerStyle(timeLeft, totalTime = 30) {
   const timerEl = document.getElementById('timer');
-  if (!timerEl) return;
+  const progressRing = document.querySelector('.progress-ring-circle');
+  
+  if (!timerEl || !progressRing) return;
+  
+  // Calculate progress (0 to 1, where 1 is full time remaining)
+  const progress = timeLeft / totalTime;
+  
+  // Get the current radius from CSS (automatically responsive)
+  const radius = parseFloat(progressRing.getAttribute('r'));
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - progress);
+  
+  // Update the progress ring
+  progressRing.style.strokeDashoffset = offset;
   
   // Remove existing classes
-  timerEl.classList.remove('critical-time', 'low-time');
+  progressRing.classList.remove('critical-time', 'low-time');
   
   // Add appropriate class based on time remaining
   if (timeLeft <= 5) {
-    timerEl.classList.add('critical-time');
+    progressRing.classList.add('critical-time');
   } else if (timeLeft <= 10) {
-    timerEl.classList.add('low-time');
+    progressRing.classList.add('low-time');
   }
+  
+  // Update the number display
+  timerEl.textContent = timeLeft;
 }
+
+
 
 
 

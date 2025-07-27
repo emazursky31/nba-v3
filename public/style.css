@@ -571,61 +571,68 @@ button:disabled {
   justify-content: center;
   align-items: center;
   margin: 0.5rem 0;
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg); /* Start from top */
+}
+
+.progress-ring-track {
+  stroke: #e5e7eb; /* Light gray background track */
+  stroke-width: 6;
+  fill: transparent;
+}
+
+.progress-ring-circle {
+  stroke: #fbbf24; /* Default yellow */
+  stroke-width: 6;
+  fill: transparent;
+  stroke-dasharray: 283; /* 2 * π * 45 = circumference */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+  stroke-linecap: round; /* Rounded ends */
 }
 
 
 #timer {
-  font-size: 2.5rem;
-  font-weight: 900;
-  text-align: center;
-  color: #fbbf24;
-  font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 3px solid #fbbf24;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 90px;
-  height: 60px;
-  letter-spacing: 0.05em;
-  transition: color 0.3s ease, border-color 0.3s ease;
-  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  background: none;
+  border: none;
+  z-index: 10;
 }
 
-/* Critical time styling (5 seconds or less) - No glow */
-#timer.critical-time {
-  color: #ef4444;
-  border-color: #ef4444;
-  /* Removed box-shadow and text-shadow */
+/* Color transitions for different time states */
+.progress-ring-circle.low-time {
+  stroke: #f59e0b; /* Orange */
+}
+
+.progress-ring-circle.critical-time {
+  stroke: #ef4444; /* Red */
   animation: critical-pulse 0.5s infinite;
-}
-
-/* Low time styling (10 seconds or less) - No glow */
-#timer.low-time {
-  color: #f59e0b;
-  border-color: #f59e0b;
-  /* Removed box-shadow and text-shadow */
-  animation: warning-pulse 1s infinite;
 }
 
 /* Pulsing animations */
 @keyframes critical-pulse {
   0%, 100% { 
+    stroke-width: 6;
     opacity: 1;
   }
   50% { 
-    opacity: 0.9;
-  }
-}
-
-@keyframes warning-pulse {
-  0%, 100% { 
-    opacity: 1;
-  }
-  50% { 
-    opacity: 0.95;
+    stroke-width: 8;
+    opacity: 0.8;
   }
 }
 
@@ -1787,15 +1794,25 @@ html {
 
   
  #timer-container {
-    margin: 0.25rem 0; 
+    width: 80px;
+    height: 80px;
   }
-
-#timer {
-    font-size: 2rem;
-    padding: 0.4rem 0.8rem;
-    min-width: 70px;
-    width: 70px; /* Fixed width for mobile */
-    height: 50px; /* Fixed height for mobile */
+  
+  .progress-ring {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .progress-ring-track,
+  .progress-ring-circle {
+    cx: 40;
+    cy: 40;
+    r: 36;
+    stroke-dasharray: 226; /* 2 * π * 36 */
+  }
+  
+  #timer {
+    font-size: 1.25rem;
   }
 
   .home-tabs {
@@ -2148,16 +2165,25 @@ html, body {
   }
 
   #timer-container {
-    margin: 0.25rem 0;
+    width: 70px;
+    height: 70px;
+  }
+  
+  .progress-ring {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .progress-ring-track,
+  .progress-ring-circle {
+    cx: 35;
+    cy: 35;
+    r: 31;
+    stroke-dasharray: 195; /* 2 * π * 31 */
   }
   
   #timer {
-    font-size: 1.75rem;
-    padding: 0.3rem 0.6rem;
-    min-width: 60px;
-    width: 60px; /* Fixed width for smallest screens */
-    height: 45px; /* Fixed height for smallest screens */
-    border-width: 2px;
+    font-size: 1.1rem;
   }
 
    .turn-prompt {
