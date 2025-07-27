@@ -1804,48 +1804,6 @@ html {
   }
 
   
- #timer-container {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    position: relative !important;
-  }
-  
-  .progress-ring {
-    width: 80px;
-    height: 80px;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-  
-  .progress-ring-track,
-  .progress-ring-circle {
-    cx: 40;
-    cy: 40;
-    r: 36;
-    stroke-dasharray: 226;
-  }
-  
-  #timer {
-    font-size: 1.4rem !important;
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    z-index: 1002 !important;
-    color: var(--text-primary) !important;
-    font-weight: 700 !important;
-    text-align: center !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
   #turnSection {
     display: flex !important;
     flex-direction: column !important;
@@ -1854,6 +1812,62 @@ html {
     text-align: center !important;
     margin-bottom: 1rem;
     padding: 1rem;
+    overflow: visible !important;
+  }
+
+  #timer-container {
+    width: 80px !important;
+    height: 80px !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    display: block !important;
+    overflow: visible !important;
+    z-index: 1000 !important;
+  }
+  
+  .progress-ring {
+    width: 80px !important;
+    height: 80px !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    overflow: visible !important;
+    transform: rotate(-90deg) !important;
+  }
+  
+  .progress-ring-track,
+  .progress-ring-circle {
+    cx: 40 !important;
+    cy: 40 !important;
+    r: 36 !important;
+  }
+  
+  .progress-ring-track {
+    stroke-dasharray: 226 !important;
+  }
+  
+  .progress-ring-circle {
+    stroke-dasharray: 226 !important;
+    stroke-dashoffset: 0 !important;
+  }
+  
+  #timer {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    z-index: 1002 !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    background: none !important;
+    border: none !important;
   }
 
   .home-tabs {
@@ -2197,45 +2211,58 @@ html, body {
   }
 
  #timer-container {
-    width: 70px;
-    height: 70px;
+    width: 70px !important;
+    height: 70px !important;
     margin: 0 auto !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
     position: relative !important;
+    display: block !important;
+    overflow: visible !important;
+    z-index: 1000 !important;
   }
   
   .progress-ring {
-    width: 70px;
-    height: 70px;
-    position: absolute;
-    top: 0;
-    left: 0;
+    width: 70px !important;
+    height: 70px !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    overflow: visible !important;
+    transform: rotate(-90deg) !important;
   }
   
   .progress-ring-track,
   .progress-ring-circle {
-    cx: 35;
-    cy: 35;
-    r: 31;
-    stroke-dasharray: 195;
+    cx: 35 !important;
+    cy: 35 !important;
+    r: 31 !important;
+  }
+  
+  .progress-ring-track {
+    stroke-dasharray: 195 !important;
+  }
+  
+  .progress-ring-circle {
+    stroke-dasharray: 195 !important;
+    stroke-dashoffset: 0 !important;
   }
   
   #timer {
-    font-size: 1.3rem !important;
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    z-index: 1002 !important;
-    color: var(--text-primary) !important;
+    font-size: 1.3rem !important;
     font-weight: 700 !important;
-    text-align: center !important;
+    color: var(--text-primary) !important;
+    z-index: 1002 !important;
     width: auto !important;
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    background: none !important;
+    border: none !important;
   }
 
    .turn-prompt {

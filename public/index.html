@@ -279,8 +279,8 @@
 
 
 
-   <div id="timer-container">
-  <svg class="progress-ring" width="100" height="100">
+<div id="timer-container">
+  <svg class="progress-ring" width="100" height="100" viewBox="0 0 100 100">
     <circle class="progress-ring-track" 
             cx="50" cy="50" r="45" 
             stroke="#e5e7eb" 
@@ -294,8 +294,9 @@
             stroke-dasharray="283"
             stroke-dashoffset="0"/>
   </svg>
-  <span id="timer">30</span>
+  <div id="timer">30</div>
 </div>
+
 
     <div id="guessControls" style="position: relative;">
       <input
@@ -966,13 +967,13 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Calculate progress (0 to 1, where 1 is full time remaining)
   const progress = timeLeft / totalTime;
   
-  // Get the CURRENT radius from the SVG element (responsive)
+  // Get the radius from the SVG element (responsive)
   const radius = parseFloat(progressRing.getAttribute('r'));
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
   
   // Update the progress ring
-  progressRing.style.strokeDasharray = circumference; // Set correct dasharray
+  progressRing.style.strokeDasharray = circumference;
   progressRing.style.strokeDashoffset = offset;
   
   // Remove existing classes
@@ -988,6 +989,7 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   // Update the number display with colon
   timerEl.textContent = `:${timeLeft}`;
 }
+
 
 
 
