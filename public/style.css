@@ -456,7 +456,7 @@ button:disabled {
 }
 
 /* Game Area */
-#gameArea, #waitingRoom {
+#gameArea, #waitingRoom, #gameOverContainer {
   display: block;
   overflow: visible;
   overflow-x: hidden;
@@ -901,7 +901,7 @@ button:disabled {
 
 
 /* Game Over */
-#gameOverContainer {
+/* #gameOverContainer {
   text-align: center;
   padding: 2rem;
   background: var(--bg-card) !important;
@@ -915,7 +915,7 @@ button:disabled {
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
-}
+} */
 
 /* Remove separate container styling for game over message */
 #gameOverContainer > div:first-child {
