@@ -555,6 +555,7 @@ socket.on('disconnect', async () => {
               canRematch: false,
             });
           }
+          playersInGame.delete(playerSocketId);
         });
 
         const preservedUserIds = { ...game.userIds };
