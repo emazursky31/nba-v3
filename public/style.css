@@ -1606,7 +1606,7 @@ section[data-route="/profile"] {
   min-height: auto !important;
   max-height: none !important;
   padding-bottom: 2rem;
-  max-width: 800px;
+  max-width: 800px !important;
   width: 100%;
   margin: 0 auto;
   padding-left: 1.5rem;
