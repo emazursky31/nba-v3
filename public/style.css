@@ -1599,7 +1599,7 @@ section[data-route="/profile"] {
 /* DESKTOP ONLY - Remove height constraints ONLY when game is active */
 @media (min-width: 769px) {
 
-   #gameOverContainer {
+  #gameOverContainer:not(.hidden) {
   display: block !important;
   overflow: visible !important;
   height: auto !important;
