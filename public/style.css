@@ -261,20 +261,53 @@ nav {
 .nba-loader {
   display: flex;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   margin-top: 1.5rem;
 }
 
 .nba-loader .ball {
-  width: 16px;
-  height: 16px;
-  background: orange;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   position: relative;
+  background: radial-gradient(circle at 30% 30%, #f77f00, #cc5200);
   animation: bounce 1.2s infinite ease-in-out;
-  box-shadow: inset 0 0 0 1px #c85f00, inset -2px -2px 0 0 #000;
+  box-shadow: 0 0 1px #000;
 }
 
+.nba-loader .ball::before,
+.nba-loader .ball::after {
+  content: "";
+  position: absolute;
+  background: #000;
+  border-radius: 50%;
+}
+
+.nba-loader .ball::before {
+  width: 2px;
+  height: 100%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nba-loader .ball::after {
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+/* Curved cross lines using an extra pseudo-element */
+.nba-loader .ball::after {
+  box-shadow:
+    inset 0 0 0 0 transparent,
+    inset 3px 3px 0 -1px #000,
+    inset -3px -3px 0 -1px #000;
+}
+
+/* Bounce timing */
 .nba-loader .ball:nth-child(1) {
   animation-delay: -0.32s;
 }
@@ -290,9 +323,10 @@ nav {
     transform: translateY(0);
   } 
   40% {
-    transform: translateY(-12px);
+    transform: translateY(-14px);
   }
 }
+
 
 
 /* How to Play Styles */
