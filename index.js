@@ -723,6 +723,7 @@ async function getTeammates(playerName) {
 
 function getSharedTeams(career1, career2) {
   const shared = [];
+  const seen = new Set(); // 🔐 prevents duplicates
 
   for (const stint1 of career1) {
     for (const stint2 of career2) {
@@ -738,20 +739,19 @@ function getSharedTeams(career1, career2) {
         const start = Math.max(stint1.startYear, stint2.startYear);
         const end = Math.min(stint1.endYear, stint2.endYear);
 
-        console.log(`🟡 Match on team ${team1}, overlap years: ${start}–${end}`);
-
         if (start <= end) {
-          shared.push({
-            team: team1,
-            startYear: start,
-            endYear: end,
-            years: start === end ? `${start}` : `${start}–${end}`
-          });
-        } else {
-          console.log(`🔸 No overlap: ${team1}, ${stint1.startYear}–${stint1.endYear} vs ${stint2.startYear}–${stint2.endYear}`);
+          const key = `${team1}:${start}-${end}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+
+            shared.push({
+              team: team1,
+              startYear: start,
+              endYear: end,
+              years: start === end ? `${start}` : `${start}–${end}`,
+            });
+          }
         }
-      } else {
-        console.log(`🔹 No match: ${team1} vs ${team2}`);
       }
     }
   }
@@ -759,6 +759,7 @@ function getSharedTeams(career1, career2) {
   console.log('✅ Final shared teams:', shared);
   return shared;
 }
+
 
 
 async function getCareer(playerName) {

@@ -456,7 +456,7 @@ button:disabled {
 }
 
 /* Game Area */
-#gameArea, #waitingRoom, #gameOverContainer {
+#gameArea, #waitingRoom {
   display: block;
   overflow: visible;
   overflow-x: hidden;
@@ -901,7 +901,7 @@ button:disabled {
 
 
 /* Game Over */
-/* #gameOverContainer {
+#gameOverContainer {
   text-align: center;
   padding: 2rem;
   background: var(--bg-card) !important;
@@ -915,7 +915,7 @@ button:disabled {
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
-} */
+}
 
 /* Remove separate container styling for game over message */
 #gameOverContainer > div:first-child {
@@ -1599,23 +1599,23 @@ section[data-route="/profile"] {
 /* DESKTOP ONLY - Remove height constraints ONLY when game is active */
 @media (min-width: 769px) {
 
+  #gameOverContainer:not(.hidden) {
+  display: block !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  padding-bottom: 2rem;
+  max-width: 1200px !important;
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
   
   /* Only apply to visible game area (when not hidden) */
   #gameArea:not(.hidden) {
-    display: block !important;
-    overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-    max-height: none !important;
-    padding-bottom: 2rem;
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-
-   #gameOverContainer:not(.hidden) {
     display: block !important;
     overflow: visible !important;
     height: auto !important;
