@@ -722,43 +722,60 @@ async function getTeammates(playerName) {
 }
 
 function getSharedTeams(career1, career2) {
-  const shared = [];
-  const seen = new Set(); // 🔐 prevents duplicates
+  const rangesByTeam = {};
 
   for (const stint1 of career1) {
     for (const stint2 of career2) {
       const team1 = stint1.team?.trim().toUpperCase();
       const team2 = stint2.team?.trim().toUpperCase();
 
-      if (!team1 || !team2) {
-        console.warn('⚠️ Missing team info:', { team1, team2, stint1, stint2 });
-        continue;
-      }
+      if (!team1 || !team2 || team1 !== team2) continue;
 
-      if (team1 === team2) {
-        const start = Math.max(stint1.startYear, stint2.startYear);
-        const end = Math.min(stint1.endYear, stint2.endYear);
+      const start = Math.max(stint1.startYear, stint2.startYear);
+      const end = Math.min(stint1.endYear, stint2.endYear);
 
-        if (start <= end) {
-          const key = `${team1}:${start}-${end}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-
-            shared.push({
-              team: team1,
-              startYear: start,
-              endYear: end,
-              years: start === end ? `${start}` : `${start}–${end}`,
-            });
-          }
-        }
+      if (start <= end) {
+        if (!rangesByTeam[team1]) rangesByTeam[team1] = [];
+        rangesByTeam[team1].push([start, end]);
       }
     }
   }
 
-  console.log('✅ Final shared teams:', shared);
+  // 🔁 Merge overlapping or adjacent ranges per team
+  const shared = [];
+  for (const team in rangesByTeam) {
+    const ranges = rangesByTeam[team];
+    ranges.sort((a, b) => a[0] - b[0]);
+
+    let [curStart, curEnd] = ranges[0];
+    for (let i = 1; i < ranges.length; i++) {
+      const [nextStart, nextEnd] = ranges[i];
+      if (nextStart <= curEnd + 1) {
+        // Overlapping or adjacent
+        curEnd = Math.max(curEnd, nextEnd);
+      } else {
+        shared.push({
+          team,
+          startYear: curStart,
+          endYear: curEnd,
+          years: curStart === curEnd ? `${curStart}` : `${curStart}–${curEnd}`,
+        });
+        [curStart, curEnd] = [nextStart, nextEnd];
+      }
+    }
+    // Push the final range
+    shared.push({
+      team,
+      startYear: curStart,
+      endYear: curEnd,
+      years: curStart === curEnd ? `${curStart}` : `${curStart}–${curEnd}`,
+    });
+  }
+
+  console.log('✅ Merged shared teams:', shared);
   return shared;
 }
+
 
 
 
