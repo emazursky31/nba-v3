@@ -291,6 +291,47 @@ nav {
 }
 
 
+/* Matched Screen Styling */
+#matchedScreen {
+  background: var(--bg-card);
+  border: 2px solid var(--success-color);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-xl);
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+#matchedMessage {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.2) 100%);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-weight: 600;
+}
+
+#countdownContainer {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+}
+
+#countdownTimer {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+
 
 
 /* How to Play Styles */
@@ -1839,6 +1880,21 @@ html {
     align-items: flex-start;
     gap: 0.5rem;
   }
+
+  #matchedScreen {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  #matchedMessage {
+    font-size: 1.25rem;
+    padding: 1rem;
+  }
+  
+  #countdownTimer {
+    font-size: 2.5rem;
+  }
+  
   
  section[data-route] {
     padding: 1rem 1.5rem;  /* Even more compact on mobile */
