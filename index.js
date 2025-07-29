@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
 
 socket.on('findMatch', ({ username, userId }) => {
   socket.data.username = username;
-    socket.data.userId = userId;
+  socket.data.userId = userId;
 
   // ✅ Player must not already be in a game
   if (playersInGame.has(socket.id)) {
@@ -179,10 +179,14 @@ socket.on('findMatch', ({ username, userId }) => {
     const roomId = `room-${socket.id}-${opponentSocket.id}`;
     console.log(`✅ Matched players ${username} (${socket.id}) and ${opponentUsername} (${opponentSocket.id}) in room ${roomId}`);
 
-    if (!games[roomId]) games[roomId] = { players: [], userIds: {}, usernames: {} };
+    if (!games[roomId]) games[roomId] = { 
+      players: [], 
+      userIds: {}, 
+      usernames: {},
+      playersReady: new Set() // ✅ NEW: Track ready players
+    };
 
     games[roomId].players.push(socket.id, opponentSocket.id);
-
     games[roomId].userIds[socket.id] = userId;
     games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
 
@@ -200,24 +204,17 @@ socket.on('findMatch', ({ username, userId }) => {
       return;
     }
 
-    // ✅ ADD DEFENSIVE CHECKS AND LOGGING
-    console.log('[MATCH] Setting userIds:', {
-      [socket.id]: userId,
-      [opponentSocket.id]: opponentSocket.data.userId
-    });
-
     // ✅ ENSURE SOCKET DATA IS SET
     socket.data.userId = userId;
     if (!opponentSocket.data.userId) {
       console.warn('[MATCH] Opponent missing userId, attempting to get from stored data');
-      // Try to get from any stored location
-      opponentSocket.data.userId = opponentSocket.data.userId || userId; // fallback if needed
+      opponentSocket.data.userId = opponentSocket.data.userId || userId;
     }
 
     games[roomId].usernames[socket.id] = username;
     games[roomId].usernames[opponentSocket.id] = opponentUsername;
 
-    // ✅ Track socket-room mapping (single map)
+    // ✅ Track socket-room mapping
     socketRoomMap[socket.id] = roomId;
     socketRoomMap[opponentSocket.id] = roomId;
 
@@ -229,28 +226,11 @@ socket.on('findMatch', ({ username, userId }) => {
     playersInGame.add(socket.id);
     playersInGame.add(opponentSocket.id);
 
-    // // Handle joining game for both players
-    // handleJoinGame(socket, roomId, username, socket.data.userId);
-    // handleJoinGame(opponentSocket, roomId, opponentUsername, opponentSocket.data.userId);
-
-
-    // Check if game ready to start
-    if (!(games[roomId]?.players?.length >= 2)) {
-      console.log(`⚠️ Not enough players to start game in ${roomId}`);
-      return;
-    }
-
-    // Start the game
-    startGame(roomId);
-
-    // Notify clients
+    // ✅ SEND MATCHED EVENT (triggers countdown) - NO GAME START YET
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
-
-    setTimeout(() => {
-      // Ensure both players are ready after countdown
-      io.to(roomId).emit('countdownComplete');
-    }, 5000);
+    
+    console.log(`📱 Matched screen sent to both players in room ${roomId}`);
 
   } else {
     console.log(`🕐 No opponents. ${username} (${socket.id}) added to waiting queue`);
@@ -265,6 +245,26 @@ socket.on('findMatch', ({ username, userId }) => {
 });
 
 
+socket.on('readyToStart', ({ roomId }) => {
+  const game = games[roomId];
+  if (!game) {
+    console.log(`❌ No game found for room ${roomId}`);
+    return;
+  }
+
+  // Mark this player as ready
+  game.playersReady.add(socket.id);
+  
+  console.log(`✅ Player ${socket.data.username} ready to start in room ${roomId}. Ready count: ${game.playersReady.size}/${game.players.length}`);
+
+  // Start game when both players are ready
+  if (game.playersReady.size === game.players.length && !game.leadoffPlayer) {
+    console.log(`🚀 All players ready! Starting game in room ${roomId}`);
+    startGame(roomId);
+  }
+});
+
+
 socket.on('userSignedIn', ({ userId, username }) => {
   console.log('[SIGNIN] Setting socket data for user:', { userId, username });
   socket.data.userId = userId;
@@ -275,6 +275,9 @@ socket.on('userSignedIn', ({ userId, username }) => {
 socket.on('joinGame', async ({ roomId, username, userId }) => {
     await handleJoinGame(socket, roomId, username, userId);
 });
+
+
+
 
 
 // Diagnostic event to check current games from client on demand

@@ -1903,7 +1903,18 @@ function startMatchCountdown() {
       countdownEl.textContent = timeLeft;
     } else {
       clearInterval(countdownInterval);
-      // Countdown finished, proceed to waiting room
+      
+      // Countdown finished - now join the game and signal ready
+      socket.emit('joinGame', { 
+        roomId: myRoomId, 
+        username: myUsername,
+        userId: myUserId
+      });
+      
+      // Signal that this player is ready to start
+      socket.emit('readyToStart', { roomId: myRoomId });
+      
+      // Navigate to waiting room
       navigateTo('/waiting');
     }
   }, 1000);
@@ -2357,12 +2368,12 @@ socket.on('matched', ({ roomId, opponent }) => {
   // Show matched screen with countdown
   showMatchedScreen(opponent);
 
-  // Include userId in joinGame
-  socket.emit('joinGame', { 
-    roomId: myRoomId, 
-    username: myUsername,
-    userId: myUserId
-  });
+  // // Include userId in joinGame
+  // socket.emit('joinGame', { 
+  //   roomId: myRoomId, 
+  //   username: myUsername,
+  //   userId: myUserId
+  // });
 });
 
 
@@ -2378,6 +2389,12 @@ socket.on('gameStarted', async (data) => {
   }
 
   console.log('[CLIENT] Received gameStarted event:', data);
+
+   // Clear any countdown timers that might still be running
+  const countdownEl = document.getElementById('countdownTimer');
+  if (countdownEl) {
+    // Clear any existing countdown intervals
+  }
 
   resetCardSpread();
 
