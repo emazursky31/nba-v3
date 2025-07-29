@@ -247,6 +247,11 @@ socket.on('findMatch', ({ username, userId }) => {
     socket.emit('matched', { roomId, opponent: opponentUsername });
     opponentSocket.emit('matched', { roomId, opponent: username });
 
+    setTimeout(() => {
+      // Ensure both players are ready after countdown
+      io.to(roomId).emit('countdownComplete');
+    }, 5000);
+
   } else {
     console.log(`🕐 No opponents. ${username} (${socket.id}) added to waiting queue`);
 

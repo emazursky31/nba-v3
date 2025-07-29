@@ -252,6 +252,20 @@
 </div>
 </section>
 
+
+<!-- Matched Screen with Countdown -->
+<section id="matchedScreen" data-route="/matched" class="hidden" style="text-align: center; margin-top: 2rem;">
+  <h2>Match Found!</h2>
+  <div id="matchedMessage" style="font-size: 1.5rem; margin: 2rem 0; color: var(--success-color);">
+    Matched with: <span id="matchedOpponentName">Opponent</span>
+  </div>
+  <div id="countdownContainer" style="margin: 2rem 0;">
+    <div id="countdownTimer" style="font-size: 3rem; font-weight: bold; color: var(--primary-color);">5</div>
+    <p style="font-size: 1.1rem; color: var(--text-secondary);">Game starting in...</p>
+  </div>
+</section>
+
+
 <!-- Scoreboard UI -->
 <!-- <section id="scoreboardSection">
   <div id="jumbotronScoreboard" class="scoreboard-box">
@@ -1067,6 +1081,8 @@ function attachRouteListeners(route) {
       }
       break;
 
+
+
     case '/confirmed':
       const confirmedContinueBtn = document.getElementById('confirmedContinueBtn');
       if (confirmedContinueBtn) {
@@ -1155,6 +1171,12 @@ function attachRouteListeners(route) {
       }
       // Setup copy invite button listener anyway
       setupCopyInviteListeners();
+      break;
+
+
+    case '/matched':
+      // No specific listeners needed for matched screen
+      // Countdown handles automatic transition
       break;
 
 
@@ -1853,6 +1875,40 @@ function setupCopyInviteListeners() {
 }
 
 
+function showMatchedScreen(opponentName) {
+  // Update opponent name
+  const matchedOpponentEl = document.getElementById('matchedOpponentName');
+  if (matchedOpponentEl) {
+    matchedOpponentEl.textContent = opponentName;
+  }
+
+  // Navigate to matched screen
+  navigateTo('/matched');
+
+  // Start 5-second countdown
+  startMatchCountdown();
+}
+
+function startMatchCountdown() {
+  const countdownEl = document.getElementById('countdownTimer');
+  if (!countdownEl) return;
+
+  let timeLeft = 5;
+  countdownEl.textContent = timeLeft;
+
+  const countdownInterval = setInterval(() => {
+    timeLeft--;
+    
+    if (timeLeft > 0) {
+      countdownEl.textContent = timeLeft;
+    } else {
+      clearInterval(countdownInterval);
+      // Countdown finished, proceed to waiting room
+      navigateTo('/waiting');
+    }
+  }, 1000);
+}
+
 
 
 async function handleAuthSuccess() {
@@ -2291,24 +2347,24 @@ socket.on('matched', ({ roomId, opponent }) => {
 
   if (gameStarted && !gameOver) return;
 
-  // ✅ Once matched, clear stale flags
+  // Clear stale flags
   isLeavingGame = false;
   localStorage.removeItem('isLeavingGame');
 
   myRoomId = roomId;
   opponentName = opponent;
 
-  statusDiv.textContent = `Matched with ${opponent}! Joining game...`;
+  // Show matched screen with countdown
+  showMatchedScreen(opponent);
 
-  navigateTo('/waiting');
-
-  // ✅ Include userId!
+  // Include userId in joinGame
   socket.emit('joinGame', { 
     roomId: myRoomId, 
     username: myUsername,
-    userId: myUserId   // <-- this part is critical now
+    userId: myUserId
   });
 });
+
 
 
 
