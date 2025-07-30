@@ -1396,56 +1396,72 @@ section[data-route="/profile"] {
   height: 220px;
   margin: 2rem auto;
   perspective: 1000px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0.5rem;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: none;
+  -webkit-overscroll-behavior-x: none;
 }
 
 .player-card {
-  position: absolute;
+  position: relative;
   width: 200px;
   height: 280px;
   background: white;
   border: 2px solid #333;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   padding: 1rem;
   font-family: 'Georgia', serif;
-  transform-origin: center bottom;
+  flex-shrink: 0;
+  min-width: 200px;
+  margin-right: -1px;
+  opacity: 1 !important;
 }
 
-/* Card stacking with realistic offsets
-.player-card:nth-child(1) { 
+
+/* .player-card:nth-child(1) { 
   z-index: 10; 
   top: 0; 
-  left: 50px;
+  left: 0px;           
   transform: rotate(0deg);
+  opacity: 1;
 }
 
 .player-card:nth-child(2) { 
   z-index: 9; 
-  top: 5px; 
-  left: 45px;
-  transform: rotate(-2deg);
-  opacity: 0.95;
+  top: 0px;            
+  left: 75px;          /
+  transform: rotate(0deg);
+  opacity: 1;
 }
 
 .player-card:nth-child(3) { 
   z-index: 8; 
-  top: 10px; 
-  left: 40px;
-  transform: rotate(-4deg);
-  opacity: 0.9;
+  top: 0px; 
+  left: 150px;         
+  transform: rotate(0deg);
+  opacity: 1;
 }
 
 .player-card:nth-child(4) { 
   z-index: 7; 
-  top: 15px; 
-  left: 35px;
-  transform: rotate(-6deg);
-  opacity: 0.85;
+  top: 0px; 
+  left: 225px;         
+  transform: rotate(0deg);
+  opacity: 1;
 } */
+
 
 /* Card suit corners */
 .player-card::before,
@@ -1624,61 +1640,60 @@ section[data-route="/profile"] {
 }
 
 /* Game End Card Spread Animation */
-.card-deck-container.game-ended {
+/* .card-deck-container.game-ended {
   width: 100%;
   max-width: 1200px;
   height: 350px;
   margin: 2rem auto;
   display: flex;
-  justify-content: flex-start;  /* Start from left for consistent scrolling */
+  justify-content: flex-start;  
   align-items: center;
-  gap: 0;  /* No gap - cards touch each other */
+  gap: 0;  
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 1rem;
   
-  /* Smooth scrolling */
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;  /* iOS smooth scrolling */
   
-  /* Remove bounce effect */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; 
+  
   overscroll-behavior-x: none;
   -webkit-overscroll-behavior-x: none;
-}
+} */
 
-.card-deck-container.game-ended .player-card {
-  position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;  /* Faster, smoother transitions */
+.card-deck-container .player-card {
+  position: relative;              /* Change from absolute */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: none;
   transform: rotate(0deg);
   opacity: 1 !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   z-index: auto;
   
-  /* Maintain original card dimensions */
+  /* Maintain card dimensions */
   width: 200px !important;
   height: 280px !important;
   flex-shrink: 0;
   min-width: 200px;
   
   /* Cards touch each other */
-  margin-right: -1px;  /* Slight overlap to prevent gaps */
-  border: 2px solid #333;  /* Ensure borders are visible */
+  margin-right: -1px;              /* Slight overlap to prevent gaps */
+  border: 2px solid #333;
 }
 
 /* Last card doesn't need margin */
-.card-deck-container.game-ended .player-card:last-child {
+.card-deck-container .player-card:last-child {
   margin-right: 0;
 }
 
-.card-deck-container.game-ended .player-card:hover {
-  transform: translateY(-10px) scale(1.02) !important;  /* Reduced scale for less movement */
+
+.card-deck-container .player-card:hover {
+  transform: translateY(-10px) scale(1.02) !important;
   z-index: 20 !important;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
-  margin-left: 5px;   /* Add space when hovering */
-  margin-right: 5px;  /* Add space when hovering */
+  margin-left: 5px;
+  margin-right: 5px;
 }
-
 
 
 /* Responsive Design */
