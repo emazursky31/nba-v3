@@ -332,7 +332,21 @@ nav {
 }
 
 
+/* Fixed height for message container to prevent layout shifts */
+#messageContainer {
+  min-height: 60px; /* Adjust this value based on your typical message height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
 
+/* Ensure messages are properly centered within the fixed container */
+#messageContainer .message {
+  margin: 0; /* Remove top margin since container handles spacing */
+  width: 100%;
+  max-width: 100%;
+}
 
 /* How to Play Styles */
 .how-to-play {
