@@ -1389,17 +1389,25 @@ section[data-route="/profile"] {
 
 
 
- /* Proper Playing Card Styling */
+/* Proper Playing Card Styling - Straight and Touching */
 .card-deck-container {
   position: relative;
-  width: 300px;
-  height: 220px;
+  width: 100%;
+  max-width: 1200px;
+  height: 300px;
   margin: 2rem auto;
   perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0; /* No gap - cards touch each other */
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 1rem;
 }
 
 .player-card {
-  position: absolute;
+  position: relative; /* Changed from absolute */
   width: 200px;
   height: 280px;
   background: white;
@@ -1413,41 +1421,39 @@ section[data-route="/profile"] {
   padding: 1rem;
   font-family: 'Georgia', serif;
   transform-origin: center bottom;
-}
-
-/* Card stacking with realistic offsets */
-.player-card:nth-child(1) { 
-  z-index: 10; 
-  top: 0; 
-  left: 50px;
+  flex-shrink: 0;
+  min-width: 200px;
+  
+  /* All cards have same positioning - no individual differences */
+  top: 0;
+  left: 0;
   transform: rotate(0deg);
+  opacity: 1;
+  z-index: 10;
+  
+  /* Cards touch each other */
+  margin-right: 0;
+  border-right: 1px solid #333; /* Ensure visible border between cards */
 }
 
-.player-card:nth-child(2) { 
-  z-index: 9; 
-  top: 5px; 
-  left: 45px;
-  transform: rotate(-2deg);
-  opacity: 0.95;
-}
-
-.player-card:nth-child(3) { 
-  z-index: 8; 
-  top: 10px; 
-  left: 40px;
-  transform: rotate(-4deg);
-  opacity: 0.9;
-}
-
+/* Remove individual card positioning - all cards are now identical */
+.player-card:nth-child(1),
+.player-card:nth-child(2),
+.player-card:nth-child(3),
 .player-card:nth-child(4) { 
-  z-index: 7; 
-  top: 15px; 
-  left: 35px;
-  transform: rotate(-6deg);
-  opacity: 0.85;
+  top: 0;
+  left: 0;
+  transform: rotate(0deg);
+  opacity: 1;
+  z-index: 10;
 }
 
-/* Card suit corners */
+/* Last card doesn't need right border */
+.player-card:last-child {
+  border-right: 2px solid #333;
+}
+
+/* Card suit corners remain the same */
 .player-card::before,
 .player-card::after {
   content: "" !important;
@@ -1462,18 +1468,15 @@ section[data-route="/profile"] {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-
 .player-card::before {
   top: 0.5rem;
   left: 0.5rem;
 }
 
-
 .player-card::after {
   bottom: 0.5rem;
   right: 0.5rem;
 }
-
 
 /* Fallback for missing headshots */
 .player-card:not([style*="--headshot-url"])::before,
@@ -1481,15 +1484,12 @@ section[data-route="/profile"] {
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==') !important;
 }
 
-
-/* Card types with different suits */
+/* Card types with different suits remain the same */
 .player-card.leadoff {
   background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
   border-color: var(--accent-color);
   color: var(--accent-color);
 }
-
-
 
 .player-card.your-guess {
   background: linear-gradient(135deg, #fff 0%, #f0fff0 100%);
@@ -1497,113 +1497,26 @@ section[data-route="/profile"] {
   color: #2d5a2d;
 }
 
-
-
 .player-card.opponent-guess {
   background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
   border-color: var(--primary-color);
   color: #2d2d5a;
 }
 
-
-/* Card content */
-.card-header {
-  text-align: center;
-  margin: 1rem 0 0.5rem 0;
-  font-size: 0.75rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
-}
-
-.card-player-name {
-  font-size: 1.1rem;
-  font-weight: bold;
-  text-align: center;
-  margin: 0.5rem 0;
-  line-height: 1.2;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
-}
-
-.card-connection {
-  font-size: 0.8rem;
-  text-align: center;
-  margin: 0.5rem 0;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
-}
-
-.card-footer {
-  text-align: center;
-  font-size: 0.7rem;
-  margin-top: auto;
-  padding: 0.5rem 20px;  /* Increased padding */
-  border-top: 1px solid rgba(0,0,0,0.1);
-}
-
-/* Desktop Turn Prompt Styling */
-.turn-prompt {
-  font-size: 1.25rem;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  text-align: center;
-  line-height: 1.6;
-  font-weight: 500;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.turn-prompt .player-info {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1.25rem;
-  justify-content: center;
-}
-
-#currentPlayerHeadshot {
-  width: 80px !important;
-  height: 80px !important;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
-}
-
-.turn-prompt .turn-player-name {
-  font-size: 1.75rem;
-  margin: 0;
-  color: var(--primary-color);
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-
-/* Hover effects */
+/* Simplified hover effects - no fan-out, just elevation */
 .player-card:hover {
-  transform: translateY(-10px) rotate(0deg) !important;
+  transform: translateY(-10px) scale(1.02);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  z-index: 20 !important;
+  z-index: 20;
 }
 
-/* Fan out effect on container hover */
-.card-deck-container:hover .player-card:nth-child(2) {
-  transform: rotate(-8deg) translateX(-20px);
-}
-
+/* Remove fan-out effects on container hover */
+.card-deck-container:hover .player-card:nth-child(2),
 .card-deck-container:hover .player-card:nth-child(3) {
-  transform: rotate(-12deg) translateX(-35px);
+  transform: none; /* Remove fan-out */
 }
 
-/* New card animation */
+/* New card animation remains the same */
 .player-card.new-card {
   animation: dealCard 0.8s ease-out;
 }
@@ -1623,61 +1536,49 @@ section[data-route="/profile"] {
   }
 }
 
-/* Game End Card Spread Animation */
+/* Game End Card Layout - Already straight and touching */
 .card-deck-container.game-ended {
   width: 100%;
   max-width: 1200px;
   height: 350px;
   margin: 2rem auto;
   display: flex;
-  justify-content: flex-start;  /* Start from left for consistent scrolling */
+  justify-content: flex-start;
   align-items: center;
-  gap: 0;  /* No gap - cards touch each other */
+  gap: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 1rem;
-  
-  /* Smooth scrolling */
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;  /* iOS smooth scrolling */
-  
-  /* Remove bounce effect */
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: none;
   -webkit-overscroll-behavior-x: none;
 }
 
 .card-deck-container.game-ended .player-card {
   position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;  /* Faster, smoother transitions */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: none;
   transform: rotate(0deg);
-  opacity: 1 !important;
+  opacity: 1;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   z-index: auto;
-  
-  /* Maintain original card dimensions */
-  width: 200px !important;
-  height: 280px !important;
+  width: 200px;
+  height: 280px;
   flex-shrink: 0;
   min-width: 200px;
-  
-  /* Cards touch each other */
-  margin-right: -1px;  /* Slight overlap to prevent gaps */
-  border: 2px solid #333;  /* Ensure borders are visible */
-}
-
-/* Last card doesn't need margin */
-.card-deck-container.game-ended .player-card:last-child {
-  margin-right: 0;
+  margin-right: 0; /* Changed from -1px to 0 for touching */
+  border: 2px solid #333;
 }
 
 .card-deck-container.game-ended .player-card:hover {
-  transform: translateY(-10px) scale(1.02) !important;  /* Reduced scale for less movement */
-  z-index: 20 !important;
+  transform: translateY(-10px) scale(1.02);
+  z-index: 20;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
-  margin-left: 5px;   /* Add space when hovering */
-  margin-right: 5px;  /* Add space when hovering */
+  margin-left: 5px;
+  margin-right: 5px;
 }
+
 
 
 
@@ -2163,18 +2064,70 @@ html {
   }
 
  
-  .card-deck-container {
-  width: 280px;
-  height: 200px;
-  margin: 1.5rem auto;
-  margin-bottom: 3rem !important;
-}
+   .card-deck-container {
+    width: 100%;
+    max-width: 100vw;
+    height: 260px;
+    margin: 1.5rem auto;
+    margin-bottom: 3rem !important;
+    display: flex;
+    justify-content: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0 0.5rem;
+  }
 
-.player-card {
-  width: 180px;
-  height: 240px;
-  padding: 0.875rem;
-}
+
+  .player-card {
+    width: 180px;
+    height: 240px;
+    padding: 0.875rem;
+    flex-shrink: 0;
+    min-width: 180px;
+    margin-right: 0; /* Touching cards */
+    
+    /* Ensure all cards are straight */
+    top: 0;
+    left: 0;
+    transform: rotate(0deg);
+    opacity: 1;
+    position: relative;
+  }
+
+
+    .player-card:nth-child(1),
+  .player-card:nth-child(2), 
+  .player-card:nth-child(3),
+  .player-card:nth-child(4) {
+    top: 0;
+    left: 0;
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+
+
+    .player-card:hover {
+    transform: translateY(-5px) scale(1.01);
+  }
+
+
+    .card-deck-container:hover .player-card:nth-child(2),
+  .card-deck-container:hover .player-card:nth-child(3) {
+    transform: none;
+  }
+
+  .card-deck-container.game-ended {
+    height: 280px;
+    padding: 0 0.5rem;
+  }
+  
+  .card-deck-container.game-ended .player-card {
+    width: 180px !important;
+    height: 240px !important;
+    min-width: 180px;
+    margin-right: 0; /* Changed from previous overlap */
+  }
+
 
  .card-player-name {
     font-size: 1rem;
@@ -2485,18 +2438,49 @@ html, body {
   }
 
 /* Card Deck Small Mobile */
-.card-deck-container {
-  width: 240px;
-  height: 180px;
-  margin: 1rem auto;
-  margin-bottom: 4rem !important;
-}
+ .card-deck-container {
+    width: 100%;
+    max-width: 100vw;
+    height: 240px;
+    margin: 1rem auto;
+    margin-bottom: 4rem !important;
+    display: flex;
+    justify-content: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0 0.25rem;
+  }
 
-.player-card {
-  width: 160px;
-  height: 220px;
-  padding: 0.75rem;
-}
+  .player-card {
+    width: 160px;
+    height: 220px;
+    padding: 0.75rem;
+    flex-shrink: 0;
+    min-width: 160px;
+    margin-right: 0; /* Touching cards */
+    
+    /* Ensure all cards are straight */
+    top: 0;
+    left: 0;
+    transform: rotate(0deg);
+    opacity: 1;
+    position: relative;
+  }
+
+   .player-card:nth-child(1),
+  .player-card:nth-child(2),
+  .player-card:nth-child(3), 
+  .player-card:nth-child(4) {
+    top: 0;
+    left: 0;
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+
+   .player-card:hover {
+    transform: translateY(-3px);
+  }
+
 
 .card-player-name {
     font-size: 0.9rem;
@@ -2551,34 +2535,24 @@ html, body {
     background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==') !important;
   }
 
-/* Adjust stacking for smaller cards */
-.player-card:nth-child(1) { left: 40px; }
-.player-card:nth-child(2) { left: 36px; }
-.player-card:nth-child(3) { left: 32px; }
-.player-card:nth-child(4) { left: 28px; }
 
 /* Reduce hover effects on mobile */
 .player-card:hover {
   transform: translateY(-5px) rotate(0deg) !important;
 }
 
-.card-deck-container:hover .player-card:nth-child(2) {
-  transform: rotate(-6deg) translateX(-15px);
-}
 
-.card-deck-container:hover .player-card:nth-child(3) {
-  transform: rotate(-9deg) translateX(-25px);
-}
 
 .card-deck-container.game-ended {
     height: 240px;
     padding: 0 0.25rem;
   }
   
-  .card-deck-container.game-ended .player-card {
+   .card-deck-container.game-ended .player-card {
     width: 160px !important;
     height: 220px !important;
     min-width: 160px;
+    margin-right: 0; /* Changed from previous overlap */
   }
 
 
