@@ -360,6 +360,8 @@ socket.on('playerGuess', async ({ guess }) => {
     clearInterval(game.timer);
     game.timer = null;
 
+    game.turnCount++;
+
     const previousPlayer = game.currentPlayerName;
 
     const [career1, career2] = await Promise.all([
@@ -485,6 +487,7 @@ socket.on('requestRematch', ({ roomId }) => {
     game.currentTurn = 0;
     game.activePlayerSocketId = null;
     game.timeLeft = 30;
+    game.turnCount = 0;
 
     // ✅ RESTORE userIds AFTER resetting
     game.userIds = preservedUserIds;
@@ -561,6 +564,7 @@ socket.on('disconnect', async () => {
               loserName: disconnectedUsername,
               role: 'winner',
               canRematch: false,
+              turnCount: game.turnCount
             });
           }
           playersInGame.delete(playerSocketId);
@@ -657,6 +661,7 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
         loserName: disconnectedUsername,
         role: 'winner',
         canRematch: false,
+        turnCount: game.turnCount
       });
     }
   }
@@ -827,6 +832,7 @@ async function getCareer(playerName) {
 async function startGame(roomId) {
   const game = games[roomId];
   
+  
   if (!game) {
     console.log(`❌ No game object found for room ${roomId}`);
     return;
@@ -852,6 +858,7 @@ async function startGame(roomId) {
   try {
     // ✅ RESET STATS TRACKING FOR NEW GAME
     game.statsUpdated = false;
+    game.turnCount = 0;
     console.log(`[GAME_START] Reset statsUpdated flag for room ${roomId}`);
 
     // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
@@ -1082,6 +1089,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
       activePlayerSocketId: null,
       ready: new Set(),
       starting: false,
+      turnCount: 0,
     };
 
     const game = games[roomId];
@@ -1444,6 +1452,7 @@ async function startTurnTimer(roomId) {
             role: 'winner',
             winnerName,
             loserName,
+            turnCount: currentGame.turnCount
           });
         } else {
           socket.emit('gameOver', {
@@ -1451,6 +1460,7 @@ async function startTurnTimer(roomId) {
             role: 'loser',
             winnerName,
             loserName,
+            turnCount: currentGame.turnCount
           });
         }
       });

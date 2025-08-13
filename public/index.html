@@ -2588,13 +2588,19 @@ socket.on('gameOver', (data) => {
 
   const resultsDiv = document.getElementById('gameOverResults');
   if (resultsDiv) {
+    let turnText = '';
+    if (data.turnCount !== undefined && data.turnCount > 0) {
+      turnText = `<p><strong>Game completed in ${data.turnCount} turn${data.turnCount !== 1 ? 's' : ''}</strong></p>`;
+    }
+
     if (data.winnerName && data.loserName) {
       resultsDiv.innerHTML = `
-        <p><strong>Winner:</strong> ${data.winnerName}</p>
-        <p><strong>Loser:</strong> ${data.loserName}</p>
-      `;
+      ${turnText}
+      <p><strong>Winner:</strong> ${data.winnerName}</p>
+      <p><strong>Loser:</strong> ${data.loserName}</p>
+    `;
     } else {
-      resultsDiv.innerHTML = '';
+      resultsDiv.innerHTML = turnText;
     }
   }
 
