@@ -2521,16 +2521,14 @@ socket.on('matchStats', (stats) => {
 socket.on('gameOver', (data) => {
   console.log('[DEBUG] gameOver received:', data);
 
-  // ✅ If I intentionally left, skip handling
+  // If I intentionally left, skip handling
   if (isLeavingGame) {
     console.debug('[DEBUG] Ignoring gameOver because isLeavingGame === true');
-    isLeavingGame = false; // reset for next time
-    return; // skip all the rest
+    isLeavingGame = false;
+    return;
   }
 
   gameOver = true;
-
-  // ✅ PREVENT AUTO-REJOIN: Clear room persistence when game ends
   localStorage.removeItem('privateRoomId');
 
   // Stop input & timer
@@ -2561,60 +2559,56 @@ socket.on('gameOver', (data) => {
   container.style.display = 'flex';
   container.innerHTML = '';
 
-  const gameOverMsg = document.createElement('div');
-  gameOverMsg.style.fontSize = '1.5rem';
-  gameOverMsg.style.textAlign = 'center';
-  gameOverMsg.style.fontWeight = 'bold';
-  gameOverMsg.style.marginTop = '1rem';
+  // Create the new layout structure
+  
+  // 1. "Game Over" header
+  const gameOverHeader = document.createElement('div');
+  gameOverHeader.style.fontSize = '2rem';
+  gameOverHeader.style.fontWeight = 'bold';
+  gameOverHeader.style.textAlign = 'center';
+  gameOverHeader.style.marginBottom = '1rem';
+  gameOverHeader.textContent = 'Game Over';
+  container.appendChild(gameOverHeader);
 
-  // Create main message
-  let mainMessage = '';
-  if (data.message) {
-    mainMessage = data.message;
-  } else if (data.reason === 'opponent_left') {
-    const opponent = opponentName || 'Your opponent';
-    mainMessage = `${opponent} left the game.`;
-  } else {
-    mainMessage = 'Game Over!';
-  }
+  // 2. Winner/Loser message
+  const resultMessage = document.createElement('div');
+  resultMessage.style.fontSize = '1.5rem';
+  resultMessage.style.textAlign = 'center';
+  resultMessage.style.marginBottom = '1rem';
+  resultMessage.style.fontWeight = 'bold';
 
-  // Add turn count if available
-  let turnText = '';
-  if (data.turnCount !== undefined && data.turnCount > 0) {
-    turnText = `\nGame completed in ${data.turnCount} turn${data.turnCount !== 1 ? 's' : ''}`;
-  }
-
-  gameOverMsg.textContent = mainMessage + turnText;
-
-  // Set color based on role
   if (data.role === 'winner') {
-    gameOverMsg.style.color = 'green';
+    resultMessage.textContent = 'You won!';
+    resultMessage.style.color = 'green';
   } else if (data.role === 'loser') {
-    gameOverMsg.style.color = 'darkred';
-  } else {
-    gameOverMsg.style.color = 'gray';
-  }
-
-  container.appendChild(gameOverMsg);
-
-  const resultsDiv = document.getElementById('gameOverResults');
-  if (resultsDiv) {
-    let turnText = '';
-    if (data.turnCount !== undefined && data.turnCount > 0) {
-      turnText = `<p><strong>Game completed in ${data.turnCount} turn${data.turnCount !== 1 ? 's' : ''}</strong></p>`;
-    }
-
-    if (data.winnerName && data.loserName) {
-      resultsDiv.innerHTML = `
-      ${turnText}
-      <p><strong>Winner:</strong> ${data.winnerName}</p>
-      <p><strong>Loser:</strong> ${data.loserName}</p>
-    `;
+    if (data.reason === 'timer_expired') {
+      resultMessage.textContent = 'You ran out of time.';
     } else {
-      resultsDiv.innerHTML = turnText;
+      resultMessage.textContent = 'You lost.';
     }
+    resultMessage.style.color = 'darkred';
+  } else if (data.reason === 'opponent_left') {
+    resultMessage.textContent = 'Your opponent left the game.';
+    resultMessage.style.color = 'gray';
+  } else {
+    resultMessage.textContent = 'Game ended.';
+    resultMessage.style.color = 'gray';
   }
 
+  container.appendChild(resultMessage);
+
+  // 3. Turn count display
+  if (data.turnCount !== undefined && data.turnCount > 0) {
+    const turnDisplay = document.createElement('div');
+    turnDisplay.style.fontSize = '1.2rem';
+    turnDisplay.style.textAlign = 'center';
+    turnDisplay.style.marginBottom = '1.5rem';
+    turnDisplay.style.fontWeight = 'bold';
+    turnDisplay.textContent = `Turns: ${data.turnCount}`;
+    container.appendChild(turnDisplay);
+  }
+
+  // Handle rematch button visibility
   if (data.canRematch === false || data.reason === 'opponent_left') {
     rematchBtn.style.display = 'none';
   } else {
@@ -2623,9 +2617,8 @@ socket.on('gameOver', (data) => {
     rematchBtn.textContent = 'Rematch';
   }
 
-  // Let server 'matchStats' handle scoreboard update
+  // Navigate and trigger card spread
   navigateTo('/gameover');
-
   triggerGameEndCardSpread();
 });
 
