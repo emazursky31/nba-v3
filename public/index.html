@@ -680,45 +680,62 @@ async function loadProfileData() {
   await loadRealProfileStats();
 }
 
-async function loadRealProfileStats() {
-  if (!myUserId) {
-    // Set default values if no user
-    document.getElementById('profile-total-games').textContent = '0';
-    document.getElementById('profile-games-won').textContent = '0';
-    document.getElementById('profile-win-rate').textContent = '0%';
-    document.getElementById('profile-avg-guesses').textContent = '0';
-    return;
-  }
+
+async function getUserStats(userId) {
+  if (!userId) return { games_played: 0, wins: 0, losses: 0 };
   
   try {
     const { data, error } = await supabase
       .from('user_stats')
       .select('games_played, wins, losses')
-      .eq('user_id', myUserId)
+      .eq('user_id', userId)
       .single();
       
     if (data) {
-      document.getElementById('profile-total-games').textContent = data.games_played || 0;
-      document.getElementById('profile-games-won').textContent = data.wins || 0;
-      
-      const winRate = data.games_played > 0 
-        ? Math.round((data.wins / data.games_played) * 100) 
-        : 0;
-      document.getElementById('profile-win-rate').textContent = `${winRate}%`;
-      
-      // Calculate average guesses (you may need to add this to your database)
-      document.getElementById('profile-avg-guesses').textContent = '0'; // Placeholder
+      return {
+        games_played: data.games_played || 0,
+        wins: data.wins || 0,
+        losses: data.losses || 0,
+        win_rate: data.games_played > 0 ? Math.round((data.wins / data.games_played) * 100) : 0
+      };
     }
+    return { games_played: 0, wins: 0, losses: 0, win_rate: 0 };
   } catch (error) {
-    console.error('Error loading profile stats:', error);
-    // Set default values on error
-    document.getElementById('profile-total-games').textContent = '0';
-    document.getElementById('profile-games-won').textContent = '0';
-    document.getElementById('profile-win-rate').textContent = '0%';
-    document.getElementById('profile-avg-guesses').textContent = '0';
+    console.error('Error loading user stats:', error);
+    return { games_played: 0, wins: 0, losses: 0, win_rate: 0 };
   }
 }
 
+
+async function loadRealProfileStats() {
+  const stats = await getUserStats(myUserId);
+  
+  // Safely update DOM elements only if they exist
+  const updateElement = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+  
+  updateElement('profile-total-games', stats.games_played);
+  updateElement('profile-games-won', stats.wins);
+  updateElement('profile-win-rate', `${stats.win_rate}%`);
+  updateElement('profile-avg-guesses', '0'); // Placeholder
+}
+
+
+async function displayStatsOnHomePage() {
+  const stats = await getUserStats(myUserId);
+  
+  // Update home page elements (when you add them)
+  const updateElement = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+  
+  updateElement('home-games-played', stats.games_played);
+  updateElement('home-win-rate', `${stats.win_rate}%`);
+  // etc.
+}
 
 
 
