@@ -2567,15 +2567,26 @@ socket.on('gameOver', (data) => {
   gameOverMsg.style.fontWeight = 'bold';
   gameOverMsg.style.marginTop = '1rem';
 
+  // Create main message
+  let mainMessage = '';
   if (data.message) {
-    gameOverMsg.textContent = data.message;
+    mainMessage = data.message;
   } else if (data.reason === 'opponent_left') {
     const opponent = opponentName || 'Your opponent';
-    gameOverMsg.textContent = `${opponent} left the game.`;
+    mainMessage = `${opponent} left the game.`;
   } else {
-    gameOverMsg.textContent = 'Game Over!';
+    mainMessage = 'Game Over!';
   }
 
+  // Add turn count if available
+  let turnText = '';
+  if (data.turnCount !== undefined && data.turnCount > 0) {
+    turnText = `\nGame completed in ${data.turnCount} turn${data.turnCount !== 1 ? 's' : ''}`;
+  }
+
+  gameOverMsg.textContent = mainMessage + turnText;
+
+  // Set color based on role
   if (data.role === 'winner') {
     gameOverMsg.style.color = 'green';
   } else if (data.role === 'loser') {
