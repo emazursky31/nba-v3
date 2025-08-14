@@ -458,7 +458,11 @@ socket.on('requestRematch', ({ roomId }) => {
   console.log('Current rematch votes:', Array.from(game.rematchVotes));
 
   // Notify other players in the room that this player requested rematch
-  socket.to(roomId).emit('rematchRequested', { username });
+  socket.to(roomId).emit('rematchRequested', {
+    username,
+    playersWaiting: game.rematchVotes.size + 1, // Include current player
+    totalPlayers: Object.keys(game.usernames).length
+  });
   console.log(`Emitted 'rematchRequested' to others in room ${roomId} for user ${username}`);
 
   const playersInRoom = Object.values(game.usernames).map(u => u.toLowerCase());
@@ -539,6 +543,18 @@ socket.on('disconnect', async () => {
 
       io.to(room).emit('playersUpdate', game.players.length);
       console.log(`${disconnectedUsername} removed from game in room ${room}`);
+
+      // Notify remaining players about opponent leaving
+      if (game.players.length === 1) {
+        const remainingSocketId = game.players[0];
+        const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+        if (remainingSocket && remainingSocket.connected) {
+          remainingSocket.emit('opponentLeft', {
+            username: disconnectedUsername,
+            message: `${disconnectedUsername} left the room`
+          });
+        }
+      }
 
       if (game.timer) {
         clearInterval(game.timer);
