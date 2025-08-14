@@ -1590,28 +1590,29 @@ function updateUIForRoute(path) {
   console.debug('[updateUIForRoute] Handling:', path);
 
   if (path === '/home') {
-    console.log('[DEBUG] updateUIForRoute: Handling /home');
+  console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-    updateNavUserState();
+  updateNavUserState();
 
-    if (socket && socket.connected) {
-      isLeavingGame = true;
-      socket.emit('leaveGame');
-    }
-
-    gameStarted = false;
-    gameOver = true;
-    roomId = null;
-    myRoomId = null;
-    isPrivateGame = false;
-    selectedPlayer = null;
-    successfulGuesses = [];
-
-    const welcomeEl = document.getElementById('home-welcome');
-    if (welcomeEl && myUsername) {
-      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-    }
+  // ✅ EMIT LEAVE GAME when navigating to home (covers intentional leaving)
+  if (socket && socket.connected && (gameStarted || myRoomId)) {
+    console.log('[DEBUG] Emitting leaveGame due to navigation to home');
+    socket.emit('leaveGame');
   }
+
+  gameStarted = false;
+  gameOver = true;
+  roomId = null;
+  myRoomId = null;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  const welcomeEl = document.getElementById('home-welcome');
+  if (welcomeEl && myUsername) {
+    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+  }
+}
 
  if (path === '/waiting') {
   if (isLeavingGame && !isPrivateGame) {
@@ -2833,8 +2834,8 @@ socket.on('timerTick', (data) => {
 
 
 
-// Enhanced rematch request notification - FIXED VERSION
-socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
+// Simplified rematch request notification
+socket.on('rematchRequested', ({ username }) => {
   console.log('[DEBUG] Rematch requested by:', username);
   
   // Clear any existing rematch messages
@@ -2843,7 +2844,7 @@ socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
     existingRematchMsg.remove();
   }
 
-  // Create enhanced notification
+  // Create simplified notification
   const rematchNotification = document.createElement('div');
   rematchNotification.id = 'rematch-notification';
   rematchNotification.style.cssText = `
@@ -2858,21 +2859,9 @@ socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
     animation: pulse 2s infinite;
   `;
 
-  if (playersWaiting === totalPlayers) {
-    rematchNotification.innerHTML = `
-      <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🎮 All Players Ready!</div>
-      <div>Everyone wants a rematch. Click your Rematch button to start!</div>
-    `;
-  } else {
-    rematchNotification.innerHTML = `
-      <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🔄 Rematch Request</div>
-      <div><strong>${username}</strong> wants a rematch!</div>
-      <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-        Waiting: ${playersWaiting}/${totalPlayers} players
-      </div>
-      <div style="margin-top: 0.5rem;">Click your Rematch button to accept</div>
-    `;
-  }
+  rematchNotification.innerHTML = `
+    <div>Rematch requested</div>
+  `;
 
   // Add pulsing animation if not already added
   if (!document.getElementById('pulse-animation-style')) {
@@ -2888,10 +2877,9 @@ socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
     document.head.appendChild(style);
   }
 
-  // FIXED: Insert notification in the game over container, not before rematch button
+  // Insert notification in the game over container
   const gameOverContainer = document.getElementById('gameOverContainer');
   if (gameOverContainer) {
-    // Simply append to the container - the rematch button is outside this container
     gameOverContainer.appendChild(rematchNotification);
     console.log('[DEBUG] Rematch notification added to game over container');
   } else {
@@ -2907,6 +2895,7 @@ socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
     console.log('[DEBUG] Rematch button style updated');
   }
 });
+
 
 
 
@@ -2940,15 +2929,15 @@ socket.on('rematchStarted', () => {
 });
 
 
-// Handle opponent leaving the room - FIXED VERSION
-socket.on('opponentLeft', ({ username, message }) => {
-  console.log('[DEBUG] Opponent left:', username);
+// Handle opponent leaving the room - ALL SCENARIOS
+socket.on('opponentLeft', ({ username, message, reason }) => {
+  console.log('[DEBUG] Opponent left:', username, 'Reason:', reason);
   
   // Clear any existing notifications
   const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
   existingNotifications.forEach(el => el.remove());
 
-  // Create opponent left notification
+  // Create opponent left notification with reason-specific messaging
   const leftNotification = document.createElement('div');
   leftNotification.id = 'opponent-left-notification';
   leftNotification.style.cssText = `
@@ -2962,15 +2951,37 @@ socket.on('opponentLeft', ({ username, message }) => {
     color: #c62828;
   `;
 
+  // Customize message based on reason
+  let reasonText = '';
+  switch(reason) {
+    case 'signed_out':
+      reasonText = 'signed out';
+      break;
+    case 'left_intentionally':
+      reasonText = 'left the game';
+      break;
+    case 'disconnected':
+      reasonText = 'disconnected';
+      break;
+    default:
+      reasonText = 'left the room';
+  }
+
   leftNotification.innerHTML = `
-    <div>${username} left the room.  Rematch is no longer available.</div>
+    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👋 Player Left</div>
+    <div><strong>${username}</strong> ${reasonText}</div>
+    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+      Rematch is no longer available
+    </div>
   `;
 
-  // FIXED: Insert notification in the game over container
+  // Insert notification in the game over container
   const gameOverContainer = document.getElementById('gameOverContainer');
   if (gameOverContainer) {
     gameOverContainer.appendChild(leftNotification);
     console.log('[DEBUG] Opponent left notification added');
+  } else {
+    console.warn('[DEBUG] Game over container not found');
   }
 
   // Hide and disable rematch button
@@ -2980,13 +2991,14 @@ socket.on('opponentLeft', ({ username, message }) => {
     console.log('[DEBUG] Rematch button hidden due to opponent leaving');
   }
 
-  // Auto-remove notification after 5 seconds
+  // Auto-remove notification after 8 seconds
   setTimeout(() => {
     if (leftNotification.parentNode) {
       leftNotification.remove();
     }
-  }, 5000);
+  }, 8000);
 });
+
 
 
 
@@ -3200,8 +3212,12 @@ try {
   });
 
   window.addEventListener('beforeunload', (e) => {
-    if (gameStarted && !gameOver && socket && socket.connected) {
-      isLeavingGame = true;
+  // ✅ COVERS: Tab close, browser close, page refresh, navigation away
+  if ((gameStarted && !gameOver) || myRoomId) {
+    console.log('[DEBUG] Page unloading during active game - notifying opponent');
+    
+    if (socket && socket.connected) {
+      // Use playerSignedOut for immediate notification
       socket.emit('playerSignedOut', {
         roomId: myRoomId || roomId,
         username: myUsername,
@@ -3209,7 +3225,9 @@ try {
         reason: 'page_closed'
       });
     }
-  });
+  }
+});
+
 });
 
 
