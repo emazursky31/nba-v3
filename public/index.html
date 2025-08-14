@@ -2831,59 +2831,12 @@ socket.on('timerTick', (data) => {
 });
 
 
-// Handle opponent leaving the room
-socket.on('opponentLeft', ({ username, message }) => {
-  // Clear any existing notifications
-  const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
-  existingNotifications.forEach(el => el.remove());
-
-  // Create opponent left notification
-  const leftNotification = document.createElement('div');
-  leftNotification.id = 'opponent-left-notification';
-  leftNotification.style.cssText = `
-    background: #ffebee;
-    border: 2px solid #f44336;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    text-align: center;
-    font-weight: bold;
-    color: #c62828;
-  `;
-
-  leftNotification.innerHTML = `
-    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👋 Player Left</div>
-    <div><strong>${username}</strong> has left the room</div>
-    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-      Rematch is no longer available
-    </div>
-  `;
-
-  // Insert notification
-  const gameOverContainer = document.getElementById('gameOverContainer');
-  if (gameOverContainer) {
-    gameOverContainer.appendChild(leftNotification);
-  }
-
-  // Hide and disable rematch button
-  const rematchBtn = document.getElementById('rematchBtn');
-  if (rematchBtn) {
-    rematchBtn.style.display = 'none';
-  }
-
-  // Auto-remove notification after 5 seconds
-  setTimeout(() => {
-    if (leftNotification.parentNode) {
-      leftNotification.remove();
-    }
-  }, 5000);
-});
 
 
-
-// When another player requests a rematch
-// Enhanced rematch request notification
+// Enhanced rematch request notification - FIXED VERSION
 socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
+  console.log('[DEBUG] Rematch requested by:', username);
+  
   // Clear any existing rematch messages
   const existingRematchMsg = document.getElementById('rematch-notification');
   if (existingRematchMsg) {
@@ -2921,31 +2874,40 @@ socket.on('rematchRequested', ({ username, playersWaiting, totalPlayers }) => {
     `;
   }
 
-  // Add pulsing animation
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
-    }
-  `;
-  document.head.appendChild(style);
+  // Add pulsing animation if not already added
+  if (!document.getElementById('pulse-animation-style')) {
+    const style = document.createElement('style');
+    style.id = 'pulse-animation-style';
+    style.textContent = `
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-  // Insert notification above the rematch button
+  // FIXED: Insert notification in the game over container, not before rematch button
   const gameOverContainer = document.getElementById('gameOverContainer');
-  const rematchBtn = document.getElementById('rematchBtn');
-  if (gameOverContainer && rematchBtn) {
-    gameOverContainer.insertBefore(rematchNotification, rematchBtn);
+  if (gameOverContainer) {
+    // Simply append to the container - the rematch button is outside this container
+    gameOverContainer.appendChild(rematchNotification);
+    console.log('[DEBUG] Rematch notification added to game over container');
+  } else {
+    console.warn('[DEBUG] Game over container not found');
   }
 
   // Update rematch button style to indicate pending request
+  const rematchBtn = document.getElementById('rematchBtn');
   if (rematchBtn) {
     rematchBtn.style.backgroundColor = '#4caf50';
     rematchBtn.style.transform = 'scale(1.05)';
     rematchBtn.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
+    console.log('[DEBUG] Rematch button style updated');
   }
 });
+
 
 
 // When rematch actually starts
@@ -2976,6 +2938,56 @@ socket.on('rematchStarted', () => {
     console.error('[CLIENT] Missing roomId or username for rematch.');
   }
 });
+
+
+// Handle opponent leaving the room - FIXED VERSION
+socket.on('opponentLeft', ({ username, message }) => {
+  console.log('[DEBUG] Opponent left:', username);
+  
+  // Clear any existing notifications
+  const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
+  existingNotifications.forEach(el => el.remove());
+
+  // Create opponent left notification
+  const leftNotification = document.createElement('div');
+  leftNotification.id = 'opponent-left-notification';
+  leftNotification.style.cssText = `
+    background: #ffebee;
+    border: 2px solid #f44336;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
+    font-weight: bold;
+    color: #c62828;
+  `;
+
+  leftNotification.innerHTML = `
+    <div>${username} left the room.  Rematch is no longer available.</div>
+  `;
+
+  // FIXED: Insert notification in the game over container
+  const gameOverContainer = document.getElementById('gameOverContainer');
+  if (gameOverContainer) {
+    gameOverContainer.appendChild(leftNotification);
+    console.log('[DEBUG] Opponent left notification added');
+  }
+
+  // Hide and disable rematch button
+  const rematchBtn = document.getElementById('rematchBtn');
+  if (rematchBtn) {
+    rematchBtn.style.display = 'none';
+    console.log('[DEBUG] Rematch button hidden due to opponent leaving');
+  }
+
+  // Auto-remove notification after 5 seconds
+  setTimeout(() => {
+    if (leftNotification.parentNode) {
+      leftNotification.remove();
+    }
+  }, 5000);
+});
+
 
 
   }
