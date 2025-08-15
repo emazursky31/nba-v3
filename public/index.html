@@ -1595,33 +1595,20 @@ if (path === '/home') {
 
   updateNavUserState();
 
-  // ✅ CRITICAL: Emit leaveGame IMMEDIATELY and SYNCHRONOUSLY
+  // ✅ CRITICAL: Emit playerLeftGame IMMEDIATELY and SYNCHRONOUSLY
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
-    console.log('[DEBUG] Emitting leaveGame due to navigation to home');
-    console.log('[DEBUG] Socket connected:', socket.connected);
-    console.log('[DEBUG] Room info:', { myRoomId, roomId, myUsername });
+    console.log('[DEBUG] Emitting playerLeftGame due to navigation to home');
     
     isLeavingGame = true;
     localStorage.setItem('isLeavingGame', 'true');
     
-    // ✅ ENHANCED: Send with all possible room identifiers
-    const leaveData = {
-      roomId: myRoomId || roomId,
-      username: myUsername,
-      userId: myUserId,
-      reason: 'navigated_home'
-    };
-    
-    console.log('[DEBUG] Sending leaveGame with data:', leaveData);
-    socket.emit('leaveGame', leaveData);
-    
-    // ✅ ALSO emit playerSignedOut as backup
-    socket.emit('playerSignedOut', {
-      roomId: myRoomId || roomId,
-      username: myUsername,
-      userId: myUserId,
-      reason: 'navigated_home'
-    });
+    socket.emit('playerLeftGame', {
+    roomId: myRoomId || roomId,
+    username: myUsername,
+    userId: myUserId,
+    reason: 'navigated_home',
+    socketId: socket.id 
+  });
   }
 
   // Reset game state AFTER emitting events
@@ -1793,7 +1780,7 @@ function handleGoHome() {
 
   // ✅ EMIT LEAVE GAME with room info BEFORE resetting state
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
-    console.log('[DEBUG] Emitting leaveGame from handleGoHome');
+    console.log('[DEBUG] Emitting playerLeftGame from handleGoHome');
     console.log('[DEBUG] Socket connected:', socket.connected);
     console.log('[DEBUG] Room info:', { myRoomId, roomId, myUsername });
     
@@ -1807,8 +1794,8 @@ function handleGoHome() {
       reason: 'clicked_home'
     };
     
-    console.log('[DEBUG] Sending leaveGame with data:', leaveData);
-    socket.emit('leaveGame', leaveData);
+    console.log('[DEBUG] Sending playerLeftGame with data:', leaveData);
+    socket.emit('playerLeftGame', leaveData);
     
     // ✅ ALSO emit playerSignedOut as backup
     socket.emit('playerSignedOut', {
