@@ -2939,79 +2939,57 @@ socket.on('rematchStarted', () => {
 });
 
 
-// Handle opponent leaving the room - WORKS ON ALL SCREENS
-// socket.on('opponentLeft', ({ message }) => {
-//   console.log('[DEBUG] opponentLeft event received:', message);
+// Handle opponent leaving the room - GAME OVER CONTAINER ONLY (NO POP-UP)
+socket.on('opponentLeft', ({ message }) => {
+  console.log('[DEBUG] opponentLeft event received:', message);
   
-//   // Clear any existing notifications
-//   const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
-//   existingNotifications.forEach(el => el.remove());
+  // Clear any existing notifications
+  const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
+  existingNotifications.forEach(el => el.remove());
 
-//   // Create opponent left notification
-//   const leftNotification = document.createElement('div');
-//   leftNotification.id = 'opponent-left-notification';
-//   leftNotification.style.cssText = `
-//     position: fixed;
-//     top: 20px;
-//     left: 50%;
-//     transform: translateX(-50%);
-//     background: #ffebee;
-//     border: 2px solid #f44336;
-//     border-radius: 8px;
-//     padding: 1rem 2rem;
-//     text-align: center;
-//     font-weight: bold;
-//     color: #c62828;
-//     z-index: 10000;
-//     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-//     animation: slideDown 0.3s ease-out;
-//   `;
+  // Create opponent left notification for game over container ONLY
+  const leftNotification = document.createElement('div');
+  leftNotification.id = 'opponent-left-notification';
+  leftNotification.style.cssText = `
+    background: #ffebee;
+    border: 2px solid #f44336;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
+    font-weight: bold;
+    color: #c62828;
+  `;
 
-//   leftNotification.innerHTML = `
-//     <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👋 Player Left</div>
-//     <div>Your opponent left the game</div>
-//     <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-//       Rematch is no longer available
-//     </div>
-//   `;
+  leftNotification.innerHTML = `
+    <div>Opponent left the game</div>
+  `;
 
-//   if (!document.getElementById('slide-down-animation-style')) {
-//     const style = document.createElement('style');
-//     style.id = 'slide-down-animation-style';
-//     style.textContent = `
-//       @keyframes slideDown {
-//         from { 
-//           opacity: 0; 
-//           transform: translateX(-50%) translateY(-20px); 
-//         }
-//         to { 
-//           opacity: 1; 
-//           transform: translateX(-50%) translateY(0); 
-//         }
-//       }
-//     `;
-//     document.head.appendChild(style);
-//   }
+  // ✅ ONLY add to game over container (NO pop-up overlay)
+  const gameOverContainer = document.getElementById('gameOverContainer');
+  if (gameOverContainer) {
+    gameOverContainer.appendChild(leftNotification);
+    console.log('[DEBUG] Opponent left notification added to game over container');
+  } else {
+    console.warn('[DEBUG] Game over container not found');
+  }
 
-//   // ✅ CRITICAL: Add to document body so it appears on ANY screen
-//   document.body.appendChild(leftNotification);
-//   console.log('[DEBUG] Opponent left notification added to body (visible on all screens)');
+  // Hide and disable rematch button
+  const rematchBtn = document.getElementById('rematchBtn');
+  if (rematchBtn) {
+    rematchBtn.style.display = 'none';
+    console.log('[DEBUG] Rematch button hidden due to opponent leaving');
+  }
 
-//   // Hide and disable rematch button if it exists
-//   const rematchBtn = document.getElementById('rematchBtn');
-//   if (rematchBtn) {
-//     rematchBtn.style.display = 'none';
-//     console.log('[DEBUG] Rematch button hidden due to opponent leaving');
-//   }
+  // Auto-remove notification after 8 seconds
+  setTimeout(() => {
+    if (leftNotification.parentNode) {
+      leftNotification.remove();
+      console.log('[DEBUG] Opponent left notification auto-removed');
+    }
+  }, 8000);
+});
 
-//   // Auto-remove notification after 5 seconds
-//   setTimeout(() => {
-//     if (leftNotification.parentNode) {
-//       leftNotification.remove();
-//       console.log('[DEBUG] Opponent left notification auto-removed');
-//     }
-//   }, 5000);
-// });
 
 
 
