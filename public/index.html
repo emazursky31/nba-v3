@@ -1591,18 +1591,40 @@ function updateUIForRoute(path) {
 
 if (path === '/home') {
   console.log('[DEBUG] updateUIForRoute: Handling /home');
+  console.log('[DEBUG] Current game state - gameStarted:', gameStarted, 'myRoomId:', myRoomId, 'isLeavingGame:', isLeavingGame);
 
   updateNavUserState();
 
-  // ✅ Emit leaveGame when navigating away from active game
+  // ✅ CRITICAL: Emit leaveGame IMMEDIATELY and SYNCHRONOUSLY
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
     console.log('[DEBUG] Emitting leaveGame due to navigation to home');
+    console.log('[DEBUG] Socket connected:', socket.connected);
+    console.log('[DEBUG] Room info:', { myRoomId, roomId, myUsername });
+    
     isLeavingGame = true;
     localStorage.setItem('isLeavingGame', 'true');
     
-    socket.emit('leaveGame');
+    // ✅ ENHANCED: Send with all possible room identifiers
+    const leaveData = {
+      roomId: myRoomId || roomId,
+      username: myUsername,
+      userId: myUserId,
+      reason: 'navigated_home'
+    };
+    
+    console.log('[DEBUG] Sending leaveGame with data:', leaveData);
+    socket.emit('leaveGame', leaveData);
+    
+    // ✅ ALSO emit playerSignedOut as backup
+    socket.emit('playerSignedOut', {
+      roomId: myRoomId || roomId,
+      username: myUsername,
+      userId: myUserId,
+      reason: 'navigated_home'
+    });
   }
 
+  // Reset game state AFTER emitting events
   gameStarted = false;
   gameOver = true;
   roomId = null;
@@ -1616,6 +1638,7 @@ if (path === '/home') {
     welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
   }
 }
+
 
 
 
@@ -1766,21 +1789,39 @@ if (updatePasswordBtn) {
 
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
+  console.log('[DEBUG] Current game state - gameStarted:', gameStarted, 'myRoomId:', myRoomId, 'isLeavingGame:', isLeavingGame);
 
+  // ✅ EMIT LEAVE GAME with room info BEFORE resetting state
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
     console.log('[DEBUG] Emitting leaveGame from handleGoHome');
+    console.log('[DEBUG] Socket connected:', socket.connected);
+    console.log('[DEBUG] Room info:', { myRoomId, roomId, myUsername });
+    
     isLeavingGame = true;
     localStorage.setItem('isLeavingGame', 'true');
     
-    socket.emit('leaveGame', {
+    const leaveData = {
       roomId: myRoomId || roomId,
       username: myUsername,
+      userId: myUserId,
+      reason: 'clicked_home'
+    };
+    
+    console.log('[DEBUG] Sending leaveGame with data:', leaveData);
+    socket.emit('leaveGame', leaveData);
+    
+    // ✅ ALSO emit playerSignedOut as backup
+    socket.emit('playerSignedOut', {
+      roomId: myRoomId || roomId,
+      username: myUsername,
+      userId: myUserId,
       reason: 'clicked_home'
     });
   }
 
   resetAllGameState();
 
+  // Always clear local game state
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
@@ -1793,6 +1834,7 @@ function handleGoHome() {
 
   navigateTo('/home');
 }
+
 
 
 function setupCopyInviteListeners() {

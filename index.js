@@ -622,10 +622,14 @@ socket.on('disconnect', async () => {
 
 
 socket.on('leaveGame', async (data = {}) => {
-  const username = socket.data?.username || 'Unknown';
-  const roomId = socketRoomMap[socket.id];
+  const { roomId: clientRoomId, username: clientUsername, reason } = data;
+  const username = clientUsername || socket.data?.username || 'Unknown';
+  const roomId = clientRoomId || socketRoomMap[socket.id];
   
-  console.log(`🚪 leaveGame: ${socket.id} (${username}) from room ${roomId}`);
+  console.log(`🚪 leaveGame: ${socket.id} (${username}) from room ${roomId}, reason: ${reason}`);
+  console.log(`[LEAVE_GAME] Data received:`, data);
+  console.log(`[LEAVE_GAME] Socket room mapping:`, socketRoomMap[socket.id]);
+  console.log(`[LEAVE_GAME] Available games:`, Object.keys(games));
 
   // Remove from waiting queue
   const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
@@ -634,35 +638,67 @@ socket.on('leaveGame', async (data = {}) => {
     console.log(`Removed ${username} from waiting queue`);
   }
 
-  // ✅ RESTORE: Send BOTH opponentLeft AND gameOver events
+  // ✅ ENHANCED: Search for the player in ALL games if roomId not found
+  let targetGame = null;
+  let targetRoomId = roomId;
+
   if (roomId && games[roomId]) {
-    const game = games[roomId];
-    const remainingSocketId = game.players.find(id => id !== socket.id);
-    
-    if (remainingSocketId) {
-      const remainingSocket = io.sockets.sockets.get(remainingSocketId);
-      if (remainingSocket && remainingSocket.connected) {
-        const remainingUsername = game.usernames[remainingSocketId] || 'Player';
-        
-        console.log(`[LEAVE_GAME] Notifying ${remainingUsername} that ${username} left`);
-        
-        // Send opponentLeft event (for game over container notification)
-        remainingSocket.emit('opponentLeft', {
-          message: 'Your opponent left the game'
-        });
-        
-        // Also send gameOver event
-        remainingSocket.emit('gameOver', {
-          reason: 'opponent_left',
-          message: `${username} left the game.`,
-          winnerName: remainingUsername,
-          loserName: username,
-          role: 'winner',
-          canRematch: false,
-          turnCount: game.turnCount || 0
-        });
+    targetGame = games[roomId];
+    console.log(`[LEAVE_GAME] Found game in provided room ${roomId}`);
+  } else {
+    // Search all games for this socket
+    for (const [room, game] of Object.entries(games)) {
+      if (game.players && game.players.includes(socket.id)) {
+        targetGame = game;
+        targetRoomId = room;
+        console.log(`[LEAVE_GAME] Found player in room ${room} instead of provided ${roomId}`);
+        break;
       }
     }
+  }
+
+  if (targetGame && targetRoomId) {
+    const playerIndex = targetGame.players.indexOf(socket.id);
+    
+    if (playerIndex !== -1) {
+      console.log(`[LEAVE_GAME] Player ${username} found in room ${targetRoomId}`);
+      
+      const remainingSocketId = targetGame.players.find(id => id !== socket.id);
+      
+      if (remainingSocketId) {
+        const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+        if (remainingSocket && remainingSocket.connected) {
+          const remainingUsername = targetGame.usernames[remainingSocketId] || 'Player';
+          
+          console.log(`[LEAVE_GAME] Notifying ${remainingUsername} that ${username} left`);
+          
+          // ✅ Send BOTH events for maximum reliability
+          remainingSocket.emit('opponentLeft', {
+            message: 'Your opponent left the game'
+          });
+          
+          remainingSocket.emit('gameOver', {
+            reason: 'opponent_left',
+            message: `${username} left the game.`,
+            winnerName: remainingUsername,
+            loserName: username,
+            role: 'winner',
+            canRematch: false,
+            turnCount: targetGame.turnCount || 0
+          });
+          
+          console.log(`[LEAVE_GAME] Events sent to ${remainingUsername}`);
+        } else {
+          console.log(`[LEAVE_GAME] Remaining socket not found or not connected`);
+        }
+      } else {
+        console.log(`[LEAVE_GAME] No remaining player found`);
+      }
+    } else {
+      console.log(`[LEAVE_GAME] Player not found in game players array`);
+    }
+  } else {
+    console.log(`[LEAVE_GAME] No game found for player ${username}`);
   }
 
   // Handle disconnect logic
@@ -677,77 +713,109 @@ socket.on('leaveGame', async (data = {}) => {
 socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
   console.log(`Player ${username} signed out from room ${roomId}, reason: ${reason}`);
   
-  const game = games[roomId];
-  if (!game) return;
+  // ✅ ENHANCED: Find the game even if roomId is not provided or incorrect
+  let targetGame = null;
+  let targetRoomId = roomId;
+  
+  if (roomId && games[roomId]) {
+    targetGame = games[roomId];
+    console.log(`[SIGNOUT] Found game in provided room ${roomId}`);
+  } else {
+    // Search all games for this socket
+    for (const [room, game] of Object.entries(games)) {
+      if (game.players && game.players.includes(socket.id)) {
+        targetGame = game;
+        targetRoomId = room;
+        console.log(`[SIGNOUT] Found player in room ${room} instead of provided ${roomId}`);
+        break;
+      }
+    }
+  }
+  
+  if (!targetGame) {
+    console.log(`[SIGNOUT] No game found for player ${username}`);
+    return;
+  }
   
   const disconnectedSocketId = socket.id;
-  const disconnectedUsername = username || game.usernames[disconnectedSocketId] || 'Player';
+  const disconnectedUsername = username || targetGame.usernames[disconnectedSocketId] || 'Player';
   
   // Find remaining player and notify them
-  const remainingPlayerSocketId = game.players.find(id => id !== disconnectedSocketId);
+  const remainingPlayerSocketId = targetGame.players.find(id => id !== disconnectedSocketId);
   
   if (remainingPlayerSocketId) {
     const remainingPlayerSocket = io.sockets.sockets.get(remainingPlayerSocketId);
-    const remainingUsername = game.usernames[remainingPlayerSocketId] || 'Player';
+    const remainingUsername = targetGame.usernames[remainingPlayerSocketId] || 'Player';
     
     if (remainingPlayerSocket && remainingPlayerSocket.connected) {
-      console.log(`[SIGNOUT] Notifying ${remainingUsername} that ${disconnectedUsername} signed out`);
+      console.log(`[SIGNOUT] Notifying ${remainingUsername} that ${disconnectedUsername} left (reason: ${reason})`);
       
-      // ✅ RESTORE: Send BOTH events
-      // Send opponentLeft event (for game over container notification)
+      // ✅ Send BOTH events
       remainingPlayerSocket.emit('opponentLeft', {
         message: 'Your opponent left the game'
       });
       
-      // Send gameOver event
       remainingPlayerSocket.emit('gameOver', {
-        reason: 'opponent_signed_out',
-        message: `${disconnectedUsername} signed out. You win!`,
+        reason: reason === 'navigated_home' || reason === 'clicked_home' ? 'opponent_left' : 'opponent_signed_out',
+        message: reason === 'navigated_home' || reason === 'clicked_home' 
+          ? `${disconnectedUsername} left the game.`
+          : `${disconnectedUsername} signed out. You win!`,
         winnerName: remainingUsername,
         loserName: disconnectedUsername,
         role: 'winner',
         canRematch: false,
-        turnCount: game.turnCount || 0
+        turnCount: targetGame.turnCount || 0
       });
       
-      // Update stats
-      const remainingUserId = game.userIds[remainingPlayerSocketId] || 
-                             remainingPlayerSocket.data?.userId;
-      const disconnectedUserId = game.userIds[disconnectedSocketId] || 
-                                socket.data?.userId;
+      console.log(`[SIGNOUT] Events sent to ${remainingUsername}`);
       
-      if (remainingUserId && disconnectedUserId) {
-        try {
-          await updateUserStats(remainingUserId, 'win');
-          await updateUserStats(disconnectedUserId, 'loss');
-          console.log('[SIGNOUT] Stats updated successfully');
-        } catch (err) {
-          console.error('[SIGNOUT] Error updating stats:', err);
+      // Update stats only for actual sign out, not navigation
+      if (reason !== 'navigated_home' && reason !== 'clicked_home') {
+        const remainingUserId = targetGame.userIds[remainingPlayerSocketId] || 
+                               remainingPlayerSocket.data?.userId;
+        const disconnectedUserId = targetGame.userIds[disconnectedSocketId] || 
+                                  socket.data?.userId;
+        
+        if (remainingUserId && disconnectedUserId) {
+          try {
+            await updateUserStats(remainingUserId, 'win');
+            await updateUserStats(disconnectedUserId, 'loss');
+            console.log('[SIGNOUT] Stats updated successfully');
+          } catch (err) {
+            console.error('[SIGNOUT] Error updating stats:', err);
+          }
         }
       }
     }
   }
   
   // Clean up the game
-  if (game.timer) {
-    clearInterval(game.timer);
-    delete game.timer;
+  if (targetGame.timer) {
+    clearInterval(targetGame.timer);
+    delete targetGame.timer;
   }
   
-  game.players = [];
-  game.usernames = {};
-  game.userIds = {};
-  game.currentTurn = 0;
-  game.currentPlayerName = null;
-  game.teammates = [];
-  game.successfulGuesses = [];
-  game.rematchVotes = new Set();
+  // Remove the leaving player
+  const playerIndex = targetGame.players.indexOf(disconnectedSocketId);
+  if (playerIndex !== -1) {
+    targetGame.players.splice(playerIndex, 1);
+  }
+  delete targetGame.usernames[disconnectedSocketId];
+  delete targetGame.userIds[disconnectedSocketId];
   
+  // Clean up socket mappings
   delete socketRoomMap[disconnectedSocketId];
   playersInGame.delete(disconnectedSocketId);
   
-  console.log(`Game in room ${roomId} ended due to ${disconnectedUsername} signing out`);
+  // If no players left, delete the game
+  if (targetGame.players.length === 0) {
+    delete games[targetRoomId];
+    console.log(`[SIGNOUT] Deleted empty game room ${targetRoomId}`);
+  }
+  
+  console.log(`Game in room ${targetRoomId} handled for ${disconnectedUsername} leaving (reason: ${reason})`);
 });
+
 
 
 
