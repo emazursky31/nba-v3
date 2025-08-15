@@ -1590,29 +1590,39 @@ function updateUIForRoute(path) {
   console.debug('[updateUIForRoute] Handling:', path);
 
   if (path === '/home') {
-  console.log('[DEBUG] updateUIForRoute: Handling /home');
+    console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  updateNavUserState();
+    updateNavUserState();
 
-  // ✅ EMIT LEAVE GAME when navigating to home (covers intentional leaving)
-  if (socket && socket.connected && (gameStarted || myRoomId)) {
-    console.log('[DEBUG] Emitting leaveGame due to navigation to home');
-    socket.emit('leaveGame');
+    // ✅ CRITICAL: Emit leaveGame BEFORE resetting game state
+    if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
+      console.log('[DEBUG] Emitting leaveGame due to navigation to home');
+      isLeavingGame = true;
+      localStorage.setItem('isLeavingGame', 'true');
+
+      // Emit leaveGame with current room info
+      socket.emit('leaveGame', {
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        reason: 'navigated_home'
+      });
+    }
+
+    // Reset game state AFTER emitting leaveGame
+    gameStarted = false;
+    gameOver = true;
+    roomId = null;
+    myRoomId = null;
+    isPrivateGame = false;
+    selectedPlayer = null;
+    successfulGuesses = [];
+
+    const welcomeEl = document.getElementById('home-welcome');
+    if (welcomeEl && myUsername) {
+      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+    }
   }
 
-  gameStarted = false;
-  gameOver = true;
-  roomId = null;
-  myRoomId = null;
-  isPrivateGame = false;
-  selectedPlayer = null;
-  successfulGuesses = [];
-
-  const welcomeEl = document.getElementById('home-welcome');
-  if (welcomeEl && myUsername) {
-    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-  }
-}
 
  if (path === '/waiting') {
   if (isLeavingGame && !isPrivateGame) {
@@ -1762,18 +1772,20 @@ if (updatePasswordBtn) {
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
 
-  resetAllGameState();
-
-  // ✅ Mark that you’re intentionally leaving — and persist it!
-  isLeavingGame = true;
-  localStorage.setItem('isLeavingGame', 'true');
-
-  // ✅ Tell server if in an active game
-  if (socket && socket.connected && gameStarted && !gameOver) {
-    socket.emit('leaveGame');
+  if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
+    console.log('[DEBUG] Emitting leaveGame from handleGoHome');
+    isLeavingGame = true;
+    localStorage.setItem('isLeavingGame', 'true');
+    
+    socket.emit('leaveGame', {
+      roomId: myRoomId || roomId,
+      username: myUsername,
+      reason: 'clicked_home'
+    });
   }
 
-  // ✅ Always clear local game state
+  resetAllGameState();
+
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
@@ -1786,6 +1798,7 @@ function handleGoHome() {
 
   navigateTo('/home');
 }
+
 
 function setupCopyInviteListeners() {
   const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -2929,15 +2942,14 @@ socket.on('rematchStarted', () => {
 });
 
 
-// Handle opponent leaving the room - ALL SCENARIOS
-socket.on('opponentLeft', ({ username, message, reason }) => {
-  console.log('[DEBUG] Opponent left:', username, 'Reason:', reason);
+socket.on('opponentLeft', ({ message }) => {
+  console.log('[DEBUG] opponentLeft event received:', message);
   
   // Clear any existing notifications
   const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
   existingNotifications.forEach(el => el.remove());
 
-  // Create opponent left notification with reason-specific messaging
+  // Create opponent left notification with consistent message
   const leftNotification = document.createElement('div');
   leftNotification.id = 'opponent-left-notification';
   leftNotification.style.cssText = `
@@ -2951,35 +2963,15 @@ socket.on('opponentLeft', ({ username, message, reason }) => {
     color: #c62828;
   `;
 
-  // Customize message based on reason
-  let reasonText = '';
-  switch(reason) {
-    case 'signed_out':
-      reasonText = 'signed out';
-      break;
-    case 'left_intentionally':
-      reasonText = 'left the game';
-      break;
-    case 'disconnected':
-      reasonText = 'disconnected';
-      break;
-    default:
-      reasonText = 'left the room';
-  }
-
   leftNotification.innerHTML = `
-    <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">👋 Player Left</div>
-    <div><strong>${username}</strong> ${reasonText}</div>
-    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-      Rematch is no longer available
-    </div>
+    <div>Opponent left the game.</div>
   `;
 
   // Insert notification in the game over container
   const gameOverContainer = document.getElementById('gameOverContainer');
   if (gameOverContainer) {
     gameOverContainer.appendChild(leftNotification);
-    console.log('[DEBUG] Opponent left notification added');
+    console.log('[DEBUG] Opponent left notification added to game over container');
   } else {
     console.warn('[DEBUG] Game over container not found');
   }
@@ -2995,9 +2987,11 @@ socket.on('opponentLeft', ({ username, message, reason }) => {
   setTimeout(() => {
     if (leftNotification.parentNode) {
       leftNotification.remove();
+      console.log('[DEBUG] Opponent left notification auto-removed');
     }
   }, 8000);
 });
+
 
 
 

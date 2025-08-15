@@ -522,21 +522,21 @@ socket.on('disconnect', async () => {
 
   playersInGame.delete(socket.id);
 
-  // Remove from socketRoomMap (once)
+  // Remove from socketRoomMap
   const roomId = socketRoomMap[socket.id];
   if (roomId) {
     cleanupTimer(roomId);
     delete socketRoomMap[socket.id];
-    console.log(`Removed socket ${socket.id} from socketRoomMap`);
+    console.log(`Removed socket ${socket.id} from socketRoomMap for room ${roomId}`);
   }
 
   for (const [room, game] of Object.entries(games)) {
     const idx = game.players.indexOf(socket.id);
     if (idx !== -1) {
       const disconnectedUsername = game.usernames[socket.id] || username;
+      console.log(`[DISCONNECT] Processing disconnect for ${disconnectedUsername} in room ${room}`);
 
-      // ✅ CRITICAL: Notify remaining players BEFORE removing the disconnected player
-      // This covers ALL leaving scenarios: tab close, navigation, refresh, sign out, etc.
+      // ✅ Notify remaining players BEFORE removing the disconnected player
       if (game.players.length === 2) {
         const remainingSocketId = game.players.find(id => id !== socket.id);
         const remainingSocket = io.sockets.sockets.get(remainingSocketId);
@@ -544,12 +544,12 @@ socket.on('disconnect', async () => {
         if (remainingSocket && remainingSocket.connected) {
           console.log(`[DISCONNECT] Notifying ${game.usernames[remainingSocketId]} that ${disconnectedUsername} left`);
           
-          // Emit opponentLeft event to the remaining player
+          // Simple, consistent message for all scenarios
           remainingSocket.emit('opponentLeft', {
-            username: disconnectedUsername,
-            message: `${disconnectedUsername} left the room`,
-            reason: 'disconnected' // Could be tab close, navigation, refresh, etc.
+            message: 'Your opponent left the game'
           });
+        } else {
+          console.log(`[DISCONNECT] Remaining socket not found or not connected`);
         }
       }
 
@@ -561,6 +561,7 @@ socket.on('disconnect', async () => {
       io.to(room).emit('playersUpdate', game.players.length);
       console.log(`${disconnectedUsername} removed from game in room ${room}`);
 
+      // Rest of disconnect logic remains the same...
       if (game.timer) {
         clearInterval(game.timer);
         delete game.timer;
@@ -622,9 +623,13 @@ socket.on('disconnect', async () => {
 
 
 
-socket.on('leaveGame', async () => {
-  console.log(`🚪 leaveGame: ${socket.id}`);
-  const username = socket.data?.username || 'Unknown';
+
+socket.on('leaveGame', async (data = {}) => {
+  const { roomId: clientRoomId, username: clientUsername, reason } = data;
+  const username = clientUsername || socket.data?.username || 'Unknown';
+  const roomId = clientRoomId || socketRoomMap[socket.id];
+  
+  console.log(`🚪 leaveGame: ${socket.id} (${username}) from room ${roomId}, reason: ${reason}`);
 
   // Remove from waiting queue if in it
   const waitingIndex = waitingPlayers.findIndex(wp => wp.socket.id === socket.id);
@@ -633,29 +638,48 @@ socket.on('leaveGame', async () => {
     console.log(`Removed ${username} from waiting queue`);
   }
 
-  // ✅ NOTIFY REMAINING PLAYERS BEFORE LEAVING
-  const roomId = socketRoomMap[socket.id];
+  // ✅ CRITICAL: Notify remaining players BEFORE handling disconnect
   if (roomId && games[roomId]) {
     const game = games[roomId];
-    const remainingSocketId = game.players.find(id => id !== socket.id);
+    const playerIndex = game.players.indexOf(socket.id);
     
-    if (remainingSocketId) {
-      const remainingSocket = io.sockets.sockets.get(remainingSocketId);
-      if (remainingSocket && remainingSocket.connected) {
-        console.log(`[LEAVE_GAME] Notifying ${game.usernames[remainingSocketId]} that ${username} left intentionally`);
-        
-        remainingSocket.emit('opponentLeft', {
-          username: username,
-          message: `${username} left the room`,
-          reason: 'left_intentionally' // Navigation to home, profile, etc.
-        });
+    if (playerIndex !== -1) {
+      console.log(`[LEAVE_GAME] Player ${username} is leaving room ${roomId}`);
+      
+      // Find remaining player and notify them
+      const remainingSocketId = game.players.find(id => id !== socket.id);
+      
+      if (remainingSocketId) {
+        const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+        if (remainingSocket && remainingSocket.connected) {
+          console.log(`[LEAVE_GAME] Notifying remaining player that opponent left`);
+          
+          // Emit opponentLeft event
+          remainingSocket.emit('opponentLeft', {
+            message: 'Your opponent left the game'
+          });
+          
+          // Also emit gameOver after a small delay
+          setTimeout(() => {
+            remainingSocket.emit('gameOver', {
+              reason: 'opponent_left',
+              message: `${username} left the game.`,
+              winnerName: game.usernames[remainingSocketId] || 'Player',
+              loserName: username,
+              role: 'winner',
+              canRematch: false,
+              turnCount: game.turnCount || 0
+            });
+          }, 100);
+        }
       }
     }
   }
 
-  // Handle disconnect logic too
+  // Handle disconnect logic
   await handlePlayerDisconnect(socket);
 });
+
 
 
 
