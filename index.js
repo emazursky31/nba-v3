@@ -637,7 +637,7 @@ socket.on('leaveGame', async (data = {}) => {
     console.log(`Removed ${username} from waiting queue`);
   }
 
-  // ✅ IMMEDIATE NOTIFICATION: Find and notify remaining player
+  // Find and notify remaining player
   if (roomId && games[roomId]) {
     const game = games[roomId];
     const remainingSocketId = game.players.find(id => id !== socket.id);
@@ -649,11 +649,7 @@ socket.on('leaveGame', async (data = {}) => {
         
         console.log(`[LEAVE_GAME] Notifying ${remainingUsername} that ${username} left`);
         
-        // Send both events to ensure coverage
-        remainingSocket.emit('opponentLeft', {
-          message: 'Your opponent left the game'
-        });
-        
+        // Send gameOver event which will show the opponent left message
         remainingSocket.emit('gameOver', {
           reason: 'opponent_left',
           message: `${username} left the game.`,
@@ -670,6 +666,7 @@ socket.on('leaveGame', async (data = {}) => {
   // Handle disconnect logic
   await handlePlayerDisconnect(socket);
 });
+
 
 
 
@@ -694,11 +691,7 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
     if (remainingPlayerSocket && remainingPlayerSocket.connected) {
       console.log(`[SIGNOUT] Notifying ${remainingUsername} that ${disconnectedUsername} signed out`);
       
-      // Send both events immediately
-      remainingPlayerSocket.emit('opponentLeft', {
-        message: 'Your opponent left the game'
-      });
-      
+      // Send gameOver event which will show the opponent left message
       remainingPlayerSocket.emit('gameOver', {
         reason: 'opponent_signed_out',
         message: `${disconnectedUsername} signed out. You win!`,
@@ -747,6 +740,7 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
   
   console.log(`Game in room ${roomId} ended due to ${disconnectedUsername} signing out`);
 });
+
 
 
 
