@@ -1589,44 +1589,39 @@ function updateUIForRoute(path) {
 
   console.debug('[updateUIForRoute] Handling:', path);
 
-if (path === '/home') {
-  console.log('[DEBUG] updateUIForRoute: Handling /home');
-  console.log('[DEBUG] Current game state - gameStarted:', gameStarted, 'myRoomId:', myRoomId, 'isLeavingGame:', isLeavingGame);
+  if (path === '/home') {
+    console.log('[DEBUG] updateUIForRoute: Handling /home');
 
-  updateNavUserState();
+    updateNavUserState();
 
-  // ✅ CRITICAL: Emit playerLeftGame IMMEDIATELY and SYNCHRONOUSLY
-  if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
-    console.log('[DEBUG] Emitting playerLeftGame due to navigation to home');
-    
-    isLeavingGame = true;
-    localStorage.setItem('isLeavingGame', 'true');
-    
-    socket.emit('playerLeftGame', {
-    roomId: myRoomId || roomId,
-    username: myUsername,
-    userId: myUserId,
-    reason: 'navigated_home',
-    socketId: socket.id 
-  });
+    // ✅ CRITICAL: Emit leaveGame BEFORE resetting game state
+    if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
+      console.log('[DEBUG] Emitting leaveGame due to navigation to home');
+      isLeavingGame = true;
+      localStorage.setItem('isLeavingGame', 'true');
+
+      // Emit leaveGame with current room info
+      socket.emit('leaveGame', {
+        roomId: myRoomId || roomId,
+        username: myUsername,
+        reason: 'navigated_home'
+      });
+    }
+
+    // Reset game state AFTER emitting leaveGame
+    gameStarted = false;
+    gameOver = true;
+    roomId = null;
+    myRoomId = null;
+    isPrivateGame = false;
+    selectedPlayer = null;
+    successfulGuesses = [];
+
+    const welcomeEl = document.getElementById('home-welcome');
+    if (welcomeEl && myUsername) {
+      welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
+    }
   }
-
-  // Reset game state AFTER emitting events
-  gameStarted = false;
-  gameOver = true;
-  roomId = null;
-  myRoomId = null;
-  isPrivateGame = false;
-  selectedPlayer = null;
-  successfulGuesses = [];
-
-  const welcomeEl = document.getElementById('home-welcome');
-  if (welcomeEl && myUsername) {
-    welcomeEl.textContent = `Welcome, ${myUsername}! Choose your game mode below.`;
-  }
-}
-
-
 
 
  if (path === '/waiting') {
@@ -1776,39 +1771,21 @@ if (updatePasswordBtn) {
 
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
-  console.log('[DEBUG] Current game state - gameStarted:', gameStarted, 'myRoomId:', myRoomId, 'isLeavingGame:', isLeavingGame);
 
-  // ✅ EMIT LEAVE GAME with room info BEFORE resetting state
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
-    console.log('[DEBUG] Emitting playerLeftGame from handleGoHome');
-    console.log('[DEBUG] Socket connected:', socket.connected);
-    console.log('[DEBUG] Room info:', { myRoomId, roomId, myUsername });
-    
+    console.log('[DEBUG] Emitting leaveGame from handleGoHome');
     isLeavingGame = true;
     localStorage.setItem('isLeavingGame', 'true');
     
-    const leaveData = {
+    socket.emit('leaveGame', {
       roomId: myRoomId || roomId,
       username: myUsername,
-      userId: myUserId,
-      reason: 'clicked_home'
-    };
-    
-    console.log('[DEBUG] Sending playerLeftGame with data:', leaveData);
-    socket.emit('playerLeftGame', leaveData);
-    
-    // ✅ ALSO emit playerSignedOut as backup
-    socket.emit('playerSignedOut', {
-      roomId: myRoomId || roomId,
-      username: myUsername,
-      userId: myUserId,
       reason: 'clicked_home'
     });
   }
 
   resetAllGameState();
 
-  // Always clear local game state
   myRoomId = null;
   roomId = null;
   isPrivateGame = false;
@@ -1821,7 +1798,6 @@ function handleGoHome() {
 
   navigateTo('/home');
 }
-
 
 
 function setupCopyInviteListeners() {
@@ -2597,7 +2573,7 @@ socket.on('gameOver', (data) => {
   container.style.display = 'flex';
   container.innerHTML = '';
 
-  // Create the layout structure
+  // Create the new layout structure
   
   // 1. "Game Over" header
   const gameOverHeader = document.createElement('div');
@@ -2625,7 +2601,7 @@ socket.on('gameOver', (data) => {
       resultMessage.textContent = 'You lost.';
     }
     resultMessage.style.color = 'darkred';
-  } else if (data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
+  } else if (data.reason === 'opponent_left') {
     resultMessage.textContent = 'Your opponent left the game.';
     resultMessage.style.color = 'gray';
   } else {
@@ -2647,7 +2623,7 @@ socket.on('gameOver', (data) => {
   }
 
   // Handle rematch button visibility
-  if (data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
+  if (data.canRematch === false || data.reason === 'opponent_left') {
     rematchBtn.style.display = 'none';
   } else {
     rematchBtn.style.display = 'block';
@@ -2659,8 +2635,6 @@ socket.on('gameOver', (data) => {
   navigateTo('/gameover');
   triggerGameEndCardSpread();
 });
-
-
 
 
 
@@ -2968,7 +2942,6 @@ socket.on('rematchStarted', () => {
 });
 
 
-// Handle opponent leaving the room - GAME OVER CONTAINER ONLY (NO POP-UP)
 socket.on('opponentLeft', ({ message }) => {
   console.log('[DEBUG] opponentLeft event received:', message);
   
@@ -2976,7 +2949,7 @@ socket.on('opponentLeft', ({ message }) => {
   const existingNotifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
   existingNotifications.forEach(el => el.remove());
 
-  // Create opponent left notification for game over container ONLY
+  // Create opponent left notification with consistent message
   const leftNotification = document.createElement('div');
   leftNotification.id = 'opponent-left-notification';
   leftNotification.style.cssText = `
@@ -2991,10 +2964,10 @@ socket.on('opponentLeft', ({ message }) => {
   `;
 
   leftNotification.innerHTML = `
-    <div>Opponent left the game</div>
+    <div>Opponent left the game.</div>
   `;
 
-  // ✅ ONLY add to game over container (NO pop-up overlay)
+  // Insert notification in the game over container
   const gameOverContainer = document.getElementById('gameOverContainer');
   if (gameOverContainer) {
     gameOverContainer.appendChild(leftNotification);
@@ -3018,8 +2991,6 @@ socket.on('opponentLeft', ({ message }) => {
     }
   }, 8000);
 });
-
-
 
 
 
