@@ -318,20 +318,17 @@
 </div>
 
 
-    <div id="guessControls" style="position: relative;">
-      <input
-        type="text"
-        id="guessInput"
-        placeholder="Type a teammate's name..."
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-      />
-      <button id="submitGuessBtn" disabled>Submit Guess</button>
-      <button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
+    <div id="guessControls">
+      <div class="primary-controls">
+        <input type="text" id="guessInput" placeholder="Type a teammate's name..." />
+        <button id="submitGuessBtn" disabled>Submit Guess</button>
+      </div>
+      <div class="secondary-controls">
+        <button id="skipTurnBtn" style="display: none;" disabled>Skip Turn</button>
+      </div>
       <div id="autocomplete-list"></div>
     </div>
+
   </div>
 
   <div id="messageContainer"></div>
