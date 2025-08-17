@@ -1443,7 +1443,7 @@ async function startTurnTimer(roomId) {
   if (activeSocket) {
     activeSocket.emit('yourTurn', {
       currentPlayerName: game.currentPlayerName,
-      canSkip: !game.skipsUsed[socketId],
+      canSkip: !(game.skipsUsed && game.skipsUsed[socketId]),
       currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
       timeLeft: game.timeLeft,
     });
