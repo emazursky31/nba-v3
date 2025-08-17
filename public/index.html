@@ -296,7 +296,18 @@
   <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
   <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
 </p>
-
+<div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
+  <div class="career-header" onclick="toggleLeadoffCareer()">
+    <button class="toggle-career-btn">
+      <span class="toggle-text">Career Details</span>
+      <span class="toggle-icon">▼</span>
+    </button>
+  </div>
+  <!-- <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+    <div class="career-loading">Click above to load career details...</div>
+  </div> -->
+</div>
+<button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
 
 
 <div id="timer-container">
@@ -329,7 +340,7 @@
         spellcheck="false"
       />
       <button id="submitGuessBtn" disabled>Submit Guess</button>
-      <button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
+      
       <div id="autocomplete-list"></div>
     </div>
   </div>
@@ -369,13 +380,13 @@
   let gameStarted = false;
   let gameOver = false;
   let leadoffPlayerName = null;
+  let careerDataLoaded = false;
   let myUsername = null;
   let opponentName = null;
   let successfulGuesses = [];
   let isPrivateGame = false;
   let socket = null;
   let isLeavingGame = false;
-// ✅ Global route tracker
   let currentRoute = '';
   let statusDiv = null;
   let socketConnected = false;
@@ -793,7 +804,93 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 }
 
 
+function showLeadoffCareerSection(playerName) {
+  careerDataLoaded = false;
+  
+  const careerSection = document.getElementById('leadoff-career-section');
+  const careerTitle = document.getElementById('leadoff-career-title');
+  const careerContent = document.getElementById('leadoff-career-content');
+  const toggleText = document.querySelector('.toggle-text');
+  const toggleIcon = document.querySelector('.toggle-icon');
+  
+  // Show the career section header but keep content collapsed
+  careerSection.style.display = 'block';
+  careerContent.style.display = 'none';
+  careerTitle.textContent = `${playerName} - Career Details`;
+  
+  // Reset toggle button to collapsed state
+  toggleText.textContent = 'Show Details';
+  toggleIcon.textContent = '▼';
+  
+  // Reset content
+  careerContent.innerHTML = '<div class="career-loading">Click above to load career details...</div>';
+}
 
+async function toggleLeadoffCareer() {
+  const careerContent = document.getElementById('leadoff-career-content');
+  const toggleText = document.querySelector('.toggle-text');
+  const toggleIcon = document.querySelector('.toggle-icon');
+  
+  if (careerContent.style.display === 'none') {
+    // Show career details
+    careerContent.style.display = 'block';
+    toggleText.textContent = 'Hide Details';
+    toggleIcon.textContent = '▲';
+    
+    // Load career data if not already loaded
+    if (!careerDataLoaded && leadoffPlayerName) {
+      careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
+      
+      try {
+        const response = await fetch(`/player-career?name=${encodeURIComponent(leadoffPlayerName)}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch career data');
+        }
+        
+        const careerData = await response.json();
+        
+        // Format team stints
+        const teamStintsHtml = careerData.team_stints.map(stint => 
+          `<div class="team-stint">
+            <span class="team-name">${stint.team}</span>
+            <span class="years">${stint.start_year}-${stint.end_year}</span>
+          </div>`
+        ).join('');
+        
+        careerContent.innerHTML = `
+          <div class="career-summary">
+            <div class="total-years">
+              <strong>Total Years Played:</strong> ${careerData.years_played}
+            </div>
+          </div>
+          <div class="team-stints-section">
+            <h4>Team History:</h4>
+            <div class="team-stints">
+              ${teamStintsHtml}
+            </div>
+          </div>
+        `;
+        
+        careerDataLoaded = true;
+      } catch (error) {
+        console.error('Error loading career data:', error);
+        careerContent.innerHTML = '<div class="career-error">Failed to load career details. Please try again.</div>';
+      }
+    }
+  } else {
+    // Hide career details
+    careerContent.style.display = 'none';
+    toggleText.textContent = 'Show Details';
+    toggleIcon.textContent = '▼';
+  }
+}
+
+// Function to hide the career section completely (for game resets)
+function hideLeadoffCareer() {
+  const careerSection = document.getElementById('leadoff-career-section');
+  careerSection.style.display = 'none';
+  careerDataLoaded = false;
+}
 
 
 async function startPrivateGame() {
@@ -1363,6 +1460,10 @@ function resetGameUI() {
   if (messageContainer) {
     messageContainer.innerHTML = '';
   }
+
+  // Reset career section
+  hideLeadoffCareer();
+  leadoffPlayerName = null;
 }
 
 
@@ -1453,6 +1554,7 @@ function resetAllGameState() {
   gameStarted = false;
   gameOver = true;
   leadoffPlayerName = null;
+  hideLeadoffCareer();
   opponentName = null;
   successfulGuesses = [];
   isPrivateGame = false;
@@ -2433,6 +2535,9 @@ socket.on('gameStarted', async (data) => {
 
   const leadoffPlayer = data.leadoffPlayer || null;
   leadoffPlayerName = leadoffPlayer?.player_name || null;
+  if (leadoffPlayerName) {
+  showLeadoffCareerSection(leadoffPlayerName);
+  }
 
   if (window.timerInterval) {
     clearInterval(window.timerInterval);

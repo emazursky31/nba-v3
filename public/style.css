@@ -769,6 +769,171 @@ button:disabled {
 }
 
 
+/* Leadoff career section in main game area */
+.leadoff-career-section {
+  margin: 20px 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #667eea;
+  overflow: hidden;
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.career-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.career-header:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.career-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.toggle-career-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  pointer-events: none; /* Prevent double-click since header is clickable */
+}
+
+.toggle-career-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.toggle-icon {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+}
+
+.leadoff-career-content {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+}
+
+.career-summary {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.total-years {
+  font-size: 15px;
+  color: #495057;
+}
+
+.team-stints-section h4 {
+  margin: 0 0 15px 0;
+  color: #343a40;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.team-stints {
+  display: grid;
+  gap: 8px;
+}
+
+.team-stint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.team-stint:hover {
+  background: #f1f3f4;
+  transform: translateX(2px);
+}
+
+.team-name {
+  font-weight: 600;
+  color: #343a40;
+  font-size: 14px;
+}
+
+.years {
+  font-size: 12px;
+  color: #6c757d;
+  font-family: 'Courier New', monospace;
+  background: #e9ecef;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.career-loading {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 30px 20px;
+  font-size: 14px;
+}
+
+.career-error {
+  text-align: center;
+  color: #dc3545;
+  padding: 30px 20px;
+  font-size: 14px;
+  background: #f8d7da;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+}
+
+
 /* Guess Controls */
 #guessControls {
   display: flex;
@@ -1950,6 +2115,37 @@ html {
   
   #countdownTimer {
     font-size: 2.5rem;
+  }
+
+  .leadoff-career-section {
+    margin: 15px 0;
+  }
+  
+  .career-header {
+    padding: 12px 15px;
+  }
+  
+  .career-header h3 {
+    font-size: 14px;
+  }
+  
+  .leadoff-career-content {
+    padding: 15px;
+  }
+  
+  .team-stint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .years {
+    align-self: flex-end;
+  }
+  
+  .toggle-career-btn {
+    font-size: 11px;
+    padding: 5px 10px;
   }
 
   

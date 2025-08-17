@@ -113,6 +113,27 @@ app.get('/players', async (req, res) => {
   }
 });
 
+
+app.get('/player-career', async (req, res) => {
+  const { name } = req.query;
+  
+  if (!name) {
+    return res.status(400).json({ error: 'Player name is required' });
+  }
+  
+  try {
+    const playerCareer = await getPlayerCareerDetails(name);
+    if (!playerCareer) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+    res.json(playerCareer);
+  } catch (error) {
+    console.error('Error in /player-career endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 // Serve index.html for all other routes (SPA fallback)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -484,7 +505,44 @@ async function getPlayerByName(playerName) {
 }
 
 
-
+async function getPlayerCareerDetails(playerName) {
+  const query = `
+    SELECT 
+      p.name,
+      p.years_played,
+      pts.team,
+      pts.start_year,
+      pts.end_year
+    FROM players p
+    LEFT JOIN player_team_stints pts ON p.name = pts.player_name
+    WHERE LOWER(p.name) = LOWER($1)
+    ORDER BY pts.start_year ASC, pts.end_year ASC
+  `;
+  
+  try {
+    const result = await pool.query(query, [playerName]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const player = {
+      name: result.rows[0].name,
+      years_played: result.rows[0].years_played,
+      team_stints: result.rows
+        .filter(row => row.team) // Filter out null teams
+        .map(row => ({
+          team: row.team,
+          start_year: row.start_year,
+          end_year: row.end_year
+        }))
+    };
+    
+    return player;
+  } catch (error) {
+    console.error('Error fetching player career details:', error);
+    throw error;
+  }
+}
 
 
 
