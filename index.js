@@ -411,6 +411,50 @@ socket.on('playerGuess', async ({ guess }) => {
 });
 
 
+socket.on('playerSkip', () => {
+    const game = games[socket.gameId];
+    if (!game) return;
+
+    const playerId = socket.id;
+    
+    // Validate skip usage
+    if (game.skipsUsed[playerId]) {
+        socket.emit('skipError', 'You have already used your skip for this game');
+        return;
+    }
+
+    // Validate it's player's turn
+    if (game.activePlayerSocketId !== playerId) {
+        socket.emit('skipError', 'It is not your turn');
+        return;
+    }
+
+    // Mark skip as used
+    game.skipsUsed[playerId] = true;
+
+    // Clear the timer
+    if (game.timer) {
+        clearTimeout(game.timer);
+    }
+
+    // Switch turn back to previous player (keep same base player and teammates)
+    game.currentTurn = game.currentTurn === 0 ? 1 : 0;
+    game.activePlayerSocketId = game.players[game.currentTurn];
+
+    // Notify both players
+    io.to(socket.gameId).emit('turnSkipped', {
+        skippedBy: playerId,
+        newActivePlayer: game.activePlayerSocketId,
+        currentPlayerName: game.currentPlayerName,
+        skipsUsed: game.skipsUsed
+    });
+
+    // Start new turn timer
+    startTurnTimer(socket.gameId);
+});
+
+
+
 
 async function getPlayerByName(playerName) {
   const query = `
@@ -1143,6 +1187,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
       currentPlayerName: null,
       timer: null,
       timeLeft: 30,
+      skipsUsed: {},
       teammates: [],
       successfulGuesses: [],
       rematchVotes: new Set(),
@@ -1392,6 +1437,7 @@ async function startTurnTimer(roomId) {
   if (activeSocket) {
     activeSocket.emit('yourTurn', {
       currentPlayerName: game.currentPlayerName,
+      canSkip: !game.skipsUsed[socket.id],
       currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
       timeLeft: game.timeLeft,
     });
@@ -1403,6 +1449,7 @@ async function startTurnTimer(roomId) {
       if (opponentSocket) {
         opponentSocket.emit('opponentTurn', {
           currentPlayerName: game.currentPlayerName,
+          activePlayerName: socket.username || 'Player',
           currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
         });
       }

@@ -329,6 +329,7 @@
         spellcheck="false"
       />
       <button id="submitGuessBtn" disabled>Submit Guess</button>
+      <button id="skipTurnBtn" style="display: none;">Skip Turn</button>
       <div id="autocomplete-list"></div>
     </div>
   </div>
@@ -2695,6 +2696,14 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
+   const skipBtn = document.getElementById('skipTurnBtn');
+    if (data.canSkip) {
+        skipBtn.style.display = 'inline-block';
+    } else {
+        skipBtn.style.display = 'none';
+    }
+
+
  const turnPromptText = document.getElementById('turnPromptText');
 if (turnPromptText) {
   turnPromptText.innerHTML = `
@@ -2777,6 +2786,34 @@ if (turnPromptText) {
     playerYouEl.classList.remove('active-turn');
     playerOpponentEl.classList.add('active-turn');
   }
+});
+
+
+socket.on('turnSkipped', (data) => {
+    const skippedPlayerName = data.skippedBy === socket.id ? 'You' : 'Your opponent';
+    
+    // Update UI to show skip occurred
+    document.getElementById('gameMessages').innerHTML += 
+        `<div class="message">${skippedPlayerName} skipped the turn. Base player remains: ${data.currentPlayerName}</div>`;
+    
+    // Hide guess controls
+    document.getElementById('guessControls').style.display = 'none';
+    
+    // Update turn prompt
+    if (data.newActivePlayer === socket.id) {
+        document.getElementById('turnPrompt').textContent = `Your turn! Find a teammate of ${data.currentPlayerName}`;
+        // Show controls again for the new turn
+        setTimeout(() => {
+            socket.emit('requestTurn'); // Trigger yourTurn event
+        }, 1000);
+    } else {
+        document.getElementById('turnPrompt').textContent = `Opponent's turn to find a teammate of ${data.currentPlayerName}`;
+    }
+});
+
+
+socket.on('skipError', (message) => {
+    alert(message);
 });
 
 
@@ -3077,6 +3114,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   waitingRoom = document.getElementById('waitingRoom');
   gameArea = document.getElementById('gameArea');
   inviteLinkContainer = document.getElementById('inviteLinkContainer');
+
+  const skipTurnBtn = document.getElementById('skipTurnBtn');
+  if (skipTurnBtn) {
+    skipTurnBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to skip your turn? You can only skip once per game.')) {
+        socket.emit('playerSkip');
+      }
+    });
+  }
   
   // Set initial default image
   if (currentPlayerHeadshotEl) {
