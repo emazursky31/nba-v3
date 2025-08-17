@@ -412,7 +412,7 @@ socket.on('playerGuess', async ({ guess }) => {
 
 
 socket.on('playerSkip', () => {
-    const roomId = socketRoomMap[socket.id]; // Fix: use socketRoomMap instead of socket.gameId
+    const roomId = socketRoomMap[socket.id];
     const game = games[roomId];
     if (!game) {
         socket.emit('skipError', 'Game room not found');
@@ -422,7 +422,7 @@ socket.on('playerSkip', () => {
     const playerId = socket.id;
     
     // Validate skip usage
-    if (game.skipsUsed[playerId]) {
+    if (game.skipsUsed && game.skipsUsed[playerId]) {
         socket.emit('skipError', 'You have already used your skip for this game');
         return;
     }
@@ -431,6 +431,11 @@ socket.on('playerSkip', () => {
     if (game.activePlayerSocketId !== playerId) {
         socket.emit('skipError', 'It is not your turn');
         return;
+    }
+
+    // Initialize skipsUsed if it doesn't exist
+    if (!game.skipsUsed) {
+        game.skipsUsed = {};
     }
 
     // Mark skip as used
@@ -442,20 +447,24 @@ socket.on('playerSkip', () => {
         game.timer = null;
     }
 
-    // Switch turn back to previous player (keep same base player and teammates)
-    game.currentTurn = game.currentTurn === 0 ? 1 : 0;
+    // Switch to the other player (keep same NBA player and teammates)
+    game.currentTurn = (game.currentTurn + 1) % 2;
     game.activePlayerSocketId = game.players[game.currentTurn];
+    game.timeLeft = 30; // Reset timer to full 30 seconds
 
     // Notify both players
-    io.to(roomId).emit('turnSkipped', { // Fix: use roomId instead of socket.gameId
+    io.to(roomId).emit('turnSkipped', {
         skippedBy: playerId,
+        skippedByUsername: game.usernames[playerId],
         newActivePlayer: game.activePlayerSocketId,
-        currentPlayerName: game.currentPlayerName,
+        newActivePlayerUsername: game.usernames[game.activePlayerSocketId],
+        currentPlayerName: game.currentPlayerName, // Same NBA player
+        timeLeft: game.timeLeft,
         skipsUsed: game.skipsUsed
     });
 
     // Start new turn timer
-    startTurnTimer(roomId); // Fix: use roomId instead of socket.gameId
+    startTurnTimer(roomId);
 });
 
 
