@@ -329,7 +329,7 @@
         spellcheck="false"
       />
       <button id="submitGuessBtn" disabled>Submit Guess</button>
-      <button id="skipTurnBtn" style="display: none;">Skip</button>
+      <button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
       <div id="autocomplete-list"></div>
     </div>
   </div>
@@ -2696,14 +2696,12 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
-   const skipBtn = document.getElementById('skipTurnBtn');
-    if (skipBtn) {
-        if (data.canSkip) {
-            skipBtn.style.display = 'inline-block';
-        } else {
-            skipBtn.style.display = 'none';
-        }
-    }
+  const skipBtn = document.getElementById('skipTurnBtn');
+  if (skipBtn) {
+    skipBtn.style.display = 'inline-block'; // Always show the button
+    skipBtn.disabled = !data.canSkip; // Enable/disable based on canSkip
+    skipBtn.textContent = data.canSkip ? 'Skip' : 'Skip Used';
+  }
 
 
  const turnPromptText = document.getElementById('turnPromptText');

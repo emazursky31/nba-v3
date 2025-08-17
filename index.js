@@ -551,6 +551,7 @@ socket.on('requestRematch', ({ roomId }) => {
     game.activePlayerSocketId = null;
     game.timeLeft = 30;
     game.turnCount = 0;
+    game.skipsUsed = {};
 
     // ✅ RESTORE userIds AFTER resetting
     game.userIds = preservedUserIds;
