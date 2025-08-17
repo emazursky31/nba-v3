@@ -2697,10 +2697,12 @@ socket.on('yourTurn', (data) => {
 
 
    const skipBtn = document.getElementById('skipTurnBtn');
-    if (data.canSkip) {
-        skipBtn.style.display = 'inline-block';
-    } else {
-        skipBtn.style.display = 'none';
+    if (skipBtn) {
+        if (data.canSkip) {
+            skipBtn.style.display = 'inline-block';
+        } else {
+            skipBtn.style.display = 'none';
+        }
     }
 
 
@@ -2789,12 +2791,12 @@ if (turnPromptText) {
 });
 
 
+// Add skip event handlers in the socket setup section
 socket.on('turnSkipped', (data) => {
     const skippedPlayerName = data.skippedBy === socket.id ? 'You' : 'Your opponent';
     
     // Update UI to show skip occurred
-    document.getElementById('gameMessages').innerHTML += 
-        `<div class="message">${skippedPlayerName} skipped the turn. Base player remains: ${data.currentPlayerName}</div>`;
+    showMessage(`${skippedPlayerName} skipped the turn. Base player remains: ${data.currentPlayerName}`, 'info');
     
     // Hide guess controls
     document.getElementById('guessControls').style.display = 'none';
@@ -2802,20 +2804,14 @@ socket.on('turnSkipped', (data) => {
     // Update turn prompt
     if (data.newActivePlayer === socket.id) {
         document.getElementById('turnPrompt').textContent = `Your turn! Find a teammate of ${data.currentPlayerName}`;
-        // Show controls again for the new turn
-        setTimeout(() => {
-            socket.emit('requestTurn'); // Trigger yourTurn event
-        }, 1000);
     } else {
         document.getElementById('turnPrompt').textContent = `Opponent's turn to find a teammate of ${data.currentPlayerName}`;
     }
 });
 
-
 socket.on('skipError', (message) => {
     alert(message);
 });
-
 
 
 

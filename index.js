@@ -412,8 +412,12 @@ socket.on('playerGuess', async ({ guess }) => {
 
 
 socket.on('playerSkip', () => {
-    const game = games[socket.gameId];
-    if (!game) return;
+    const roomId = socketRoomMap[socket.id]; // Fix: use socketRoomMap instead of socket.gameId
+    const game = games[roomId];
+    if (!game) {
+        socket.emit('skipError', 'Game room not found');
+        return;
+    }
 
     const playerId = socket.id;
     
@@ -434,7 +438,8 @@ socket.on('playerSkip', () => {
 
     // Clear the timer
     if (game.timer) {
-        clearTimeout(game.timer);
+        clearInterval(game.timer);
+        game.timer = null;
     }
 
     // Switch turn back to previous player (keep same base player and teammates)
@@ -442,7 +447,7 @@ socket.on('playerSkip', () => {
     game.activePlayerSocketId = game.players[game.currentTurn];
 
     // Notify both players
-    io.to(socket.gameId).emit('turnSkipped', {
+    io.to(roomId).emit('turnSkipped', { // Fix: use roomId instead of socket.gameId
         skippedBy: playerId,
         newActivePlayer: game.activePlayerSocketId,
         currentPlayerName: game.currentPlayerName,
@@ -450,8 +455,9 @@ socket.on('playerSkip', () => {
     });
 
     // Start new turn timer
-    startTurnTimer(socket.gameId);
+    startTurnTimer(roomId); // Fix: use roomId instead of socket.gameId
 });
+
 
 
 
@@ -1437,7 +1443,7 @@ async function startTurnTimer(roomId) {
   if (activeSocket) {
     activeSocket.emit('yourTurn', {
       currentPlayerName: game.currentPlayerName,
-      canSkip: !game.skipsUsed[socket.id],
+      canSkip: !game.skipsUsed[socketId],
       currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
       timeLeft: game.timeLeft,
     });
