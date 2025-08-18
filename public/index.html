@@ -284,49 +284,51 @@
 <!-- In-Game UI -->
 
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
- <div id="playersDisplay">
-  <span class="opponent-label">Opponent:</span>
-  <span class="player-name opponent" id="playerOpponent">OpponentName</span>
-</div>
-
+  <div id="playersDisplay">
+    <span class="opponent-label">Opponent:</span>
+    <span class="player-name opponent" id="playerOpponent">OpponentName</span>
+  </div>
 
   <div id="turnSection">
- <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
-  <!-- Dynamic content will be inserted here by JavaScript -->
-  <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-  <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
-</p>
-<div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
-  <div class="career-header" onclick="toggleLeadoffCareer()">
-    <span class="toggle-text">Career Details</span>
-    <span class="toggle-icon">▼</span>
-  </div>
-  <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
-    <div class="career-loading">Loading career details...</div>
-  </div>
-</div>
+    <div class="turn-prompt" id="turnPromptText">
+      <div class="prompt-header">Name any teammate of:</div>
+      <div class="player-info">
+        <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+        <div class="player-details">
+          <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
+          <a href="#" class="career-link" onclick="toggleLeadoffCareer()">
+            Career Details <span class="career-arrow">▼</span>
+          </a>
+        </div>
+      </div>
+    </div>
 
-<button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
+    <div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
+      <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+        <div class="career-loading">Loading career details...</div>
+      </div>
+    </div>
 
-
-<div id="timer-container">
-<svg class="progress-ring" width="100" height="100" viewBox="0 0 100 100">
-  <circle class="progress-ring-track" 
-          cx="50" cy="50" r="45" 
-          stroke="#e5e7eb" 
-          stroke-width="6" 
-          fill="transparent"/>
-  <circle class="progress-ring-circle" 
-          cx="50" cy="50" r="45" 
-          stroke="#fbbf24" 
-          stroke-width="6" 
-          fill="transparent"
-          stroke-dasharray="282.74"
-          stroke-dashoffset="0"/>
-</svg>
-  <div id="timer">30</div>
-</div>
-
+    <div class="timer-skip-row">
+      <div id="timer-container">
+        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+          <circle class="progress-ring-track" 
+                  cx="40" cy="40" r="35" 
+                  stroke="#e5e7eb" 
+                  stroke-width="5" 
+                  fill="transparent"/>
+          <circle class="progress-ring-circle" 
+                  cx="40" cy="40" r="35" 
+                  stroke="#fbbf24" 
+                  stroke-width="5" 
+                  fill="transparent"
+                  stroke-dasharray="219.91"
+                  stroke-dashoffset="0"/>
+        </svg>
+        <div id="timer">30</div>
+      </div>
+      <a href="#" class="skip-link" id="skipTurnBtn" style="display: none;">Skip</a>
+    </div>
 
     <div id="guessControls" style="position: relative;">
       <input
@@ -346,6 +348,7 @@
 
   <div id="messageContainer"></div>
 </section>
+
 
 <div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
   
@@ -1388,35 +1391,24 @@ function setupMobileInputFocus() {
   if (!guessInput) return;
 
   guessInput.addEventListener('focus', () => {
-    // Only apply on mobile devices
     if (window.innerWidth <= 768) {
       setTimeout(() => {
-        // Get the turn prompt (contains player info)
-        const turnPrompt = document.getElementById('turnPromptText');
-        if (!turnPrompt) return;
+        // Gentle scroll to ensure input is visible without hiding player info
+        const inputRect = guessInput.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
         
-        // Calculate how much we need to scroll UP to keep player info visible
-        const turnPromptRect = turnPrompt.getBoundingClientRect();
-        const currentScrollY = window.scrollY;
-        
-        // If turn prompt is above the viewport or too close to top
-        if (turnPromptRect.top < 60) { // 60px buffer from top
-          // Calculate target position to show turn prompt with buffer
-          const turnPromptOffsetTop = turnPrompt.getBoundingClientRect().top + window.scrollY;
-          const targetScroll = turnPromptOffsetTop - 60; // 60px from top of viewport
-          
-          window.scrollTo({
-            top: Math.max(0, targetScroll),
+        // Only scroll if input is below the fold
+        if (inputRect.bottom > viewportHeight - 50) {
+          const scrollAmount = inputRect.bottom - viewportHeight + 100;
+          window.scrollBy({
+            top: scrollAmount,
             behavior: 'smooth'
           });
         }
-        // If turn prompt is already visible with good spacing, don't scroll
-        
-      }, 300); // Delay for keyboard animation
+      }, 300);
     }
   });
 }
-
 
 
 
@@ -2897,13 +2889,16 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
-  const skipBtn = document.getElementById('skipTurnBtn');
-  if (skipBtn) {
-    skipBtn.style.display = 'inline-block'; // Always show the button
-    skipBtn.disabled = !data.canSkip; // Enable/disable based on canSkip
-    skipBtn.textContent = data.canSkip ? 'Skip' : 'Skip Used';
+  const skipLink = document.getElementById('skipTurnBtn');
+if (skipLink) {
+  if (data.canSkip) {
+    skipLink.classList.remove('disabled');
+    skipLink.textContent = 'Skip';
+  } else {
+    skipLink.classList.add('disabled');
+    skipLink.textContent = 'Skip Used';
   }
-
+}
 
  const turnPromptText = document.getElementById('turnPromptText');
 if (turnPromptText) {
@@ -2992,11 +2987,16 @@ if (turnPromptText) {
     playerOpponentEl.classList.add('active-turn');
   }
 
-  const skipButton = document.getElementById('skipTurnBtn');
-  if (skipButton) {
-    skipButton.style.display = 'none';
-    skipButton.disabled = true;
+  const skipLink = document.getElementById('skipTurnBtn');
+if (skipLink) {
+  if (data.canSkip) {
+    skipLink.classList.remove('disabled');
+    skipLink.textContent = 'Skip';
+  } else {
+    skipLink.classList.add('disabled');
+    skipLink.textContent = 'Skip Used';
   }
+}
 
 setTimeout(() => {
   scrollToGameArea();
@@ -3331,14 +3331,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   gameArea = document.getElementById('gameArea');
   inviteLinkContainer = document.getElementById('inviteLinkContainer');
 
-  const skipTurnBtn = document.getElementById('skipTurnBtn');
-  if (skipTurnBtn) {
-    skipTurnBtn.addEventListener('click', () => {
+  const skipTurnLink = document.getElementById('skipTurnBtn');
+if (skipTurnLink) {
+  skipTurnLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!skipTurnLink.classList.contains('disabled')) {
       if (confirm('Are you sure you want to skip your turn? You can only skip once per game.')) {
         socket.emit('playerSkip');
       }
-    });
-  }
+    }
+  });
+}
   
   // Set initial default image
   if (currentPlayerHeadshotEl) {
