@@ -151,6 +151,75 @@ console.log('Games object ID:', games);
 
 
 
+async function getPlayerByName(playerName) {
+  const query = `
+    SELECT player_id, player_name, headshot_url
+    FROM players
+    WHERE LOWER(player_name) = LOWER($1)
+    LIMIT 1;
+  `;
+  const { rows } = await client.query(query, [playerName]);
+  console.log(`[DEBUG] getPlayerByName for "${playerName}":`, rows[0] || {});
+  return rows[0] || {};
+}
+
+
+// Add this function with your other database functions
+async function getPlayerCareerDetails(playerName) {
+  try {
+    console.log(`[getPlayerCareerDetails] Fetching career data for: ${playerName}`);
+    
+    // Get player basic info and career summary
+    const playerQuery = `
+      SELECT DISTINCT p.player_name, 
+             MIN(pts.season_start_year) as first_year,
+             MAX(pts.season_end_year) as last_year,
+             COUNT(DISTINCT pts.team_abbreviation) as total_teams
+      FROM players p
+      JOIN player_team_stints pts ON p.player_name = pts.player_name
+      WHERE p.player_name = $1
+      GROUP BY p.player_name
+    `;
+    
+   const playerResult = await client.query(playerQuery, [playerName]);
+
+    if (playerResult.rows.length === 0) {
+      return null;
+    }
+    
+    const playerInfo = playerResult.rows[0];
+    
+    // Get team stints
+    const stintsQuery = `
+      SELECT team_abbreviation, season_start_year, season_end_year
+      FROM player_team_stints
+      WHERE player_name = $1
+      ORDER BY season_start_year ASC, season_end_year ASC
+    `;
+    
+    const stintsResult = await client.query(stintsQuery, [playerName]);
+    
+    return {
+      playerName: playerInfo.player_name,
+      firstYear: playerInfo.first_year,
+      lastYear: playerInfo.last_year,
+      totalTeams: parseInt(playerInfo.total_teams),
+      teamStints: stintsResult.rows.map(stint => ({
+        team: stint.team_abbreviation,
+        startYear: stint.season_start_year,
+        endYear: stint.season_end_year
+      }))
+    };
+    
+  } catch (error) {
+    console.error('[getPlayerCareerDetails] Database error:', error);
+    throw error;
+  }
+}
+
+
+
+
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
   
@@ -498,71 +567,6 @@ socket.on('playerSkip', () => {
 
 
 
-async function getPlayerByName(playerName) {
-  const query = `
-    SELECT player_id, player_name, headshot_url
-    FROM players
-    WHERE LOWER(player_name) = LOWER($1)
-    LIMIT 1;
-  `;
-  const { rows } = await client.query(query, [playerName]);
-  console.log(`[DEBUG] getPlayerByName for "${playerName}":`, rows[0] || {});
-  return rows[0] || {};
-}
-
-
-// Add this function with your other database functions
-async function getPlayerCareerDetails(playerName) {
-  try {
-    console.log(`[getPlayerCareerDetails] Fetching career data for: ${playerName}`);
-    
-    // Get player basic info and career summary
-    const playerQuery = `
-      SELECT DISTINCT p.player_name, 
-             MIN(pts.season_start_year) as first_year,
-             MAX(pts.season_end_year) as last_year,
-             COUNT(DISTINCT pts.team_abbreviation) as total_teams
-      FROM players p
-      JOIN player_team_stints pts ON p.player_name = pts.player_name
-      WHERE p.player_name = $1
-      GROUP BY p.player_name
-    `;
-    
-   const playerResult = await client.query(playerQuery, [playerName]);
-
-    if (playerResult.rows.length === 0) {
-      return null;
-    }
-    
-    const playerInfo = playerResult.rows[0];
-    
-    // Get team stints
-    const stintsQuery = `
-      SELECT team_abbreviation, season_start_year, season_end_year
-      FROM player_team_stints
-      WHERE player_name = $1
-      ORDER BY season_start_year ASC, season_end_year ASC
-    `;
-    
-    const stintsResult = await client.query(stintsQuery, [playerName]);
-    
-    return {
-      playerName: playerInfo.player_name,
-      firstYear: playerInfo.first_year,
-      lastYear: playerInfo.last_year,
-      totalTeams: parseInt(playerInfo.total_teams),
-      teamStints: stintsResult.rows.map(stint => ({
-        team: stint.team_abbreviation,
-        startYear: stint.season_start_year,
-        endYear: stint.season_end_year
-      }))
-    };
-    
-  } catch (error) {
-    console.error('[getPlayerCareerDetails] Database error:', error);
-    throw error;
-  }
-}
 
 
 
