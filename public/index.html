@@ -881,11 +881,14 @@ async function toggleLeadoffCareer() {
 
 // Helper function to get current player name
 function getCurrentPlayerName() {
-  // This should return the current leadoff player's name
-  // You may need to adapt this based on how you store the current player
-  const playerNameElement = document.querySelector('.current-player-name') || 
-                           document.querySelector('[data-player-name]');
-  return playerNameElement ? playerNameElement.textContent.trim() : null;
+  // Get the leadoff player from successfulGuesses
+  if (window.successfulGuesses && window.successfulGuesses.length > 0) {
+    const leadoffGuess = window.successfulGuesses.find(guess => guess.isLeadoff);
+    if (leadoffGuess && leadoffGuess.name) {
+      return leadoffGuess.name;
+    }
+  }
+  return null;
 }
 
 
