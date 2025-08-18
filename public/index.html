@@ -923,9 +923,6 @@ function displayCareerData(careerData) {
   const { playerName, firstYear, lastYear, totalTeams, teamStints } = careerData;
   
   let html = `
-    <div class="career-summary">
-      <strong>${playerName}</strong> played from ${firstYear} to ${lastYear} (${totalTeams} teams)
-    </div>
     <div class="team-stints-section">
       <h4>Team History:</h4>
   `;
@@ -3020,6 +3017,8 @@ socket.on('turnEnded', (data) => {
   if (data.message) {
     showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
   }
+
+   hideLeadoffCareer();
 
   // ✅ Save turn state for next turn rendering
   currentPlayerName = data.currentPlayerName || '???';
