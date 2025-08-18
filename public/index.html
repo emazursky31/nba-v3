@@ -296,7 +296,7 @@
         <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
         <div class="player-details">
           <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
-          <a href="#" class="career-link" onclick="toggleLeadoffCareer()">
+          <a href="#" class="career-link" onclick="toggleLeadoffCareer()" style="display: none;">
             Career Details <span class="career-arrow">▼</span>
           </a>
         </div>
@@ -1159,8 +1159,8 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   const progress = timeLeft / totalTime;
   
   // ✅ FIX: Use consistent radius that matches SVG
-  const radius = 45;  // Match the SVG r="45"
-  const circumference = 2 * Math.PI * 45; // = 282.74
+  const radius = 35; 
+  const circumference = 2 * Math.PI * 35; 
   
   // Calculate offset - start from top (12:00 position)
   const offset = circumference * (1 - progress);
@@ -2889,12 +2889,14 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
-  const skipLink = document.getElementById('skipTurnBtn');
+const skipLink = document.getElementById('skipTurnBtn');
 if (skipLink) {
   if (data.canSkip) {
+    skipLink.style.display = 'inline-block'; 
     skipLink.classList.remove('disabled');
     skipLink.textContent = 'Skip';
   } else {
+    skipLink.style.display = 'inline-block'; 
     skipLink.classList.add('disabled');
     skipLink.textContent = 'Skip Used';
   }
@@ -2987,15 +2989,9 @@ if (turnPromptText) {
     playerOpponentEl.classList.add('active-turn');
   }
 
-  const skipLink = document.getElementById('skipTurnBtn');
+const skipLink = document.getElementById('skipTurnBtn');
 if (skipLink) {
-  if (data.canSkip) {
-    skipLink.classList.remove('disabled');
-    skipLink.textContent = 'Skip';
-  } else {
-    skipLink.classList.add('disabled');
-    skipLink.textContent = 'Skip Used';
-  }
+  skipLink.style.display = 'none'; 
 }
 
 setTimeout(() => {
