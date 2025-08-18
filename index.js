@@ -172,17 +172,17 @@ async function getPlayerCareerDetails(playerName) {
     // Get player basic info and career summary
     const playerQuery = `
       SELECT DISTINCT p.player_name, 
-             MIN(pts.season_start_year) as first_year,
-             MAX(pts.season_end_year) as last_year,
-             COUNT(DISTINCT pts.team_abbreviation) as total_teams
+             MIN(CAST(pts.start_season AS INT)) as first_year,
+             MAX(CAST(pts.end_season AS INT)) as last_year,
+             COUNT(DISTINCT pts.team_abbr) as total_teams
       FROM players p
-      JOIN player_team_stints pts ON p.player_name = pts.player_name
+      JOIN player_team_stints pts ON p.player_id = pts.player_id
       WHERE p.player_name = $1
       GROUP BY p.player_name
     `;
     
-   const playerResult = await client.query(playerQuery, [playerName]);
-
+    const playerResult = await client.query(playerQuery, [playerName]);
+    
     if (playerResult.rows.length === 0) {
       return null;
     }
@@ -191,10 +191,11 @@ async function getPlayerCareerDetails(playerName) {
     
     // Get team stints
     const stintsQuery = `
-      SELECT team_abbreviation, season_start_year, season_end_year
-      FROM player_team_stints
-      WHERE player_name = $1
-      ORDER BY season_start_year ASC, season_end_year ASC
+      SELECT pts.team_abbr, pts.start_season, pts.end_season
+      FROM players p
+      JOIN player_team_stints pts ON p.player_id = pts.player_id
+      WHERE p.player_name = $1
+      ORDER BY CAST(pts.start_season AS INT) ASC, CAST(pts.end_season AS INT) ASC
     `;
     
     const stintsResult = await client.query(stintsQuery, [playerName]);
@@ -205,9 +206,9 @@ async function getPlayerCareerDetails(playerName) {
       lastYear: playerInfo.last_year,
       totalTeams: parseInt(playerInfo.total_teams),
       teamStints: stintsResult.rows.map(stint => ({
-        team: stint.team_abbreviation,
-        startYear: stint.season_start_year,
-        endYear: stint.season_end_year
+        team: stint.team_abbr,
+        startYear: parseInt(stint.start_season),
+        endYear: parseInt(stint.end_season)
       }))
     };
     
@@ -216,6 +217,7 @@ async function getPlayerCareerDetails(playerName) {
     throw error;
   }
 }
+
 
 
 
