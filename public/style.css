@@ -551,7 +551,7 @@ button:disabled {
   display: block;
   overflow: visible;
   overflow-x: hidden;
-  padding-bottom: 2rem;
+  padding-bottom: 1rem;
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
@@ -2647,13 +2647,22 @@ html, body {
     border: none !important;
   }
 
+
+  #turnSection {
+    padding: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+    position: relative;
+    z-index: 10;
+  }
+
    .turn-prompt {
     font-size: 1rem;
     gap: 0.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem;  /* Add padding for breathing room */
+    padding: 0.25rem; 
+    margin-bottom: 1rem !important;
   }
 
   .turn-prompt .player-info {
@@ -2661,8 +2670,23 @@ html, body {
     flex-direction: row;
     align-items: center;
     gap: 0.5rem; 
+    margin-bottom: 0.5rem;
     max-width: none;
     justify-content: center;
+  }
+
+  /* Ensure guess controls are properly positioned */
+  #guessControls {
+    margin-top: 0.5rem !important;
+    margin-bottom: 1rem !important;
+    position: relative;
+    z-index: 5;
+  }
+  
+  /* Prevent viewport jumping when keyboard appears */
+  #guessInput:focus {
+    transform: none !important;
+    transition: border-color 0.2s ease;
   }
 
   #currentPlayerHeadshot {
