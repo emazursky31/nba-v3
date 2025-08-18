@@ -1387,85 +1387,36 @@ function setupMobileInputFocus() {
   const guessInput = document.getElementById('guessInput');
   if (!guessInput) return;
 
-  // Store original viewport height to detect keyboard
-  let originalViewportHeight = window.innerHeight;
-  
   guessInput.addEventListener('focus', () => {
     // Only apply on mobile devices
     if (window.innerWidth <= 768) {
       setTimeout(() => {
-        // Get key elements
+        // Get the turn prompt (contains player info)
         const turnPrompt = document.getElementById('turnPromptText');
-        const guessControls = document.getElementById('guessControls');
+        if (!turnPrompt) return;
         
-        if (!turnPrompt || !guessControls) return;
-        
-        // Calculate positions
+        // Calculate how much we need to scroll UP to keep player info visible
         const turnPromptRect = turnPrompt.getBoundingClientRect();
-        const guessControlsRect = guessControls.getBoundingClientRect();
+        const currentScrollY = window.scrollY;
         
-        // Detect if keyboard is likely open (viewport height reduced significantly)
-        const currentViewportHeight = window.innerHeight;
-        const keyboardHeight = originalViewportHeight - currentViewportHeight;
-        const keyboardOpen = keyboardHeight > 150; // Threshold for keyboard detection
-        
-        if (keyboardOpen) {
-          // Calculate optimal scroll position to keep player info visible
-          const turnPromptTop = turnPrompt.getBoundingClientRect().top + window.scrollY;
-          const availableHeight = currentViewportHeight;
-          const neededHeight = turnPromptRect.height + guessControlsRect.height + 40; // 40px padding
-          
-          // If content fits in available space, scroll to show turn prompt at top
-          if (neededHeight <= availableHeight) {
-            const targetScroll = turnPromptTop - 20; // 20px from top
-            
-            window.scrollTo({
-              top: Math.max(0, targetScroll),
-              behavior: 'smooth'
-            });
-          } else {
-            // If content doesn't fit, prioritize player info visibility
-            const targetScroll = turnPromptTop - 10;
-            
-            window.scrollTo({
-              top: Math.max(0, targetScroll),
-              behavior: 'smooth'
-            });
-          }
-        } else {
-          // No keyboard detected, use original behavior
-          const guessControlsTop = guessControls.getBoundingClientRect().top + window.scrollY;
-          const padding = 20;
+        // If turn prompt is above the viewport or too close to top
+        if (turnPromptRect.top < 60) { // 60px buffer from top
+          // Calculate target position to show turn prompt with buffer
+          const turnPromptOffsetTop = turnPrompt.getBoundingClientRect().top + window.scrollY;
+          const targetScroll = turnPromptOffsetTop - 60; // 60px from top of viewport
           
           window.scrollTo({
-            top: Math.max(0, guessControlsTop - padding),
+            top: Math.max(0, targetScroll),
             behavior: 'smooth'
           });
         }
-      }, 300); // Delay to allow keyboard animation
-    }
-  });
-
-  // Handle blur event to restore scroll position if needed
-  guessInput.addEventListener('blur', () => {
-    if (window.innerWidth <= 768) {
-      setTimeout(() => {
-        // Update viewport height after keyboard closes
-        originalViewportHeight = window.innerHeight;
-      }, 300);
-    }
-  });
-
-  // Update viewport height on resize (orientation change, etc.)
-  window.addEventListener('resize', () => {
-    if (window.innerWidth <= 768) {
-      // Only update if not focused (to avoid interfering with keyboard detection)
-      if (document.activeElement !== guessInput) {
-        originalViewportHeight = window.innerHeight;
-      }
+        // If turn prompt is already visible with good spacing, don't scroll
+        
+      }, 300); // Delay for keyboard animation
     }
   });
 }
+
 
 
 
