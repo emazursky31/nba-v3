@@ -2114,8 +2114,8 @@ html {
     font-size: 2.5rem;
   }
 
-  /* .leadoff-career-section {
-    margin: 15px 0;
+  .leadoff-career-section {
+    margin: 10px 0;
   }
   
   .career-header {
@@ -2131,13 +2131,16 @@ html {
   }
   
   .team-stint {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+     padding: 6px 0;
+     font-size: 14px;
+  }
+
+  .team-name {
+    font-size: 14px;
   }
   
   .years {
-    align-self: flex-end;
+     font-size: 13px;
   }
   
   .toggle-career-btn {
