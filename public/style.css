@@ -334,7 +334,7 @@ nav {
 
 /* Fixed height for message container to prevent layout shifts */
 #messageContainer {
-  min-height: 60px; /* Adjust this value based on your typical message height */
+  min-height: 30px; /* Adjust this value based on your typical message height */
   display: flex;
   align-items: center;
   justify-content: center;
