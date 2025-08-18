@@ -1402,6 +1402,32 @@ function setupMobileInputFocus() {
   }
 }
 
+
+function scrollToGameArea() {
+  // Only apply on mobile devices
+  if (window.innerWidth <= 768) {
+    const gameArea = document.getElementById('gameArea');
+    const turnSection = document.getElementById('turnSection');
+    
+    if (gameArea && turnSection) {
+      // Calculate optimal scroll position
+      const gameAreaTop = gameArea.getBoundingClientRect().top + window.scrollY;
+      const turnSectionTop = turnSection.getBoundingClientRect().top + window.scrollY;
+      
+      // Use turn section as primary target, fallback to game area
+      const targetPosition = turnSectionTop || gameAreaTop;
+      const offset = 20; // Small padding from top
+      
+      window.scrollTo({
+        top: Math.max(0, targetPosition - offset),
+        behavior: 'smooth'
+      });
+    }
+  }
+}
+
+
+
 function setupAuthTabs() {
   const tabSignup = document.getElementById('tab-signup');
   const tabSignin = document.getElementById('tab-signin');
@@ -2881,6 +2907,10 @@ if (turnPromptText) {
     playerYouEl.classList.add('active-turn');
     playerOpponentEl.classList.remove('active-turn');
   }
+
+  setTimeout(() => {
+  scrollToGameArea();
+}, 200);
 });
 
 socket.on('opponentTurn', (data) => {
@@ -2950,6 +2980,11 @@ if (turnPromptText) {
     skipButton.style.display = 'none';
     skipButton.disabled = true;
   }
+
+setTimeout(() => {
+  scrollToGameArea();
+}, 200);
+
 });
 
 
@@ -3031,6 +3066,10 @@ socket.on('turnEnded', (data) => {
   timeLeft = data.timeLeft || 15;
 
   renderPlayScreen();
+
+  setTimeout(() => {
+    scrollToGameArea();
+  }, 300); // Small delay to let DOM updates complete
 });
 
 
