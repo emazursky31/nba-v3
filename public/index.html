@@ -2944,6 +2944,11 @@ if (turnPromptText) {
     playerYouEl.classList.remove('active-turn');
     playerOpponentEl.classList.add('active-turn');
   }
+
+  const skipButton = document.getElementById('skip-btn');
+  if (skipButton) {
+    skipButton.style.display = 'none';
+  }
 });
 
 
