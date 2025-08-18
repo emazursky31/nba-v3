@@ -770,11 +770,15 @@ button:disabled {
 
 
 /* Leadoff career section in main game area */
-.leadoff-career-section {
-  margin: 10px 0;
-  background: white;
-  overflow: hidden;
-  animation: slideInFromTop 0.4s ease-out;
+.leadoff-career-content {
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  font-size: 13px;
+  width: 100%; /* Ensure it matches header width */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 
 @keyframes slideInFromTop {
@@ -890,6 +894,11 @@ button:disabled {
   border-radius: 6px;
   border: 1px solid #e9ecef;
   transition: all 0.2s ease;
+  min-height: 24px;
+}
+
+.team-stint:last-child {
+  border-bottom: none;
 }
 
 .team-stint:hover {
@@ -898,9 +907,11 @@ button:disabled {
 }
 
 .team-name {
-  font-weight: 600;
+  font-weight: 500;
   color: #343a40;
   font-size: 14px;
+  flex: 0 0 auto; /* Don't shrink */
+  margin-right: 12px; /* Add space between team and years */
 }
 
 .years {
@@ -910,6 +921,8 @@ button:disabled {
   background: #e9ecef;
   padding: 3px 8px;
   border-radius: 4px;
+  flex: 0 0 auto;
+  text-align: right;
 }
 
 .career-loading {
@@ -2116,6 +2129,7 @@ html {
 
   .leadoff-career-section {
     margin: 10px 0;
+    padding: 16px;
   }
   
   .career-header {
@@ -2131,12 +2145,13 @@ html {
   }
   
   .team-stint {
-     padding: 6px 0;
-     font-size: 14px;
+    padding: 10px 6px; /* Even more spacing on mobile */
+    min-height: 28px;
   }
 
   .team-name {
     font-size: 14px;
+    margin-right: 16px;
   }
   
   .years {
