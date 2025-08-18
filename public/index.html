@@ -298,15 +298,14 @@
 </p>
 <div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
   <div class="career-header" onclick="toggleLeadoffCareer()">
-    <button class="toggle-career-btn">
-      <span class="toggle-text">Career Details</span>
-      <span class="toggle-icon">▼</span>
-    </button>
+    <span class="toggle-text">Career Details</span>
+    <span class="toggle-icon">▼</span>
   </div>
-  <!-- <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
-    <div class="career-loading">Click above to load career details...</div>
-  </div> -->
+  <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+    <div class="career-loading">Loading career details...</div>
+  </div>
 </div>
+
 <button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
 
 
@@ -808,28 +807,39 @@ function showLeadoffCareerSection(playerName) {
   careerDataLoaded = false;
   
   const careerSection = document.getElementById('leadoff-career-section');
-  const careerTitle = document.getElementById('leadoff-career-title');
   const careerContent = document.getElementById('leadoff-career-content');
   const toggleText = document.querySelector('.toggle-text');
   const toggleIcon = document.querySelector('.toggle-icon');
+  
+  if (!careerSection || !careerContent || !toggleText || !toggleIcon) {
+    console.error('Career section elements not found in DOM');
+    return;
+  }
   
   // Show the career section header but keep content collapsed
   careerSection.style.display = 'block';
   careerContent.style.display = 'none';
-  careerTitle.textContent = `${playerName} - Career Details`;
   
   // Reset toggle button to collapsed state
-  toggleText.textContent = 'Show Details';
+  toggleText.textContent = 'Career Details';
   toggleIcon.textContent = '▼';
   
   // Reset content
-  careerContent.innerHTML = '<div class="career-loading">Click above to load career details...</div>';
+  careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
 }
 
+
+// Function to toggle the career details visibility and load data if needed
 async function toggleLeadoffCareer() {
   const careerContent = document.getElementById('leadoff-career-content');
   const toggleText = document.querySelector('.toggle-text');
   const toggleIcon = document.querySelector('.toggle-icon');
+  
+  // Check if elements exist
+  if (!careerContent || !toggleText || !toggleIcon) {
+    console.error('Career toggle elements not found in DOM');
+    return;
+  }
   
   if (careerContent.style.display === 'none') {
     // Show career details
@@ -888,7 +898,9 @@ async function toggleLeadoffCareer() {
 // Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
   const careerSection = document.getElementById('leadoff-career-section');
-  careerSection.style.display = 'none';
+  if (careerSection) {
+    careerSection.style.display = 'none';
+  }
   careerDataLoaded = false;
 }
 

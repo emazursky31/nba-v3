@@ -771,11 +771,8 @@ button:disabled {
 
 /* Leadoff career section in main game area */
 .leadoff-career-section {
-  margin: 20px 0;
+  margin: 10px 0;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid #667eea;
   overflow: hidden;
   animation: slideInFromTop 0.4s ease-out;
 }
