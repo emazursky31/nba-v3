@@ -881,15 +881,30 @@ async function toggleLeadoffCareer() {
 
 // Helper function to get current player name
 function getCurrentPlayerName() {
-  // Get the leadoff player from successfulGuesses
-  if (window.successfulGuesses && window.successfulGuesses.length > 0) {
-    const leadoffGuess = window.successfulGuesses.find(guess => guess.isLeadoff);
+   console.log('[DEBUG] successfulGuesses:', successfulGuesses);
+  console.log('[DEBUG] window.successfulGuesses:', window.successfulGuesses);
+  
+  if (typeof successfulGuesses !== 'undefined' && successfulGuesses && successfulGuesses.length > 0) {
+    const leadoffGuess = successfulGuesses.find(guess => guess.isLeadoff);
     if (leadoffGuess && leadoffGuess.name) {
+      console.log('[getCurrentPlayerName] Found leadoff player:', leadoffGuess.name);
       return leadoffGuess.name;
     }
   }
+  
+  // Fallback: check window.successfulGuesses
+  if (window.successfulGuesses && window.successfulGuesses.length > 0) {
+    const leadoffGuess = window.successfulGuesses.find(guess => guess.isLeadoff);
+    if (leadoffGuess && leadoffGuess.name) {
+      console.log('[getCurrentPlayerName] Found leadoff player in window:', leadoffGuess.name);
+      return leadoffGuess.name;
+    }
+  }
+  
+  console.warn('[getCurrentPlayerName] Could not find leadoff player in successfulGuesses');
   return null;
 }
+
 
 
 // Function to hide the career section completely (for game resets)
