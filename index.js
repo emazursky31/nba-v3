@@ -115,23 +115,29 @@ app.get('/players', async (req, res) => {
 
 
 app.get('/player-career', async (req, res) => {
-  const { name } = req.query;
-  
-  if (!name) {
-    return res.status(400).json({ error: 'Player name is required' });
-  }
-  
   try {
-    const playerCareer = await getPlayerCareerDetails(name);
-    if (!playerCareer) {
+    const playerName = req.query.name;
+    
+    if (!playerName) {
+      return res.status(400).json({ error: 'Player name is required' });
+    }
+    
+    console.log(`[/player-career] Request for: ${playerName}`);
+    
+    const careerData = await getPlayerCareerDetails(playerName);
+    
+    if (!careerData) {
       return res.status(404).json({ error: 'Player not found' });
     }
-    res.json(playerCareer);
+    
+    res.json(careerData);
+    
   } catch (error) {
-    console.error('Error in /player-career endpoint:', error);
+    console.error('[/player-career] Error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 // Serve index.html for all other routes (SPA fallback)
@@ -505,41 +511,55 @@ async function getPlayerByName(playerName) {
 }
 
 
+// Add this function with your other database functions
 async function getPlayerCareerDetails(playerName) {
-  const query = `
-    SELECT 
-      p.name,
-      p.years_played,
-      pts.team,
-      pts.start_year,
-      pts.end_year
-    FROM players p
-    LEFT JOIN player_team_stints pts ON p.name = pts.player_name
-    WHERE LOWER(p.name) = LOWER($1)
-    ORDER BY pts.start_year ASC, pts.end_year ASC
-  `;
-  
   try {
-    const result = await pool.query(query, [playerName]);
-    if (result.rows.length === 0) {
+    console.log(`[getPlayerCareerDetails] Fetching career data for: ${playerName}`);
+    
+    // Get player basic info and career summary
+    const playerQuery = `
+      SELECT DISTINCT p.player_name, 
+             MIN(pts.season_start_year) as first_year,
+             MAX(pts.season_end_year) as last_year,
+             COUNT(DISTINCT pts.team_abbreviation) as total_teams
+      FROM players p
+      JOIN player_team_stints pts ON p.player_name = pts.player_name
+      WHERE p.player_name = $1
+      GROUP BY p.player_name
+    `;
+    
+   const playerResult = await client.query(playerQuery, [playerName]);
+
+    if (playerResult.rows.length === 0) {
       return null;
     }
     
-    const player = {
-      name: result.rows[0].name,
-      years_played: result.rows[0].years_played,
-      team_stints: result.rows
-        .filter(row => row.team) // Filter out null teams
-        .map(row => ({
-          team: row.team,
-          start_year: row.start_year,
-          end_year: row.end_year
-        }))
+    const playerInfo = playerResult.rows[0];
+    
+    // Get team stints
+    const stintsQuery = `
+      SELECT team_abbreviation, season_start_year, season_end_year
+      FROM player_team_stints
+      WHERE player_name = $1
+      ORDER BY season_start_year ASC, season_end_year ASC
+    `;
+    
+    const stintsResult = await client.query(stintsQuery, [playerName]);
+    
+    return {
+      playerName: playerInfo.player_name,
+      firstYear: playerInfo.first_year,
+      lastYear: playerInfo.last_year,
+      totalTeams: parseInt(playerInfo.total_teams),
+      teamStints: stintsResult.rows.map(stint => ({
+        team: stint.team_abbreviation,
+        startYear: stint.season_start_year,
+        endYear: stint.season_end_year
+      }))
     };
     
-    return player;
   } catch (error) {
-    console.error('Error fetching player career details:', error);
+    console.error('[getPlayerCareerDetails] Database error:', error);
     throw error;
   }
 }

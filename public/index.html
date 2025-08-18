@@ -820,7 +820,7 @@ function showLeadoffCareerSection(playerName) {
   careerSection.style.display = 'block';
   careerContent.style.display = 'none';
   
-  // Reset toggle button to collapsed state
+  // Always reset to "Career Details" when showing the section
   toggleText.textContent = 'Career Details';
   toggleIcon.textContent = '▼';
   
@@ -832,68 +832,62 @@ function showLeadoffCareerSection(playerName) {
 // Function to toggle the career details visibility and load data if needed
 async function toggleLeadoffCareer() {
   const careerContent = document.getElementById('leadoff-career-content');
-  const toggleText = document.querySelector('.toggle-text');
   const toggleIcon = document.querySelector('.toggle-icon');
+  const toggleText = document.querySelector('.toggle-text'); 
   
-  // Check if elements exist
-  if (!careerContent || !toggleText || !toggleIcon) {
-    console.error('Career toggle elements not found in DOM');
+  if (!careerContent || !toggleIcon || !toggleText) {
+    console.error('Career elements not found');
     return;
   }
   
-  if (careerContent.style.display === 'none') {
-    // Show career details
+  const isExpanded = careerContent.style.display === 'block';
+  
+  if (isExpanded) {
+    // Collapse
+    careerContent.style.display = 'none';
+    toggleIcon.textContent = '▼';
+    toggleText.textContent = 'Career Details'; 
+  } else {
+    // Expand
     careerContent.style.display = 'block';
-    toggleText.textContent = 'Hide Details';
     toggleIcon.textContent = '▲';
+    toggleText.textContent = 'Hide Details'; // Optional: change text when expanded
     
-    // Load career data if not already loaded
-    if (!careerDataLoaded && leadoffPlayerName) {
-      careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
-      
+    if (!careerDataLoaded) {
       try {
-        const response = await fetch(`/player-career?name=${encodeURIComponent(leadoffPlayerName)}`);
+        const currentPlayerName = getCurrentPlayerName();
+        if (!currentPlayerName) {
+          throw new Error('No current player name available');
+        }
+        
+        const response = await fetch(`/player-career?name=${encodeURIComponent(currentPlayerName)}`);
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch career data');
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const careerData = await response.json();
-        
-        // Format team stints
-        const teamStintsHtml = careerData.team_stints.map(stint => 
-          `<div class="team-stint">
-            <span class="team-name">${stint.team}</span>
-            <span class="years">${stint.start_year}-${stint.end_year}</span>
-          </div>`
-        ).join('');
-        
-        careerContent.innerHTML = `
-          <div class="career-summary">
-            <div class="total-years">
-              <strong>Total Years Played:</strong> ${careerData.years_played}
-            </div>
-          </div>
-          <div class="team-stints-section">
-            <h4>Team History:</h4>
-            <div class="team-stints">
-              ${teamStintsHtml}
-            </div>
-          </div>
-        `;
-        
+        displayCareerData(careerData);
         careerDataLoaded = true;
+        
       } catch (error) {
         console.error('Error loading career data:', error);
-        careerContent.innerHTML = '<div class="career-error">Failed to load career details. Please try again.</div>';
+        careerContent.innerHTML = `<div class="career-error">Failed to load career data: ${error.message}</div>`;
       }
     }
-  } else {
-    // Hide career details
-    careerContent.style.display = 'none';
-    toggleText.textContent = 'Show Details';
-    toggleIcon.textContent = '▼';
   }
 }
+
+
+// Helper function to get current player name
+function getCurrentPlayerName() {
+  // This should return the current leadoff player's name
+  // You may need to adapt this based on how you store the current player
+  const playerNameElement = document.querySelector('.current-player-name') || 
+                           document.querySelector('[data-player-name]');
+  return playerNameElement ? playerNameElement.textContent.trim() : null;
+}
+
 
 // Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
