@@ -883,7 +883,7 @@ async function toggleLeadoffCareer() {
 function getCurrentPlayerName() {
    console.log('[DEBUG] successfulGuesses:', successfulGuesses);
   console.log('[DEBUG] window.successfulGuesses:', window.successfulGuesses);
-  
+
   if (typeof successfulGuesses !== 'undefined' && successfulGuesses && successfulGuesses.length > 0) {
     const leadoffGuess = successfulGuesses.find(guess => guess.isLeadoff);
     if (leadoffGuess && leadoffGuess.name) {
@@ -915,6 +915,39 @@ function hideLeadoffCareer() {
   }
   careerDataLoaded = false;
 }
+
+function displayCareerData(careerData) {
+  const careerContent = document.getElementById('leadoff-career-content');
+  if (!careerContent) return;
+  
+  const { playerName, firstYear, lastYear, totalTeams, teamStints } = careerData;
+  
+  let html = `
+    <div class="career-summary">
+      <strong>${playerName}</strong> played from ${firstYear} to ${lastYear} (${totalTeams} teams)
+    </div>
+    <div class="team-stints-section">
+      <h4>Team History:</h4>
+  `;
+  
+  teamStints.forEach(stint => {
+    const years = stint.startYear === stint.endYear 
+      ? stint.startYear 
+      : `${stint.startYear}–${stint.endYear}`;
+    
+    html += `
+      <div class="team-stint">
+        <span class="team-name">${stint.team}</span>
+        <span class="years">${years}</span>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  
+  careerContent.innerHTML = html;
+}
+
 
 
 async function startPrivateGame() {
