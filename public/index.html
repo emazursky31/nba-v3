@@ -2945,9 +2945,10 @@ if (turnPromptText) {
     playerOpponentEl.classList.add('active-turn');
   }
 
-  const skipButton = document.getElementById('skip-btn');
+  const skipButton = document.getElementById('skipTurnBtn');
   if (skipButton) {
     skipButton.style.display = 'none';
+    skipButton.disabled = true;
   }
 });
 
