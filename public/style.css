@@ -334,7 +334,7 @@ nav {
 
 /* Fixed height for message container to prevent layout shifts */
 #messageContainer {
-  min-height: 30px; /* Adjust this value based on your typical message height */
+  min-height: 60px; /* Adjust this value based on your typical message height */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,7 +551,7 @@ button:disabled {
   display: block;
   overflow: visible;
   overflow-x: hidden;
-  padding-bottom: 1rem;
+  padding-bottom: 2rem;
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
@@ -611,6 +611,31 @@ button:disabled {
 }
 
 
+#skipTurnBtn {
+    background-color: #ffa500;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-left: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#skipTurnBtn:hover {
+    background-color: #ff8c00;
+}
+
+#skipTurnBtn:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#skipTurnBtn:disabled:hover {
+    background-color: #cccccc;
+}
 
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.5); }
@@ -623,13 +648,49 @@ button:disabled {
   padding: 0 1rem;
 }
 
+/* Turn Section */
+#turnSection {
+  margin-bottom: 1rem;  /* Reduced from 2rem */
+  padding: 1rem;       /* Reduced from 1.5rem */
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+}
 
+#turnSection.your-turn {
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.2) 100%);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  animation: pulse-border 2s infinite;
+}
+
+#turnSection.opponent-turn {
+  opacity: 0.7;
+  border-color: var(--border-color);
+}
 
 @keyframes pulse-border {
   0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
   50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
 }
 
+.turn-prompt {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.turn-prompt .turn-player-name {
+  display: block;
+  font-size: 1.5rem;
+  margin-top: 0.75rem;
+  color: var(--primary-color);  /* Changed from #3b82f6 to use variable */
+  font-weight: 600;
+}
 
 /* Timer */
 #timer-container {
@@ -654,20 +715,20 @@ button:disabled {
 
 .progress-ring-track {
   stroke: #e5e7eb;
-  stroke-width: 5;
+  stroke-width: 6;
   fill: transparent;
 }
 
 .progress-ring-circle {
   fill: none;
   stroke: #00cc99; /* Default color */
-  stroke-width: 5;
+  stroke-width: 6;
   transition: stroke-dashoffset 0.3s linear, stroke 0.3s ease;
   transform: none;
   transform-origin: 50% 50%;
 }
 
-/* Timer */
+/* Timer Text */
 #timer {
   position: absolute;
   top: 50%;
@@ -680,10 +741,7 @@ button:disabled {
   background: none;
   border: none;
   z-index: 1002;
-  /* Fix centering offset caused by stroke-width */
-  margin-top: -1px;
 }
-
 
 /* Color States */
 .progress-ring-circle.low-time {
@@ -884,132 +942,6 @@ button:disabled {
   border-radius: 6px;
   border: 1px solid #f5c6cb;
 }
-
-
-/* Compact Turn Section - All Devices */
-#turnSection {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  border: none;
-  background: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-/* Compact Turn Prompt */
-.turn-prompt {
-  text-align: center;
-  margin: 0;
-}
-
-.prompt-header {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-
-.player-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-#currentPlayerHeadshot {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--primary-color);
-  flex-shrink: 0;
-}
-
-.player-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-}
-
-.turn-player-name {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin: 0;
-}
-
-/* Career Link Styling */
-.career-link {
-  font-size: 0.875rem;
-  color: var(--primary-color);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-
-.career-link:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
-
-.career-arrow {
-  font-size: 0.75rem;
-  transition: transform 0.2s ease;
-}
-
-/* Timer-Skip Row */
-.timer-skip-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  width: 100%;
-}
-
-/* Skip Link Styling */
-.skip-link {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.skip-link:hover {
-  color: var(--primary-color);
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.2);
-  text-decoration: none;
-}
-
-.skip-link.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* Leadoff Career Section - Compact */
-.leadoff-career-section {
-  width: 100%;
-  margin: 0.5rem 0;
-}
-
-.leadoff-career-content {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-top: 0.5rem;
-}
-
 
 
 /* Guess Controls */
@@ -1846,7 +1778,46 @@ section[data-route="/profile"] {
   border-top: 1px solid rgba(0,0,0,0.1);
 }
 
+/* Desktop Turn Prompt Styling */
+.turn-prompt {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
 
+.turn-prompt .player-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.25rem;
+  justify-content: center;
+}
+
+#currentPlayerHeadshot {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.turn-prompt .turn-player-name {
+  font-size: 1.75rem;
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 
 /* Hover effects */
@@ -2201,22 +2172,38 @@ html {
     max-height: none !important;
   }
 
-    .timer-skip-row {
-      gap: 1.5rem;
-    }
-  
-    #currentPlayerHeadshot {
-      width: 50px !important;
-      height: 50px !important;
-    }
-  
-    .turn-player-name {
-      font-size: 1.1rem !important;
-    }
-  
-    .player-info {
-      gap: 0.5rem;
-    }
+  .turn-prompt {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    line-height: 1.4;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Container for headshot and name on same line */
+  .turn-prompt .player-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 300px;  /* Prevent it from getting too wide */
+  }
+
+  #currentPlayerHeadshot {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #3b82f6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;  /* Don't shrink the headshot */
+  }
 
   
   #turnSection {
@@ -2660,39 +2647,22 @@ html, body {
     border: none !important;
   }
 
-
-  #turnSection {
-    padding: 0.5rem !important;
-    margin-bottom: 0.75rem !important;
-    position: relative;
-    z-index: 10;
+   .turn-prompt {
+    font-size: 1rem;
+    gap: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;  /* Add padding for breathing room */
   }
 
-  .timer-skip-row {
-  gap: 1rem;
-}
-
-
-.turn-player-name {
-  font-size: 1rem !important;
-}
-
-.career-link {
-  font-size: 0.8rem;
-}
-
-  /* Ensure guess controls are properly positioned */
-  #guessControls {
-    margin-top: 0.5rem !important;
-    margin-bottom: 1rem !important;
-    position: relative;
-    z-index: 5;
-  }
-  
-  /* Prevent viewport jumping when keyboard appears */
-  #guessInput:focus {
-    transform: none !important;
-    transition: border-color 0.2s ease;
+  .turn-prompt .player-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem; 
+    max-width: none;
+    justify-content: center;
   }
 
   #currentPlayerHeadshot {

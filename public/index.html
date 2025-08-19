@@ -284,49 +284,49 @@
 <!-- In-Game UI -->
 
 <section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
-  <div id="playersDisplay">
-    <span class="opponent-label">Opponent:</span>
-    <span class="player-name opponent" id="playerOpponent">OpponentName</span>
-  </div>
+ <div id="playersDisplay">
+  <span class="opponent-label">Opponent:</span>
+  <span class="player-name opponent" id="playerOpponent">OpponentName</span>
+</div>
+
 
   <div id="turnSection">
-    <div class="turn-prompt" id="turnPromptText">
-      <div class="prompt-header">Name any teammate of:</div>
-      <div class="player-info">
-        <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-        <div class="player-details">
-          <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
-          <a href="#" class="career-link" onclick="toggleLeadoffCareer()" style="display: none;">
-            Career Details <span class="career-arrow">▼</span>
-          </a>
-        </div>
-      </div>
-    </div>
+ <p class="turn-prompt" id="turnPromptText" style="display: flex; align-items: center; gap: 12px;">
+  <!-- Dynamic content will be inserted here by JavaScript -->
+  <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
+  <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
+</p>
+<div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
+  <div class="career-header" onclick="toggleLeadoffCareer()">
+    <span class="toggle-text">Career Details</span>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+    <div class="career-loading">Loading career details...</div>
+  </div>
+</div>
 
-    <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
-  <div class="career-loading">Loading career details...</div>
-   </div>
+<button id="skipTurnBtn" style="display: none;" disabled>Skip</button>
 
-    <div class="timer-skip-row">
-      <div id="timer-container">
-        <svg class="progress-ring" width="80" height="80" viewBox="-2.5 -2.5 85 85">
-          <circle class="progress-ring-track" 
-                  cx="40" cy="40" r="35" 
-                  stroke="#e5e7eb" 
-                  stroke-width="5" 
-                  fill="transparent"/>
-          <circle class="progress-ring-circle" 
-                  cx="40" cy="40" r="35" 
-                  stroke="#fbbf24" 
-                  stroke-width="5" 
-                  fill="transparent"
-                  stroke-dasharray="219.91"
-                  stroke-dashoffset="0"/>
-        </svg>
-        <div id="timer">30</div>
-      </div>
-      <a href="#" class="skip-link" id="skipTurnBtn" style="display: none;">Skip</a>
-    </div>
+
+<div id="timer-container">
+<svg class="progress-ring" width="100" height="100" viewBox="0 0 100 100">
+  <circle class="progress-ring-track" 
+          cx="50" cy="50" r="45" 
+          stroke="#e5e7eb" 
+          stroke-width="6" 
+          fill="transparent"/>
+  <circle class="progress-ring-circle" 
+          cx="50" cy="50" r="45" 
+          stroke="#fbbf24" 
+          stroke-width="6" 
+          fill="transparent"
+          stroke-dasharray="282.74"
+          stroke-dashoffset="0"/>
+</svg>
+  <div id="timer">30</div>
+</div>
+
 
     <div id="guessControls" style="position: relative;">
       <input
@@ -346,7 +346,6 @@
 
   <div id="messageContainer"></div>
 </section>
-
 
 <div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
   
@@ -807,20 +806,25 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 function showLeadoffCareerSection(playerName) {
   careerDataLoaded = false;
   
+  const careerSection = document.getElementById('leadoff-career-section');
   const careerContent = document.getElementById('leadoff-career-content');
-  const careerLink = document.querySelector('.career-link');
+  const toggleText = document.querySelector('.toggle-text');
+  const toggleIcon = document.querySelector('.toggle-icon');
   
-  if (!careerContent) {
-    console.error('Career content element not found in DOM');
+  if (!careerSection || !careerContent || !toggleText || !toggleIcon) {
+    console.error('Career section elements not found in DOM');
     return;
   }
   
-  // Show the career link and reset content
-  if (careerLink) {
-    careerLink.style.display = 'inline-block';
-  }
+  // Show the career section header but keep content collapsed
+  careerSection.style.display = 'block';
+  careerContent.style.display = 'none';
   
-  // Reset content but keep it hidden until clicked
+  // Always reset to "Career Details" when showing the section
+  toggleText.textContent = 'Career Details';
+  toggleIcon.textContent = '▼';
+  
+  // Reset content
   careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
 }
 
@@ -828,9 +832,10 @@ function showLeadoffCareerSection(playerName) {
 // Function to toggle the career details visibility and load data if needed
 async function toggleLeadoffCareer() {
   const careerContent = document.getElementById('leadoff-career-content');
-  const toggleIcon = document.querySelector('.career-arrow');
+  const toggleIcon = document.querySelector('.toggle-icon');
+  const toggleText = document.querySelector('.toggle-text'); 
   
-  if (!careerContent || !toggleIcon) {
+  if (!careerContent || !toggleIcon || !toggleText) {
     console.error('Career elements not found');
     return;
   }
@@ -841,10 +846,12 @@ async function toggleLeadoffCareer() {
     // Collapse
     careerContent.style.display = 'none';
     toggleIcon.textContent = '▼';
+    toggleText.textContent = 'Career Details'; 
   } else {
     // Expand
     careerContent.style.display = 'block';
     toggleIcon.textContent = '▲';
+    toggleText.textContent = 'Hide Details'; // Optional: change text when expanded
     
     if (!careerDataLoaded) {
       try {
@@ -870,7 +877,6 @@ async function toggleLeadoffCareer() {
     }
   }
 }
-
 
 
 // Helper function to get current player name
@@ -903,22 +909,12 @@ function getCurrentPlayerName() {
 
 // Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
-  const careerContent = document.getElementById('leadoff-career-content');
-  const careerLink = document.querySelector('.career-link');
-
-  if (careerContent) {
-    careerContent.style.display = 'none';
+  const careerSection = document.getElementById('leadoff-career-section');
+  if (careerSection) {
+    careerSection.style.display = 'none';
   }
-
-  if (careerLink) {
-    careerLink.style.display = 'none';
-  }
-
   careerDataLoaded = false;
 }
-
-
-
 
 function displayCareerData(careerData) {
   const careerContent = document.getElementById('leadoff-career-content');
@@ -1160,8 +1156,8 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   const progress = timeLeft / totalTime;
   
   // ✅ FIX: Use consistent radius that matches SVG
-  const radius = 35; 
-  const circumference = 2 * Math.PI * radius;  
+  const radius = 45;  // Match the SVG r="45"
+  const circumference = 2 * Math.PI * 45; // = 282.74
   
   // Calculate offset - start from top (12:00 position)
   const offset = circumference * (1 - progress);
@@ -1389,54 +1385,22 @@ function navigateTo(path, options = {}) {
 
 function setupMobileInputFocus() {
   const guessInput = document.getElementById('guessInput');
-  if (!guessInput) return;
+  if (guessInput) {
+    guessInput.addEventListener('focus', () => {
+      // Only apply if screen width is <= 480px (mobile)
+      if (window.innerWidth <= 480) {
+        const guessControls = document.getElementById('guessControls');
+        const topOffset = guessControls.getBoundingClientRect().top + window.scrollY;
+        const padding = parseFloat(getComputedStyle(document.body).paddingTop) || 16;
 
-  guessInput.addEventListener('focus', () => {
-    if (window.innerWidth <= 768) {
-      setTimeout(() => {
-        // Gentle scroll to ensure input is visible without hiding player info
-        const inputRect = guessInput.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        
-        // Only scroll if input is below the fold
-        if (inputRect.bottom > viewportHeight - 50) {
-          const scrollAmount = inputRect.bottom - viewportHeight + 100;
-          window.scrollBy({
-            top: scrollAmount,
-            behavior: 'smooth'
-          });
-        }
-      }, 300);
-    }
-  });
-}
-
-
-
-function scrollToGameArea() {
-  // Only apply on mobile devices
-  if (window.innerWidth <= 768) {
-    const gameArea = document.getElementById('gameArea');
-    const turnSection = document.getElementById('turnSection');
-    
-    if (gameArea && turnSection) {
-      // Calculate optimal scroll position
-      const gameAreaTop = gameArea.getBoundingClientRect().top + window.scrollY;
-      const turnSectionTop = turnSection.getBoundingClientRect().top + window.scrollY;
-      
-      // Use turn section as primary target, fallback to game area
-      const targetPosition = turnSectionTop || gameAreaTop;
-      const offset = 20; // Small padding from top
-      
-      window.scrollTo({
-        top: Math.max(0, targetPosition - offset),
-        behavior: 'smooth'
-      });
-    }
+        window.scrollTo({
+          top: topOffset - padding,
+          behavior: 'smooth'
+        });
+      }
+    });
   }
 }
-
-
 
 function setupAuthTabs() {
   const tabSignup = document.getElementById('tab-signup');
@@ -2626,13 +2590,6 @@ socket.on('gameStarted', async (data) => {
   leadoffPlayerName = leadoffPlayer?.player_name || null;
   if (leadoffPlayerName) {
   showLeadoffCareerSection(leadoffPlayerName);
-  setTimeout(() => {
-  const careerLink = document.querySelector('.career-link');
-  if (careerLink) {
-    careerLink.style.display = 'inline-block';
-    careerLink.style.visibility = 'visible';
-  }
-}, 100);
   }
 
   if (window.timerInterval) {
@@ -2897,18 +2854,13 @@ socket.on('yourTurn', (data) => {
   showMessage(data.message || "It's your turn to guess!", 'info');
 
 
-const skipLink = document.getElementById('skipTurnBtn');
-if (skipLink) {
-  if (data.canSkip) {
-    skipLink.style.display = 'inline-block'; 
-    skipLink.classList.remove('disabled');
-    skipLink.textContent = 'Skip';
-  } else {
-    skipLink.style.display = 'inline-block'; 
-    skipLink.classList.add('disabled');
-    skipLink.textContent = 'Skip Used';
+  const skipBtn = document.getElementById('skipTurnBtn');
+  if (skipBtn) {
+    skipBtn.style.display = 'inline-block'; // Always show the button
+    skipBtn.disabled = !data.canSkip; // Enable/disable based on canSkip
+    skipBtn.textContent = data.canSkip ? 'Skip' : 'Skip Used';
   }
-}
+
 
  const turnPromptText = document.getElementById('turnPromptText');
 if (turnPromptText) {
@@ -2929,10 +2881,6 @@ if (turnPromptText) {
     playerYouEl.classList.add('active-turn');
     playerOpponentEl.classList.remove('active-turn');
   }
-
-  setTimeout(() => {
-  scrollToGameArea();
-}, 200);
 });
 
 socket.on('opponentTurn', (data) => {
@@ -2997,15 +2945,10 @@ if (turnPromptText) {
     playerOpponentEl.classList.add('active-turn');
   }
 
-const skipLink = document.getElementById('skipTurnBtn');
-if (skipLink) {
-  skipLink.style.display = 'none'; 
-}
-
-setTimeout(() => {
-  scrollToGameArea();
-}, 200);
-
+  const skipButton = document.getElementById('skip-btn');
+  if (skipButton) {
+    skipButton.style.display = 'none';
+  }
 });
 
 
@@ -3087,10 +3030,6 @@ socket.on('turnEnded', (data) => {
   timeLeft = data.timeLeft || 15;
 
   renderPlayScreen();
-
-  setTimeout(() => {
-    scrollToGameArea();
-  }, 300); // Small delay to let DOM updates complete
 });
 
 
@@ -3335,17 +3274,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   gameArea = document.getElementById('gameArea');
   inviteLinkContainer = document.getElementById('inviteLinkContainer');
 
-  const skipTurnLink = document.getElementById('skipTurnBtn');
-if (skipTurnLink) {
-  skipTurnLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (!skipTurnLink.classList.contains('disabled')) {
+  const skipTurnBtn = document.getElementById('skipTurnBtn');
+  if (skipTurnBtn) {
+    skipTurnBtn.addEventListener('click', () => {
       if (confirm('Are you sure you want to skip your turn? You can only skip once per game.')) {
         socket.emit('playerSkip');
       }
-    }
-  });
-}
+    });
+  }
   
   // Set initial default image
   if (currentPlayerHeadshotEl) {
