@@ -811,11 +811,24 @@ function showLeadoffCareerSection(playerName) {
   
   const careerSection = document.getElementById('leadoff-career-section');
   const careerContent = document.getElementById('leadoff-career-content');
+  const careerLink = document.querySelector('.career-link');
+  
+  if (!careerSection || !careerContent) {
+    console.error('Career section elements not found in DOM');
+    return;
+  }
+  
+  // Show the career link first
+  if (careerLink) {
+    careerLink.style.display = 'flex';
+  }
+  
+  // Now get the toggle elements after they're visible
   const toggleText = document.querySelector('.toggle-text');
   const toggleIcon = document.querySelector('.toggle-icon');
   
-  if (!careerSection || !careerContent || !toggleText || !toggleIcon) {
-    console.error('Career section elements not found in DOM');
+  if (!toggleText || !toggleIcon) {
+    console.error('Toggle elements not found in DOM');
     return;
   }
   
@@ -830,6 +843,7 @@ function showLeadoffCareerSection(playerName) {
   // Reset content
   careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
 }
+
 
 
 // Function to toggle the career details visibility and load data if needed
