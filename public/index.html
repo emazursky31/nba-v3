@@ -823,8 +823,9 @@ function showLeadoffCareerSection(playerName) {
   careerContent.style.display = 'none';
 
    if (careerLink) {
-    careerLink.style.display = 'inline-block';
-  }
+  careerLink.style.display = 'inline-block';
+  careerLink.style.visibility = 'visible';
+}
   
   
   // Reset content
@@ -2633,6 +2634,13 @@ socket.on('gameStarted', async (data) => {
   leadoffPlayerName = leadoffPlayer?.player_name || null;
   if (leadoffPlayerName) {
   showLeadoffCareerSection(leadoffPlayerName);
+  setTimeout(() => {
+  const careerLink = document.querySelector('.career-link');
+  if (careerLink) {
+    careerLink.style.display = 'inline-block';
+    careerLink.style.visibility = 'visible';
+  }
+}, 100);
   }
 
   if (window.timerInterval) {

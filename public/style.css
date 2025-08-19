@@ -667,7 +667,7 @@ button:disabled {
   transform-origin: 50% 50%;
 }
 
-/* Timer Text */
+/* Timer */
 #timer {
   position: absolute;
   top: 50%;
@@ -680,6 +680,9 @@ button:disabled {
   background: none;
   border: none;
   z-index: 1002;
+  /* Adjust for stroke-width visual offset */
+  margin-top: -1px;
+  margin-left: -0.5px;
 }
 
 /* Color States */
