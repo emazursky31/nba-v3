@@ -811,14 +811,12 @@ function showLeadoffCareerSection(playerName) {
   
   const careerSection = document.getElementById('leadoff-career-section');
   const careerContent = document.getElementById('leadoff-career-content');
-  const toggleText = document.querySelector('.toggle-text');
-  const toggleIcon = document.querySelector('.toggle-icon');
   const careerLink = document.querySelector('.career-link');
   
-  if (!careerSection || !careerContent || !toggleText || !toggleIcon) {
-    console.error('Career section elements not found in DOM');
-    return;
-  }
+  if (!careerSection || !careerContent) {
+  console.error('Career section elements not found in DOM');
+  return;
+}
   
   // Show the career section header but keep content collapsed
   careerSection.style.display = 'block';
@@ -828,9 +826,6 @@ function showLeadoffCareerSection(playerName) {
     careerLink.style.display = 'inline-block';
   }
   
-  // Always reset to "Career Details" when showing the section
-  toggleText.textContent = 'Career Details';
-  toggleIcon.textContent = '▼';
   
   // Reset content
   careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
@@ -840,8 +835,8 @@ function showLeadoffCareerSection(playerName) {
 // Function to toggle the career details visibility and load data if needed
 async function toggleLeadoffCareer() {
   const careerContent = document.getElementById('leadoff-career-content');
-  const toggleIcon = document.querySelector('.toggle-icon');
-  const toggleText = document.querySelector('.toggle-text'); 
+  const toggleIcon = document.querySelector('.career-arrow');
+  const careerLink = document.querySelector('.career-link');   
   
   if (!careerContent || !toggleIcon || !toggleText) {
     console.error('Career elements not found');
@@ -854,12 +849,11 @@ async function toggleLeadoffCareer() {
     // Collapse
     careerContent.style.display = 'none';
     toggleIcon.textContent = '▼';
-    toggleText.textContent = 'Career Details'; 
   } else {
     // Expand
     careerContent.style.display = 'block';
     toggleIcon.textContent = '▲';
-    toggleText.textContent = 'Hide Details'; // Optional: change text when expanded
+    
     
     if (!careerDataLoaded) {
       try {
@@ -927,7 +921,7 @@ function hideLeadoffCareer() {
   if (careerLink) {
     careerLink.style.display = 'none';
   }
-  
+
   careerDataLoaded = false;
 }
 
