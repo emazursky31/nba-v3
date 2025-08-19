@@ -303,15 +303,13 @@
       </div>
     </div>
 
-    <div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
-      <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
-        <div class="career-loading">Loading career details...</div>
-      </div>
-    </div>
+    <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+  <div class="career-loading">Loading career details...</div>
+   </div>
 
     <div class="timer-skip-row">
       <div id="timer-container">
-        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+        <svg class="progress-ring" width="80" height="80" viewBox="-2.5 -2.5 85 85">
           <circle class="progress-ring-track" 
                   cx="40" cy="40" r="35" 
                   stroke="#e5e7eb" 
@@ -809,26 +807,20 @@ function markLeadoffInGuesses(guesses, leadoffName) {
 function showLeadoffCareerSection(playerName) {
   careerDataLoaded = false;
   
-  const careerSection = document.getElementById('leadoff-career-section');
   const careerContent = document.getElementById('leadoff-career-content');
   const careerLink = document.querySelector('.career-link');
   
-  if (!careerSection || !careerContent) {
-  console.error('Career section elements not found in DOM');
-  return;
-}
+  if (!careerContent) {
+    console.error('Career content element not found in DOM');
+    return;
+  }
   
-  // Show the career section header but keep content collapsed
-  careerSection.style.display = 'block';
-  careerContent.style.display = 'none';
-
-   if (careerLink) {
-  careerLink.style.display = 'inline-block';
-  careerLink.style.visibility = 'visible';
-}
+  // Show the career link and reset content
+  if (careerLink) {
+    careerLink.style.display = 'inline-block';
+  }
   
-  
-  // Reset content
+  // Reset content but keep it hidden until clicked
   careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
 }
 
@@ -837,7 +829,6 @@ function showLeadoffCareerSection(playerName) {
 async function toggleLeadoffCareer() {
   const careerContent = document.getElementById('leadoff-career-content');
   const toggleIcon = document.querySelector('.career-arrow');
-  const careerLink = document.querySelector('.career-link');   
   
   if (!careerContent || !toggleIcon) {
     console.error('Career elements not found');
@@ -854,7 +845,6 @@ async function toggleLeadoffCareer() {
     // Expand
     careerContent.style.display = 'block';
     toggleIcon.textContent = '▲';
-    
     
     if (!careerDataLoaded) {
       try {
@@ -880,6 +870,7 @@ async function toggleLeadoffCareer() {
     }
   }
 }
+
 
 
 // Helper function to get current player name
@@ -912,11 +903,11 @@ function getCurrentPlayerName() {
 
 // Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
-  const careerSection = document.getElementById('leadoff-career-section');
+  const careerContent = document.getElementById('leadoff-career-content');
   const careerLink = document.querySelector('.career-link');
 
-  if (careerSection) {
-    careerSection.style.display = 'none';
+  if (careerContent) {
+    careerContent.style.display = 'none';
   }
 
   if (careerLink) {
@@ -925,6 +916,7 @@ function hideLeadoffCareer() {
 
   careerDataLoaded = false;
 }
+
 
 
 

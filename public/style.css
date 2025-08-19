@@ -680,10 +680,10 @@ button:disabled {
   background: none;
   border: none;
   z-index: 1002;
-  /* Adjust for stroke-width visual offset */
+  /* Fix centering offset caused by stroke-width */
   margin-top: -1px;
-  margin-left: -0.5px;
 }
+
 
 /* Color States */
 .progress-ring-circle.low-time {
