@@ -805,7 +805,6 @@ function markLeadoffInGuesses(guesses, leadoffName) {
   }));
 }
 
-
 function showLeadoffCareerSection(playerName) {
   careerDataLoaded = false;
   
@@ -818,9 +817,11 @@ function showLeadoffCareerSection(playerName) {
     return;
   }
   
-  // Show the career link first
+  // ✅ CRITICAL: Show the career link first
   if (careerLink) {
-    careerLink.style.display = 'flex';
+    careerLink.style.display = 'flex';  // Change from 'none' to 'flex'
+    careerLink.style.alignItems = 'center';
+    careerLink.style.gap = '0.25rem';
   }
   
   // Now get the toggle elements after they're visible
@@ -843,6 +844,7 @@ function showLeadoffCareerSection(playerName) {
   // Reset content
   careerContent.innerHTML = '<div class="career-loading">Loading career details...</div>';
 }
+
 
 
 
