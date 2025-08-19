@@ -813,6 +813,7 @@ function showLeadoffCareerSection(playerName) {
   const careerContent = document.getElementById('leadoff-career-content');
   const toggleText = document.querySelector('.toggle-text');
   const toggleIcon = document.querySelector('.toggle-icon');
+  const careerLink = document.querySelector('.career-link');
   
   if (!careerSection || !careerContent || !toggleText || !toggleIcon) {
     console.error('Career section elements not found in DOM');
@@ -822,6 +823,10 @@ function showLeadoffCareerSection(playerName) {
   // Show the career section header but keep content collapsed
   careerSection.style.display = 'block';
   careerContent.style.display = 'none';
+
+   if (careerLink) {
+    careerLink.style.display = 'inline-block';
+  }
   
   // Always reset to "Career Details" when showing the section
   toggleText.textContent = 'Career Details';
@@ -913,11 +918,20 @@ function getCurrentPlayerName() {
 // Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
   const careerSection = document.getElementById('leadoff-career-section');
+  const careerLink = document.querySelector('.career-link');
+
   if (careerSection) {
     careerSection.style.display = 'none';
   }
+
+  if (careerLink) {
+    careerLink.style.display = 'none';
+  }
+  
   careerDataLoaded = false;
 }
+
+
 
 function displayCareerData(careerData) {
   const careerContent = document.getElementById('leadoff-career-content');
@@ -1160,7 +1174,7 @@ function updateTimerStyle(timeLeft, totalTime = 30) {
   
   // ✅ FIX: Use consistent radius that matches SVG
   const radius = 35; 
-  const circumference = 2 * Math.PI * 35; 
+  const circumference = 2 * Math.PI * radius;  
   
   // Calculate offset - start from top (12:00 position)
   const offset = circumference * (1 - progress);
