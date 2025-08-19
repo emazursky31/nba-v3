@@ -640,8 +640,8 @@ button:disabled {
   position: relative;
   width: 100px;
   height: 100px;
-  z-index: 1000;
 }
+
 
 /* Progress Ring SVG */
 .progress-ring {
