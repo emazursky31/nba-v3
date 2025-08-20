@@ -635,18 +635,22 @@ button:disabled {
 #timer-container {
   display: flex;
   justify-content: center;
+  width: 100px;        /* ✅ Add default size */
+  height: 100px;       /* ✅ Add default size */
+  margin: 0 auto;      /* ✅ Add centering */
+  position: relative;  /* ✅ Add positioning */
 }
-
 
 /* Progress Ring SVG */
 .progress-ring {
+  width: 100px;        /* ✅ Match container size */
+  height: 100px;       /* ✅ Match container size */
   position: absolute;
   top: 0;
   left: 0;
   transform: rotate(-90deg);
   z-index: 1001;
 }
-
 .progress-ring-track {
   stroke: #e5e7eb;
   stroke-width: 6;
