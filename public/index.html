@@ -2866,147 +2866,122 @@ socket.on('yourTurn', (data) => {
   navigateTo('/play');
 
   const turnSection = document.getElementById('turnSection');
-
   turnSection.classList.add('your-turn');
   turnSection.classList.remove('opponent-turn');
+  turnSection.style.display = 'block';
 
+  // Show guess controls
   document.getElementById('guessControls').style.display = 'block';
   guessInput.disabled = false;
   submitGuessBtn.disabled = !guessInput.value.trim();
 
-  // ✅ NBA player to guess:
-  currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+  // Update player name safely
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+  }
 
-  // ✅ Update headshot too:
+  // Update headshot safely
   if (currentPlayerHeadshotEl) {
     currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
-  // ✅ Store current player headshot for when they get guessed
+  // Store headshot
   if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
-  storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
-  console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
-}
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
 
+  // Update prompt header text if needed
+  const promptHeader = turnSection.querySelector('.prompt-header');
+  if (promptHeader) {
+    promptHeader.textContent = 'Name any teammate of:';
+  }
+
+  // Timer
   timerEl.textContent = `:${data.timeLeft || 30}`;
   updateTimerStyle(data.timeLeft || 30);
 
-  turnSection.style.display = 'block';
+  // Messages
   messagesEl.style.display = 'block';
-
   showMessage(data.message || "It's your turn to guess!", 'info');
 
-
-const skipLink = document.getElementById('skipTurnBtn');
-if (skipLink) {
-  skipLink.style.display = 'inline-block'; // Show during your turn
-  
-  if (data.canSkip) {
-    skipLink.classList.remove('disabled');
-    skipLink.textContent = 'Skip Turn';
-  } else {
-    skipLink.classList.add('disabled');
-    skipLink.textContent = 'Skip Used';
+  // Skip button
+  const skipLink = document.getElementById('skipTurnBtn');
+  if (skipLink) {
+    skipLink.style.display = 'inline-block';
+    skipLink.classList.toggle('disabled', !data.canSkip);
+    skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
   }
-}
 
- const turnPromptText = document.getElementById('turnPromptText');
-if (turnPromptText) {
-  turnPromptText.innerHTML = `
-  <div>Name any teammate of:</div>
-  <div class="player-info">
-    <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-    <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
-  </div>
-`;
-}
-
-  // ✅ Highlight the current player in playersDisplay
+  // Highlight current player
   const playerYouEl = document.getElementById('playerYou');
   const playerOpponentEl = document.getElementById('playerOpponent');
-
   if (playerYouEl && playerOpponentEl) {
     playerYouEl.classList.add('active-turn');
     playerOpponentEl.classList.remove('active-turn');
   }
 
-  setTimeout(() => {
-  scrollToGameArea();
-}, 200);
+  setTimeout(() => scrollToGameArea(), 200);
 });
+
+
 
 socket.on('opponentTurn', (data) => {
   navigateTo('/play');
 
   const turnSection = document.getElementById('turnSection');
-
   turnSection.classList.remove('your-turn');
   turnSection.classList.add('opponent-turn');
+  turnSection.style.display = 'block';
 
+  // Hide guess controls
   document.getElementById('guessControls').style.display = 'none';
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
-  // ✅ NBA player to guess:
-  currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
+  // Update player name safely
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
+  }
 
-  // ✅ Update headshot too:
+  // Update headshot safely
   if (currentPlayerHeadshotEl) {
     currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
     currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
   }
 
-  // ✅ Store current player headshot for when they get guessed
+  // Store headshot
   if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
-  storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
-  console.log('Stored headshot for:', data.currentPlayerName, data.currentPlayerHeadshotUrl);
-}
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
 
+  // Update prompt header text
+  const promptHeader = turnSection.querySelector('.prompt-header');
+  if (promptHeader) {
+    promptHeader.textContent = `${opponentName || 'Your opponent'} is naming a teammate of:`;
+  }
 
-  const turnPromptText = document.getElementById('turnPromptText');
-if (turnPromptText) {
-  turnPromptText.innerHTML = `
-  <div>${opponentName || 'Your opponent'} is naming a teammate of:</div>
-  <div class="player-info">
-    <img id="currentPlayerHeadshot" src="${data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE}" alt="${data.currentPlayerName || 'Player'} Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-    <strong class="turn-player-name" id="currentPlayerName">${data.currentPlayerName}</strong>
-  </div>
-`;
-}
-
+  // Timer
   timerEl.textContent = data.timeLeft || '';
   if (data.timeLeft) updateTimerStyle(data.timeLeft);
 
-  turnSection.style.display = 'block';
+  // Messages
   messagesEl.style.display = 'block';
-
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 
-  // Update only the player name text
-  const playerNameEl = document.getElementById('currentPlayerName');
-  if (playerNameEl) {
-    playerNameEl.textContent = data.currentPlayerName;
-  }
+  // Skip button hidden during opponent turn
+  const skipLink = document.getElementById('skipTurnBtn');
+  if (skipLink) skipLink.style.display = 'none';
 
-  // ✅ Highlight the opponent in playersDisplay
+  // Highlight opponent
   const playerYouEl = document.getElementById('playerYou');
   const playerOpponentEl = document.getElementById('playerOpponent');
-
   if (playerYouEl && playerOpponentEl) {
     playerYouEl.classList.remove('active-turn');
     playerOpponentEl.classList.add('active-turn');
   }
 
-const skipLink = document.getElementById('skipTurnBtn');
-if (skipLink) {
-  skipLink.style.display = 'none'; // Hide during opponent's turn
-}
-
-setTimeout(() => {
-  scrollToGameArea();
-}, 200);
-
+  setTimeout(() => scrollToGameArea(), 200);
 });
 
 
