@@ -919,14 +919,23 @@ function getCurrentPlayerName() {
 
 
 
-// Function to hide the career section completely (for game resets)
 function hideLeadoffCareer() {
   const careerSection = document.getElementById('leadoff-career-section');
+  const careerLink = document.querySelector('.career-link');
+  
+  // Hide the career section
   if (careerSection) {
     careerSection.style.display = 'none';
   }
+  
+  // ✅ ALSO hide the career link and arrow
+  if (careerLink) {
+    careerLink.style.display = 'none';
+  }
+  
   careerDataLoaded = false;
 }
+
 
 function displayCareerData(careerData) {
   const careerContent = document.getElementById('leadoff-career-content');
@@ -2907,11 +2916,12 @@ socket.on('yourTurn', (data) => {
 
   // Skip button
   const skipLink = document.getElementById('skipTurnBtn');
-  if (skipLink) {
-    skipLink.style.display = 'inline-block';
-    skipLink.classList.toggle('disabled', !data.canSkip);
-    skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
-  }
+if (skipLink) {
+  skipLink.classList.remove('hidden'); // ✅ Remove hidden class
+  skipLink.style.display = 'inline-block';
+  skipLink.classList.toggle('disabled', !data.canSkip);
+  skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
+}
 
   // Highlight current player
   const playerYouEl = document.getElementById('playerYou');
@@ -2971,7 +2981,10 @@ socket.on('opponentTurn', (data) => {
 
   // Skip button hidden during opponent turn
   const skipLink = document.getElementById('skipTurnBtn');
-  if (skipLink) skipLink.style.display = 'none';
+if (skipLink) {
+  skipLink.classList.add('hidden'); // ✅ Add hidden class back
+  skipLink.style.display = 'none';
+}
 
   // Highlight opponent
   const playerYouEl = document.getElementById('playerYou');
