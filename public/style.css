@@ -633,6 +633,8 @@ button:disabled {
 
 /* Timer */
 #timer-container {
+  grid-column: 2;
+  justify-self: center;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -642,7 +644,6 @@ button:disabled {
   height: 100px;
   z-index: 1000;
 }
-
 
 /* Progress Ring SVG */
 .progress-ring {
@@ -669,19 +670,24 @@ button:disabled {
 }
 
 /* Timer Text */
-#timer {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-  background: none;
-  border: none;
-  z-index: 1002;
-}
+ #timer {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    z-index: 1002 !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    background: none !important;
+    border: none !important;
+  }
 
 /* Color States */
 .progress-ring-circle.low-time {
@@ -707,7 +713,6 @@ button:disabled {
     opacity: 0.8;
   }
 }
-
 
 
 /* Leadoff career section in main game area */
