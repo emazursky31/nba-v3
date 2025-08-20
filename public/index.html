@@ -310,25 +310,18 @@
     </div>
 
     <div class="timer-skip-row">
-      <div id="timer-container">
-        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
-          <circle class="progress-ring-track" 
-                  cx="40" cy="40" r="35" 
-                  stroke="#e5e7eb" 
-                  stroke-width="5" 
-                  fill="transparent"/>
-          <circle class="progress-ring-circle" 
-                  cx="40" cy="40" r="35" 
-                  stroke="#fbbf24" 
-                  stroke-width="5" 
-                  fill="transparent"
-                  stroke-dasharray="219.91"
-                  stroke-dashoffset="0"/>
-        </svg>
-        <div id="timer">30</div>
-      </div>
-      <a href="#" class="skip-link" id="skipTurnBtn" style="display: none;">Skip</a>
-    </div>
+  <div id="timer-container">
+    <svg class="progress-ring" viewBox="0 0 80 80">
+      <circle class="progress-ring-track" cx="40" cy="40" r="35"/>
+      <circle class="progress-ring-circle" cx="40" cy="40" r="35"
+              stroke-dasharray="219.91"
+              stroke-dashoffset="0"/>
+    </svg>
+    <div id="timer">30</div>
+  </div>
+  <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip</a>
+</div>
+
 
     <div id="guessControls" style="position: relative;">
       <input

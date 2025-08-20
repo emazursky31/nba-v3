@@ -633,17 +633,14 @@ button:disabled {
 
 /* Timer */
 #timer-container {
-  grid-column: 2;
-  justify-self: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
   position: relative;
   width: 100px;
   height: 100px;
-  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 
 /* Progress Ring SVG */
 .progress-ring {
@@ -671,23 +668,26 @@ button:disabled {
 
 /* Timer Text */
  #timer {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    font-size: 1.4rem !important;
-    font-weight: 700 !important;
-    color: var(--text-primary) !important;
-    z-index: 1002 !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    text-align: center !important;
-    line-height: 1 !important;
-    background: none !important;
-    border: none !important;
-  }
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  color: var(--text-primary) !important;
+  z-index: 1002 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  background: none !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 
 /* Color States */
 .progress-ring-circle.low-time {
@@ -974,32 +974,32 @@ button:disabled {
   align-items: center;
   gap: 2rem;
   width: 100%;
+  justify-items: center;
 }
 
 /* Skip Link Styling */
 .skip-link {
-  grid-column: 3;
-  justify-self: start;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2563eb;              /* blue link */
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
 }
 
 .skip-link:hover {
-  color: var(--primary-color);
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.2);
-  text-decoration: none;
+  color: #1e40af;              /* darker blue on hover */
 }
 
 .skip-link.disabled {
-  opacity: 0.5;
+  color: #9ca3af;              /* gray when disabled */
   cursor: not-allowed;
-  pointer-events: none;
+  text-decoration: none;
+}
+
+.skip-link.hidden {
+  display: none !important;
 }
 
 /* Leadoff Career Section - Compact */
@@ -2208,8 +2208,12 @@ html {
   }
 
     .timer-skip-row {
-      gap: 1.5rem;
-    }
+    gap: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
   
     #currentPlayerHeadshot {
       width: 50px !important;
@@ -2241,9 +2245,13 @@ html {
     height: 80px !important;
     margin: 0 auto !important;
     position: relative !important;
-    display: block !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     overflow: visible !important;
     z-index: 1000 !important;
+    grid-column: unset !important;
+    justify-self: center !important;
   }
   
   .progress-ring {
