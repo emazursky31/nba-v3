@@ -1011,7 +1011,6 @@ button:disabled {
 }
 
 .skip-link.disabled::after {
-  content: " (Used)";
   font-size: 0.75rem;
   font-style: italic;
 }
@@ -2178,7 +2177,6 @@ html {
 
   .leadoff-career-section {
     margin: 5px 0;
-    padding: 16px;
   }
   
   .career-header {
