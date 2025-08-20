@@ -2900,12 +2900,12 @@ socket.on('yourTurn', (data) => {
 
 const skipLink = document.getElementById('skipTurnBtn');
 if (skipLink) {
+  skipLink.style.display = 'inline-block'; // Show during your turn
+  
   if (data.canSkip) {
-    skipLink.style.display = 'inline-block'; 
     skipLink.classList.remove('disabled');
-    skipLink.textContent = 'Skip';
+    skipLink.textContent = 'Skip Turn';
   } else {
-    skipLink.style.display = 'inline-block'; 
     skipLink.classList.add('disabled');
     skipLink.textContent = 'Skip Used';
   }
@@ -3000,7 +3000,7 @@ if (turnPromptText) {
 
 const skipLink = document.getElementById('skipTurnBtn');
 if (skipLink) {
-  skipLink.style.display = 'none'; 
+  skipLink.style.display = 'none'; // Hide during opponent's turn
 }
 
 setTimeout(() => {

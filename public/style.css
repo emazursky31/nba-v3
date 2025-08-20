@@ -979,27 +979,40 @@ button:disabled {
 
 /* Skip Link Styling */
 .skip-link {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #2563eb;              /* blue link */
-  text-decoration: underline;
-  cursor: pointer;
-  white-space: nowrap;
-  align-self: center;
+  grid-column: 3;
+  justify-self: start;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.2);
 }
 
-.skip-link:hover {
-  color: #1e40af;              /* darker blue on hover */
+.skip-link:hover:not(.disabled) {
+  color: var(--primary-color);
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(37, 99, 235, 0.3);
+  text-decoration: none;
+  transform: translateY(-1px);
 }
 
 .skip-link.disabled {
-  color: #9ca3af;              /* gray when disabled */
+  opacity: 0.4;
   cursor: not-allowed;
-  text-decoration: none;
+  pointer-events: none;
+  color: var(--text-muted);
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.2);
 }
 
-.skip-link.hidden {
-  display: none !important;
+.skip-link.disabled::after {
+  content: " (Used)";
+  font-size: 0.75rem;
+  font-style: italic;
 }
 
 /* Leadoff Career Section - Compact */
@@ -2207,12 +2220,18 @@ html {
     max-height: none !important;
   }
 
-    .timer-skip-row {
-    gap: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  .timer-skip-row {
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .skip-link {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    margin-top: 0.5rem;
+    grid-column: 1;
+    justify-self: center;
   }
   
     #currentPlayerHeadshot {
