@@ -1855,6 +1855,32 @@ if (path === '/home') {
 }
 
 
+if (path === '/profile') {
+  console.log('[DEBUG] updateUIForRoute: Handling /profile');
+
+  updateNavUserState();
+
+  // ✅ Emit leaveGame when navigating away from active game (same as home)
+  if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
+    console.log('[DEBUG] Emitting leaveGame due to navigation to profile');
+    isLeavingGame = true;
+    localStorage.setItem('isLeavingGame', 'true');
+    
+    socket.emit('leaveGame');
+  }
+
+  gameStarted = false;
+  gameOver = true;
+  roomId = null;
+  myRoomId = null;
+  isPrivateGame = false;
+  selectedPlayer = null;
+  successfulGuesses = [];
+
+  // Load profile data
+  loadProfileData();
+}
+
 
  if (path === '/waiting') {
   if (isLeavingGame && !isPrivateGame) {
