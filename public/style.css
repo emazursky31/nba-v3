@@ -923,8 +923,8 @@ button:disabled {
 }
 
 #currentPlayerHeadshot {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--primary-color);
@@ -2055,6 +2055,50 @@ section[data-route="/profile"] {
 }
 
 
+/* Skip Toast Notification */
+.skip-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 10000;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+  animation: skipToastSlide 0.4s ease-out;
+  border: 2px solid #92400e;
+  min-width: 280px;
+  max-width: 90vw;
+}
+
+@keyframes skipToastSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.skip-toast.fade-out {
+  animation: skipToastFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes skipToastFadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+
 
 
 @media (max-width: 768px) {
@@ -2565,6 +2609,12 @@ html {
   }
 
 
+   .skip-toast {
+    top: 60px;
+    font-size: 1rem;
+    padding: 0.875rem 1.5rem;
+    min-width: 260px;
+  }
 }
 
 
@@ -2909,6 +2959,14 @@ Adjust stacking for smaller cards
     width: 160px !important;
     height: 220px !important;
     min-width: 160px;
+  }
+
+
+   .skip-toast {
+    top: 55px;
+    font-size: 0.9rem;
+    padding: 0.75rem 1.25rem;
+    min-width: 240px;
   }
 
 

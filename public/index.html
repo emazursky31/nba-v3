@@ -937,6 +937,34 @@ function hideLeadoffCareer() {
 }
 
 
+function showSkipToast(message) {
+  // Remove any existing skip toast notifications
+  const existingToast = document.querySelector('.skip-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  // Create new toast notification
+  const toast = document.createElement('div');
+  toast.className = 'skip-toast';
+  toast.textContent = message;
+  
+  // Add to page
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, 300);
+  }, 3000);
+}
+
+
+
 function displayCareerData(careerData) {
   const careerContent = document.getElementById('leadoff-career-content');
   if (!careerContent) return;
@@ -3000,7 +3028,14 @@ if (skipLink) {
 
 // Add skip event handlers in the socket setup section
 socket.on('turnSkipped', (data) => {
-    const skippedPlayerName = data.skippedBy === socket.id ? 'You' : 'Your opponent';
+    // Show toast notification
+    if (data.skippedBy === socket.id) {
+        showSkipToast('You skipped your turn. Sending to opponent');
+    } else {
+        showSkipToast(`${data.skippedByUsername} skipped their turn - it's your turn now`);
+    }
+    
+    const skippedPlayerName = data.skippedBy === socket.id ? 'You' : data.skippedByUsername;
     
     // Update UI to show skip occurred
     showMessage(`${skippedPlayerName} skipped the turn. Base player remains: ${data.currentPlayerName}`, 'info');
@@ -3015,6 +3050,7 @@ socket.on('turnSkipped', (data) => {
         document.getElementById('turnPrompt').textContent = `Opponent's turn to find a teammate of ${data.currentPlayerName}`;
     }
 });
+
 
 socket.on('skipError', (message) => {
     alert(message);
