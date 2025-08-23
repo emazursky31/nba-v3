@@ -348,6 +348,15 @@ nav {
   max-width: 100%;
 }
 
+
+.message.opponent-incorrect {
+  background-color: #fff3cd !important;
+  border: 1px solid #ffeaa7 !important;
+  color: #856404 !important;
+  font-weight: 500;
+}
+
+
 /* How to Play Styles */
 .how-to-play {
   background: var(--bg-card);
@@ -943,13 +952,6 @@ button:disabled {
   font-weight: 600;
   color: var(--primary-color);
   margin: 0;
-}
-
-.message.opponent-incorrect {
-  background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
-  color: #856404;
-  font-weight: 500;
 }
 
 /* Career Link Styling */
@@ -1995,7 +1997,7 @@ section[data-route="/profile"] {
     height: auto !important;
     min-height: auto !important;
     max-height: none !important;
-    padding-bottom: 2rem;
+    padding-bottom: 1rem;
     max-width: 800px;
     width: 100%;
     margin: 0 auto;
@@ -2406,7 +2408,7 @@ html {
     max-height: none !important;
     overflow-y: visible !important; /* Allow natural scrolling */
     overflow-x: hidden;
-    padding-bottom: 3rem !important; /* Increase bottom padding significantly */
+    padding-bottom: 1rem !important;
   }
 
   #gameArea * {
@@ -2696,7 +2698,7 @@ html, body {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    padding-bottom: 2rem !important;
+    padding-bottom: 1rem !important;
   }
 
   #successful-guesses-container {

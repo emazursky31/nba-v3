@@ -2028,7 +2028,7 @@ if (updatePasswordBtn) {
 
 function showOpponentIncorrectGuess(guesserName, incorrectGuess, currentPlayer) {
   // Use existing message system with opponent-specific styling
-  const message = `${guesserName} guessed "${incorrectGuess}" ❌ Incorrect`;
+  const message = `"Guessed: ${incorrectGuess}" ❌`;
   showMessage(message, 'opponent-incorrect', false);
   
   // Auto-clear after 4 seconds
