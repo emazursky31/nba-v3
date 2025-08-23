@@ -334,7 +334,7 @@ nav {
 
 /* Fixed height for message container to prevent layout shifts */
 #messageContainer {
-  min-height: 30px; /* Adjust this value based on your typical message height */
+  min-height: 60px; /* Adjust this value based on your typical message height */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -562,6 +562,7 @@ button:disabled {
   overflow-x: hidden;
   padding-bottom: 1rem;
   max-width: 800px;
+  min-height: 600px;
   width: 100%;
   margin: 0 auto;
   padding-left: 1.5rem;
@@ -909,6 +910,7 @@ button:disabled {
   flex-direction: column;
   gap: 0.75rem;
   align-items: center;
+  min-height: 200px;
 }
 
 /* Compact Turn Prompt */
