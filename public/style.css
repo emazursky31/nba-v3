@@ -945,6 +945,13 @@ button:disabled {
   margin: 0;
 }
 
+.message.opponent-incorrect {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  font-weight: 500;
+}
+
 /* Career Link Styling */
 .career-link {
   font-size: 0.875rem;

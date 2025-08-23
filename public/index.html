@@ -2026,6 +2026,15 @@ if (updatePasswordBtn) {
 }
 
 
+function showOpponentIncorrectGuess(guesserName, incorrectGuess, currentPlayer) {
+  // Use existing message system with opponent-specific styling
+  const message = `${guesserName} guessed "${incorrectGuess}" ❌ Incorrect`;
+  showMessage(message, 'opponent-incorrect', false);
+  
+  // Auto-clear after 4 seconds
+  setTimeout(() => clearGuessError(), 4000);
+}
+
 
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
@@ -3082,7 +3091,10 @@ socket.on('skipError', (message) => {
     alert(message);
 });
 
-
+socket.on('opponentIncorrectGuess', (data) => {
+  // Show a subtle notification that opponent made an incorrect guess
+  showOpponentIncorrectGuess(data.guesserName, data.incorrectGuess, data.currentPlayerName);
+});
 
 
 socket.on('message', (msg) => {

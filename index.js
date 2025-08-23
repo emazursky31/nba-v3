@@ -505,6 +505,18 @@ socket.on('playerGuess', async ({ guess }) => {
     startTurnTimer(roomId);
   } else {
     socket.emit('message', `Incorrect guess: "${guess}"`);
+    
+    const opponentSocketId = game.players.find(id => id !== socket.id);
+    if (opponentSocketId) {
+    const opponentSocket = io.sockets.sockets.get(opponentSocketId);
+    if (opponentSocket && opponentSocket.connected) {
+      opponentSocket.emit('opponentIncorrectGuess', {
+        guesserName: game.usernames[socket.id],
+        incorrectGuess: guess.trim(),
+        currentPlayerName: game.currentPlayerName
+      });
+      }
+      }
   }
 });
 
