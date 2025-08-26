@@ -2657,6 +2657,14 @@ async function loadPlayerStats() {
 }
 
 
+// Update step indicator
+  function updateStepIndicator(step) {
+    console.log('[DEBUG] updateStepIndicator called with step:', step);
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.querySelector(`[data-step="${step}"]`)?.classList.add('active');
+  }
+
+
 function setupGameTypeSelection() {
   console.log('[DEBUG] setupGameTypeSelection called');
   
@@ -2666,12 +2674,7 @@ function setupGameTypeSelection() {
   console.log('[DEBUG] privateGameBtn:', privateGameBtn);
   console.log('[DEBUG] findGameBtn:', findGameBtn);
   
-  // Update step indicator
-  function updateStepIndicator(step) {
-    console.log('[DEBUG] updateStepIndicator called with step:', step);
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.querySelector(`[data-step="${step}"]`)?.classList.add('active');
-  }
+  
   
   // Handle private game selection
   if (privateGameBtn) {
@@ -2776,7 +2779,56 @@ function setupEraSelection() {
 }
 
 
+function setupStepNavigation() {
+  const steps = document.querySelectorAll('.step');
+  
+  steps.forEach(step => {
+    step.addEventListener('click', (e) => {
+      const stepNumber = parseInt(step.getAttribute('data-step'));
+      
+      // Only allow going back to step 1 from step 2
+      if (stepNumber === 1 && gameTypeSelected) {
+        goBackToGameTypeSelection();
+      }
+    });
+  });
+}
 
+function goBackToGameTypeSelection() {
+  console.log('[DEBUG] Going back to game type selection');
+  
+  const eraSelection = document.getElementById('eraSelection');
+  const gameModeSelection = document.getElementById('gameModeSelection');
+  
+  if (eraSelection && gameModeSelection) {
+    // Hide era selection with fade-out
+    eraSelection.classList.remove('show');
+    eraSelection.classList.add('fade-out');
+    
+    setTimeout(() => {
+      // Hide era selection
+      eraSelection.style.display = 'none';
+      eraSelection.classList.add('hidden');
+      eraSelection.classList.remove('fade-out');
+      
+      // Show game mode selection with fade-in
+      gameModeSelection.style.display = 'block';
+      gameModeSelection.classList.remove('fade-out');
+      
+      requestAnimationFrame(() => {
+        gameModeSelection.style.opacity = '1';
+        gameModeSelection.style.pointerEvents = 'auto';
+      });
+      
+      // Reset game type selection state
+      gameTypeSelected = false;
+      
+      // Update step indicator back to step 1
+      updateStepIndicator(1);
+      
+    }, 300);
+  }
+}
 
 
 ///////////////////////////////////////////////
@@ -3620,6 +3672,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeAuthStateListener();
   updateNavUserState();
   setupNavDropdown();
+  setupStepNavigation();
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
