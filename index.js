@@ -281,7 +281,8 @@ socket.on('findMatch', ({ username, userId }) => {
       players: [], 
       userIds: {}, 
       usernames: {},
-      playersReady: new Set() // ✅ NEW: Track ready players
+      playersReady: new Set(),
+      selectedEra: era
     };
 
     games[roomId].players.push(socket.id, opponentSocket.id);
@@ -370,8 +371,8 @@ socket.on('userSignedIn', ({ userId, username }) => {
 });
 
 
-socket.on('joinGame', async ({ roomId, username, userId }) => {
-    await handleJoinGame(socket, roomId, username, userId);
+socket.on('joinGame', async ({ roomId, username, userId, era }) => {
+  await handleJoinGame(socket, roomId, username, userId, era);
 });
 
 
@@ -1046,8 +1047,8 @@ async function getCareer(playerName) {
 
 
 // Starts the game in a room: picks random first player & teammates
-async function startGame(roomId) {
-  const game = games[roomId];
+async function startGame(roomId, selectedEra = '2000-present') {
+    const game = games[roomId];
   
   
   if (!game) {
@@ -1079,7 +1080,9 @@ async function startGame(roomId) {
     console.log(`[GAME_START] Reset statsUpdated flag for room ${roomId}`);
 
     // Pick the leadoff player from DB (object with player_id, player_name, headshot_url)
-    const leadoffPlayer = await getRandomPlayer();
+     const leadoffPlayer = await getRandomPlayer(selectedEra);
+
+     game.selectedEra = selectedEra;
     
     // ✅ Double-check that game wasn't started by another process while we were getting random player
     if (game.leadoffPlayer) {
@@ -1163,14 +1166,36 @@ async function startGame(roomId) {
 
 
 
-async function getRandomPlayer() {
+async function getRandomPlayer(era = '2000-present') {
+  let seasonFilter = '';
+  let minSeasons = 10; // Default for modern era
+  
+  switch(era) {
+    case '2000-present':
+      seasonFilter = "WHERE start_season >= '2000'";
+      minSeasons = 10;
+      break;
+    case '1980-1999':
+      seasonFilter = "WHERE start_season >= '1980' AND start_season < '2000'";
+      minSeasons = 10;
+      break;
+    case '1960-1979':
+      seasonFilter = "WHERE start_season >= '1960' AND start_season < '1980'";
+      minSeasons = 10;
+      break;
+    case 'pre-1960':
+      seasonFilter = "WHERE start_season < '1960'";
+      minSeasons = 8;
+      break;
+  }
+  
   const query = `
     WITH player_seasons AS (
       SELECT
         player_id,
         generate_series(CAST(start_season AS INT), CAST(end_season AS INT)) AS season
       FROM player_team_stints
-      WHERE start_season >= '2000'
+      ${seasonFilter}
     )
     SELECT 
       p.player_id,
@@ -1181,7 +1206,7 @@ async function getRandomPlayer() {
       SELECT player_id
       FROM player_seasons
       GROUP BY player_id
-      HAVING COUNT(DISTINCT season) >= 10
+      HAVING COUNT(DISTINCT season) >= ${minSeasons}
     ) ps ON p.player_id = ps.player_id
     ORDER BY RANDOM()
     LIMIT 1;
@@ -1192,8 +1217,9 @@ async function getRandomPlayer() {
 }
 
 
-async function handleJoinGame(socket, roomId, username, userId) {
-  console.log(`[handleJoinGame] ${username} attempting to join room: ${roomId}`);
+
+async function handleJoinGame(socket, roomId, username, userId, era = '2000-present') {
+  console.log(`[handleJoinGame] ${username} attempting to join room: ${roomId} with era: ${era}`);
   
   if (!userId || typeof userId !== 'string') {
     console.error('[handleJoinGame] Invalid userId:', userId, 'for user:', username);
@@ -1223,6 +1249,9 @@ async function handleJoinGame(socket, roomId, username, userId) {
     
     const game = games[roomId];
     
+    // Store/update era in existing game
+    game.selectedEra = era;
+    
     // Add player to existing game if not already in it
     if (!game.players.includes(socket.id)) {
       game.players.push(socket.id);
@@ -1251,12 +1280,11 @@ async function handleJoinGame(socket, roomId, username, userId) {
         // Lock this room during game creation
         gameCreationLocks.add(roomId);
         
-        console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId}`);
+        console.log(`[handleJoinGame] Both players ready. Starting game for room ${roomId} with era ${era}`);
         
-        
-        // Start game with lock protection
+        // Start game with lock protection and era
         try {
-          await startGame(roomId);
+          await startGame(roomId, era);
         } finally {
           // Always remove lock and reset starting flag
           gameCreationLocks.delete(roomId);
@@ -1267,9 +1295,10 @@ async function handleJoinGame(socket, roomId, username, userId) {
       const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
       game.usernames[socket.id] = finalUsername;
       game.userIds[socket.id] = userId;
+      game.selectedEra = era; // Update era
       socket.data.userId = userId;
       socket.username = finalUsername;
-      console.log(`[handleJoinGame] Updated existing player ${username} in room ${roomId}`);
+      console.log(`[handleJoinGame] Updated existing player ${username} in room ${roomId} with era ${era}`);
     }
     return;
   }
@@ -1279,13 +1308,13 @@ async function handleJoinGame(socket, roomId, username, userId) {
     console.log(`[handleJoinGame] Game creation already in progress for room ${roomId}, waiting...`);
     // Socket is already joined to room above, just wait and retry
     setTimeout(() => {
-      handleJoinGame(socket, roomId, username, userId);
+      handleJoinGame(socket, roomId, username, userId, era);
     }, 150);
     return;
   }
   
   // Create new game
-  console.log(`[handleJoinGame] Creating game for room: ${roomId}`);
+  console.log(`[handleJoinGame] Creating game for room: ${roomId} with era: ${era}`);
   
   // ✅ Lock during creation
   gameCreationLocks.add(roomId);
@@ -1308,6 +1337,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
       ready: new Set(),
       starting: false,
       turnCount: 0,
+      selectedEra: era, // ✅ Store era in new game
     };
 
     const game = games[roomId];
@@ -1322,7 +1352,7 @@ async function handleJoinGame(socket, roomId, username, userId) {
     
     io.to(roomId).emit('playersUpdate', game.players.length);
     
-    console.log(`[handleJoinGame] Successfully created game for room ${roomId}`);
+    console.log(`[handleJoinGame] Successfully created game for room ${roomId} with era ${era}`);
   } finally {
     // ✅ Always remove creation lock
     gameCreationLocks.delete(roomId);
