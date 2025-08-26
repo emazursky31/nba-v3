@@ -359,7 +359,7 @@ socket.on('readyToStart', ({ roomId }) => {
   // Start game when both players are ready
   if (game.playersReady.size === game.players.length && !game.leadoffPlayer) {
     console.log(`🚀 All players ready! Starting game in room ${roomId}`);
-    startGame(roomId);
+    startGame(roomId, game.selectedEra);
   }
 });
 
@@ -658,7 +658,7 @@ socket.on('requestRematch', ({ roomId }) => {
       cleanupTimer(roomId);
       game.timer = null;
     }
-    startGame(roomId);
+   startGame(roomId, game.selectedEra);
     io.to(roomId).emit('rematchStarted'); // Notify clients explicitly
     console.log('Emitted rematchStarted to room:', roomId);
   }
