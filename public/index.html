@@ -2707,39 +2707,27 @@ function setupGameTypeSelection() {
 
 
 function showEraSelection() {
-  console.log('[DEBUG] showEraSelection called');
-  
-  const eraSelection = document.getElementById('eraSelection');
-  const gameModeSelection = document.getElementById('gameModeSelection');
-  
-  console.log('[DEBUG] eraSelection element:', eraSelection);
-  console.log('[DEBUG] gameModeSelection element:', gameModeSelection);
-  console.log('[DEBUG] eraSelection classes before:', eraSelection?.className);
-  
-  if (eraSelection && gameModeSelection) {
-    // Dim game mode selection
-    gameModeSelection.style.opacity = '0.5';
-    gameModeSelection.style.pointerEvents = 'none';
+    console.log('[DEBUG] showEraSelection called');
     
-    // Show era selection - FORCE display
-    eraSelection.classList.remove('hidden');
-    eraSelection.style.display = 'block';
-    eraSelection.style.visibility = 'visible';
+    const eraSelection = document.getElementById('eraSelection');
+    const gameModeSelection = document.getElementById('gameModeSelection');
     
-    console.log('[DEBUG] eraSelection classes after:', eraSelection.className);
-    console.log('[DEBUG] eraSelection display:', eraSelection.style.display);
-    
-    // Scroll to era selection
-    setTimeout(() => {
-      eraSelection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      console.log('[DEBUG] Scrolled to era selection');
-    }, 100);
-  } else {
-    console.error('[DEBUG] Era selection elements not found!');
-    console.error('[DEBUG] eraSelection:', eraSelection);
-    console.error('[DEBUG] gameModeSelection:', gameModeSelection);
-  }
+    if (eraSelection && gameModeSelection) {
+        // Remove hidden class and add show class
+        eraSelection.classList.remove('hidden');
+        eraSelection.classList.add('show');  // ← ADD THIS LINE
+        eraSelection.style.display = 'block';
+        
+        // Update step indicator
+        updateStepIndicator(2);
+        
+        // Scroll to era selection
+        setTimeout(() => {
+            eraSelection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
 }
+
 
 
 function setupEraSelection() {
