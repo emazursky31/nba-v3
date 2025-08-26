@@ -2653,57 +2653,104 @@ async function loadPlayerStats() {
 
 
 function setupGameTypeSelection() {
+  console.log('[DEBUG] setupGameTypeSelection called');
+  
   const privateGameBtn = document.getElementById('privateGameBtn');
   const findGameBtn = document.getElementById('findGameBtn');
-  const eraSelection = document.getElementById('eraSelection');
-  const gameModeSelection = document.getElementById('gameModeSelection');
+  
+  console.log('[DEBUG] privateGameBtn:', privateGameBtn);
+  console.log('[DEBUG] findGameBtn:', findGameBtn);
   
   // Update step indicator
   function updateStepIndicator(step) {
+    console.log('[DEBUG] updateStepIndicator called with step:', step);
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.querySelector(`[data-step="${step}"]`)?.classList.add('active');
   }
   
   // Handle private game selection
   if (privateGameBtn) {
-    privateGameBtn.addEventListener('click', (e) => {
+    // Remove any existing listeners first
+    privateGameBtn.replaceWith(privateGameBtn.cloneNode(true));
+    const newPrivateBtn = document.getElementById('privateGameBtn');
+    
+    newPrivateBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      console.log('[DEBUG] Private game button clicked');
       gameTypeSelected = 'private';
       showEraSelection();
       updateStepIndicator(2);
     });
+    console.log('[DEBUG] Private game button listener attached');
+  } else {
+    console.error('[DEBUG] privateGameBtn not found!');
   }
   
   // Handle public game selection  
   if (findGameBtn) {
-    findGameBtn.addEventListener('click', (e) => {
+    // Remove any existing listeners first
+    findGameBtn.replaceWith(findGameBtn.cloneNode(true));
+    const newFindBtn = document.getElementById('findGameBtn');
+    
+    newFindBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      console.log('[DEBUG] Public game button clicked');
       gameTypeSelected = 'public';
       showEraSelection();
       updateStepIndicator(2);
     });
+    console.log('[DEBUG] Public game button listener attached');
+  } else {
+    console.error('[DEBUG] findGameBtn not found!');
   }
 }
 
+
 function showEraSelection() {
+  console.log('[DEBUG] showEraSelection called');
+  
   const eraSelection = document.getElementById('eraSelection');
   const gameModeSelection = document.getElementById('gameModeSelection');
   
+  console.log('[DEBUG] eraSelection element:', eraSelection);
+  console.log('[DEBUG] gameModeSelection element:', gameModeSelection);
+  console.log('[DEBUG] eraSelection classes before:', eraSelection?.className);
+  
   if (eraSelection && gameModeSelection) {
-    // Hide game mode selection
+    // Dim game mode selection
     gameModeSelection.style.opacity = '0.5';
     gameModeSelection.style.pointerEvents = 'none';
     
-    // Show era selection
+    // Show era selection - FORCE display
     eraSelection.classList.remove('hidden');
-    eraSelection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    eraSelection.style.display = 'block';
+    eraSelection.style.visibility = 'visible';
+    
+    console.log('[DEBUG] eraSelection classes after:', eraSelection.className);
+    console.log('[DEBUG] eraSelection display:', eraSelection.style.display);
+    
+    // Scroll to era selection
+    setTimeout(() => {
+      eraSelection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.log('[DEBUG] Scrolled to era selection');
+    }, 100);
+  } else {
+    console.error('[DEBUG] Era selection elements not found!');
+    console.error('[DEBUG] eraSelection:', eraSelection);
+    console.error('[DEBUG] gameModeSelection:', gameModeSelection);
   }
 }
 
+
 function setupEraSelection() {
-  const eraButtons = document.querySelectorAll('.era-btn');
+  console.log('[DEBUG] setupEraSelection called');
   
-  eraButtons.forEach(button => {
+  const eraButtons = document.querySelectorAll('.era-btn');
+  console.log('[DEBUG] Found era buttons:', eraButtons.length);
+  
+  eraButtons.forEach((button, index) => {
+    console.log('[DEBUG] Setting up era button', index, button.getAttribute('data-era'));
+    
     button.addEventListener('click', (e) => {
       e.preventDefault();
       
@@ -2715,8 +2762,10 @@ function setupEraSelection() {
       
       // Start the appropriate game type
       if (gameTypeSelected === 'private') {
+        console.log('[DEBUG] Starting private game with era:', era);
         startPrivateGame();
       } else if (gameTypeSelected === 'public') {
+        console.log('[DEBUG] Starting public game with era:', era);
         joinPublicGame();
       }
     });
