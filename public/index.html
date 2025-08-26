@@ -1789,18 +1789,22 @@ function resetAllGameState() {
   const eraSelection = document.getElementById('eraSelection');
   const gameModeSelection = document.getElementById('gameModeSelection');
   
-  if (eraSelection) {
-    eraSelection.classList.add('hidden');
-  }
-  
-  if (gameModeSelection) {
-    gameModeSelection.style.opacity = '1';
-    gameModeSelection.style.pointerEvents = 'auto';
-  }
-  
-  // Reset step indicator
-  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-  document.querySelector('[data-step="1"]')?.classList.add('active');
+ if (eraSelection) {
+  eraSelection.classList.add('hidden');
+  eraSelection.classList.remove('show');
+  eraSelection.style.display = 'none';
+}
+
+if (gameModeSelection) {
+  gameModeSelection.style.display = 'block';
+  gameModeSelection.style.opacity = '1';
+  gameModeSelection.style.pointerEvents = 'auto';
+  gameModeSelection.classList.remove('fade-out');
+}
+
+// Reset step indicator
+document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+document.querySelector('[data-step="1"]')?.classList.add('active');
   
   // Reset UI elements
   if (currentPlayerNameEl) currentPlayerNameEl.textContent = '';
@@ -1812,6 +1816,7 @@ function resetAllGameState() {
   
   resetCardSpread();
 }
+
 
 
 
@@ -2713,18 +2718,28 @@ function showEraSelection() {
     const gameModeSelection = document.getElementById('gameModeSelection');
     
     if (eraSelection && gameModeSelection) {
-        // Remove hidden class and add show class
-        eraSelection.classList.remove('hidden');
-        eraSelection.classList.add('show');  // ← ADD THIS LINE
-        eraSelection.style.display = 'block';
+        // Add fade-out class to game mode selection
+        gameModeSelection.classList.add('fade-out');
         
-        // Update step indicator
-        updateStepIndicator(2);
-        
-        // Scroll to era selection
+        // After fade-out completes, hide game mode and show era selection
         setTimeout(() => {
-            eraSelection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+            // Hide game mode selection completely
+            gameModeSelection.style.display = 'none';
+            gameModeSelection.classList.remove('fade-out');
+            
+            // Show era selection with fade-in effect
+            eraSelection.classList.remove('hidden');
+            eraSelection.style.display = 'block';
+            
+            // Trigger fade-in animation
+            requestAnimationFrame(() => {
+                eraSelection.classList.add('show');
+            });
+            
+            // Update step indicator
+            updateStepIndicator(2);
+            
+        }, 300); // Match CSS transition duration
     }
 }
 

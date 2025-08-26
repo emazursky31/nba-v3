@@ -349,6 +349,29 @@ nav {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin: 2rem 0;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.selection-grid.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.selection-grid.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Era selection specific styling */
+#eraSelection {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#eraSelection.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .era-cards {
@@ -362,7 +385,7 @@ nav {
 .selection-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
   padding: 2rem;
   text-align: center;
