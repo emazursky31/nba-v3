@@ -227,7 +227,7 @@ io.on('connection', (socket) => {
   
 
 
-socket.on('findMatch', ({ username, userId }) => {
+socket.on('findMatch', ({ username, userId, era = '2000-present' }) => {
   socket.data.username = username;
   socket.data.userId = userId;
 
