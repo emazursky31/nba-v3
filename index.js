@@ -359,7 +359,7 @@ socket.on('readyToStart', ({ roomId }) => {
   // Start game when both players are ready
   if (game.playersReady.size === game.players.length && !game.leadoffPlayer) {
     console.log(`🚀 All players ready! Starting game in room ${roomId}`);
-    startGame(roomId, game.selectedEra);
+    startGame(roomId, game.selectedEra, game.timeLimit);
   }
 });
 
@@ -371,8 +371,8 @@ socket.on('userSignedIn', ({ userId, username }) => {
 });
 
 
-socket.on('joinGame', async ({ roomId, username, userId, era }) => {
-  await handleJoinGame(socket, roomId, username, userId, era);
+socket.on('joinGame', async ({ roomId, username, userId, era, timeLimit }) => {
+  await handleJoinGame(socket, roomId, username, userId, era, timeLimit);
 });
 
 
@@ -483,7 +483,7 @@ socket.on('playerGuess', async ({ guess }) => {
     game.activePlayerSocketId = game.players[game.currentTurn];
 
     game.teammates = await getTeammates(game.currentPlayerName);
-    game.timeLeft = 30;
+    game.timeLeft = game.timeLimit || 30;
 
     // Normalize currentPlayerName for DB query
     const trimmedCurrentPlayerName = game.currentPlayerName.trim();
@@ -561,7 +561,7 @@ socket.on('playerSkip', () => {
     // Switch to the other player (keep same NBA player and teammates)
     game.currentTurn = (game.currentTurn + 1) % 2;
     game.activePlayerSocketId = game.players[game.currentTurn];
-    game.timeLeft = 30; // Reset timer to full 30 seconds
+    game.timeLeft = game.timeLimit || 30; 
 
     // Notify both players
     io.to(roomId).emit('turnSkipped', {
@@ -658,7 +658,7 @@ socket.on('requestRematch', ({ roomId }) => {
       cleanupTimer(roomId);
       game.timer = null;
     }
-   startGame(roomId, game.selectedEra);
+   startGame(roomId, game.selectedEra, game.timeLimit);
     io.to(roomId).emit('rematchStarted'); // Notify clients explicitly
     console.log('Emitted rematchStarted to room:', roomId);
   }
@@ -1047,7 +1047,7 @@ async function getCareer(playerName) {
 
 
 // Starts the game in a room: picks random first player & teammates
-async function startGame(roomId, selectedEra = '2000-present') {
+async function startGame(roomId, selectedEra = '2000-present', timeLimit = 30) {
     const game = games[roomId];
   
   
@@ -1106,7 +1106,7 @@ async function startGame(roomId, selectedEra = '2000-present') {
 
     game.rematchVotes = new Set();
     if (game.timer) clearInterval(game.timer);
-    game.timeLeft = 30;
+    game.timeLeft = timeLimit;
 
     // Pick first player to guess
     const startIndex = Math.floor(Math.random() * game.players.length);
@@ -1218,7 +1218,7 @@ async function getRandomPlayer(era = '2000-present') {
 
 
 
-async function handleJoinGame(socket, roomId, username, userId, era = '2000-present') {
+async function handleJoinGame(socket, roomId, username, userId, era = '2000-present', timeLimit = 30) {
   console.log(`[handleJoinGame] ${username} attempting to join room: ${roomId} with era: ${era}`);
   
   if (!userId || typeof userId !== 'string') {
@@ -1284,7 +1284,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
         
         // Start game with lock protection and era
         try {
-          await startGame(roomId, era);
+          await startGame(roomId, era, timeLimit);
         } finally {
           // Always remove lock and reset starting flag
           gameCreationLocks.delete(roomId);
@@ -1327,7 +1327,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       currentTurn: 0,
       currentPlayerName: null,
       timer: null,
-      timeLeft: 30,
+      timeLeft: timeLimit,
       skipsUsed: {},
       teammates: [],
       successfulGuesses: [],
@@ -1337,7 +1337,8 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       ready: new Set(),
       starting: false,
       turnCount: 0,
-      selectedEra: era, // ✅ Store era in new game
+      selectedEra: era, 
+      timeLimit: timeLimit,
     };
 
     const game = games[roomId];
@@ -1567,7 +1568,7 @@ async function startTurnTimer(roomId) {
 
   // ✅ NEW: Add timer state tracking
   game.timerRunning = true;
-  game.timeLeft = 30;
+  game.timeLeft = game.timeLimit || 30;
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
 

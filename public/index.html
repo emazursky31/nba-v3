@@ -1165,12 +1165,12 @@ async function startPrivateGame() {
 
   // ✅ Navigate and then emit
   await navigateTo('/waiting');
-  safeEmit('joinGame', { 
+ safeEmit('joinGame', { 
   roomId: myRoomId, 
   username: myUsername, 
-  userId,
+  userId: myUserId,
   era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
-  timeLimit: selectedTimeLimit || localStorage.getItem('selectedTimeLimit') || 30
+  timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
 });
 }
 
@@ -2378,11 +2378,12 @@ function startMatchCountdown() {
       clearInterval(countdownInterval);
       
       // Countdown finished - now join the game and signal ready
-      socket.emit('joinGame', { 
+socket.emit('joinGame', { 
   roomId: myRoomId, 
   username: myUsername,
   userId: myUserId,
-  era: localStorage.getItem('selectedEra') || '2000-present' 
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+  timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
 });
       
       // Signal that this player is ready to start
@@ -2443,11 +2444,12 @@ async function handleAuthSuccess() {
 
     // Join the private room
     safeEmit('joinGame', {
-      roomId: myRoomId,
-      username: myUsername,
-      userId: myUserId,
-      era: localStorage.getItem('selectedEra') || '2000-present'
-    });
+  roomId: myRoomId,
+  username: myUsername,
+  userId: myUserId,
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+  timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
+});
     navigateTo('/waiting');
     return;
   }
@@ -2808,25 +2810,27 @@ function setupGameSettings() {
   
   if (startBtn) {
     startBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Get selected era
-      const selectedEraInput = document.querySelector('input[name="era"]:checked');
-      selectedEra = selectedEraInput ? selectedEraInput.value : '2000-present';
-      
-      // Get selected time limit
-      const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
-      selectedTimeLimit = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
-      
-      // Store selections
-      localStorage.setItem('selectedEra', selectedEra);
-      localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
-      
-      console.log('[DEBUG] Settings selected - Era:', selectedEra, 'Time:', selectedTimeLimit);
-      
-      // Start private game
-      startPrivateGame();
-    });
+  e.preventDefault();
+  
+  // Get selected era
+  const selectedEraInput = document.querySelector('input[name="era"]:checked');
+  selectedEra = selectedEraInput ? selectedEraInput.value : '2000-present';
+  
+  // Get selected time limit
+  const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
+  selectedTimeLimit = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
+  
+  // Store selections
+  localStorage.setItem('selectedEra', selectedEra);
+  localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
+  
+  console.log('[DEBUG] Settings selected - Era:', selectedEra, 'Time:', selectedTimeLimit);
+  console.log('[DEBUG] localStorage era:', localStorage.getItem('selectedEra'));
+  console.log('[DEBUG] localStorage timeLimit:', localStorage.getItem('selectedTimeLimit'));
+  
+  // Start private game
+  startPrivateGame();
+});
   }
 }
 
@@ -3640,11 +3644,12 @@ socket.on('rematchStarted', () => {
   // Re-join the same room to trigger new game start
   if (myRoomId && myUsername) {
     console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
-    socket.emit('joinGame', {
+socket.emit('joinGame', {
   roomId: myRoomId,
   username: myUsername,
   userId: myUserId,
-  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present'
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+  timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
 });
     socket.emit('getMatchStats');
   } else {
@@ -3940,7 +3945,8 @@ try {
        roomId: targetRoom,
        username: myUsername,
        userId: myUserId,
-       era: selectedEra || localStorage.getItem('selectedEra') || '2000-present'
+       era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+      timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
      })
     }, 100);
     
