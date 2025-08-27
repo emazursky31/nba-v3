@@ -2553,6 +2553,27 @@ section[data-route="/profile"] {
   max-width: 90vw;
 }
 
+#gameSettings {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2rem !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 2rem !important;
+  }
+  
+  #gameSettings .settings-header {
+    grid-column: 1 / -1 !important; /* Span full width */
+  }
+  
+  #gameSettings .settings-subtitle {
+    grid-column: 1 / -1 !important; /* Span full width */
+  }
+  
+  #gameSettings .settings-actions {
+    grid-column: 1 / -1 !important; /* Span full width */
+  }
+
 @keyframes skipToastSlide {
   from {
     opacity: 0;

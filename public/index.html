@@ -2929,19 +2929,19 @@ function setupStepNavigation() {
 function goBackToGameTypeSelection() {
   console.log('[DEBUG] Going back to game type selection');
   
-  const eraSelection = document.getElementById('eraSelection');
+  const gameSettings = document.getElementById('gameSettings'); 
   const gameModeSelection = document.getElementById('gameModeSelection');
   
-  if (eraSelection && gameModeSelection) {
-    // Hide era selection with fade-out
-    eraSelection.classList.remove('show');
-    eraSelection.classList.add('fade-out');
+  if (gameSettings && gameModeSelection) {
+    // Hide game settings with fade-out
+    gameSettings.classList.remove('show');
+    gameSettings.classList.add('fade-out');
     
     setTimeout(() => {
-      // Hide era selection
-      eraSelection.style.display = 'none';
-      eraSelection.classList.add('hidden');
-      eraSelection.classList.remove('fade-out');
+      // Hide game settings
+      gameSettings.style.display = 'none';
+      gameSettings.classList.add('hidden');
+      gameSettings.classList.remove('fade-out');
       
       // Show game mode selection with fade-in
       gameModeSelection.style.display = 'block';
@@ -2955,12 +2955,10 @@ function goBackToGameTypeSelection() {
       // Reset game type selection state
       gameTypeSelected = false;
       
-      // Update step indicator back to step 1
-      updateStepIndicator(1);
-      
     }, 300);
   }
 }
+
 
 
 ///////////////////////////////////////////////
