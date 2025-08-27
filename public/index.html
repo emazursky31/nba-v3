@@ -253,6 +253,7 @@
 
   <!-- Start Game Button -->
   <div class="settings-actions">
+    <button class="selection-btn back-btn" id="backToGameTypeBtn">Back</button>
     <button class="selection-btn start-game-btn" id="startPrivateGameBtn">Start Private Game</button>
   </div>
 </div>
@@ -2024,6 +2025,24 @@ if (path === '/home') {
   selectedPlayer = null;
   successfulGuesses = [];
 
+  gameTypeSelected = false;
+  gameSettingsSelected = false;
+  
+  // Reset UI visibility
+  const gameModeSelection = document.getElementById('gameModeSelection');
+  const gameSettings = document.getElementById('gameSettings');
+  
+  if (gameModeSelection && gameSettings) {
+    // Show game type selection
+    gameModeSelection.style.display = 'block';
+    gameModeSelection.classList.remove('fade-out', 'hidden');
+    
+    // Hide game settings
+    gameSettings.style.display = 'none';
+    gameSettings.classList.add('hidden');
+    gameSettings.classList.remove('show');
+  }
+
   const welcomeEl = document.getElementById('home-welcome');
   if (welcomeEl && myUsername) {
     welcomeEl.textContent = `Play a Game`;
@@ -2808,6 +2827,14 @@ function setupGameSettings() {
   console.log('[DEBUG] setupGameSettings called');
   
   const startBtn = document.getElementById('startPrivateGameBtn');
+
+  const backBtn = document.getElementById('backToGameTypeBtn');
+  if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      goBackToGameTypeSelection();
+    });
+  }
   
   if (startBtn) {
     startBtn.addEventListener('click', (e) => {
@@ -2835,6 +2862,29 @@ function setupGameSettings() {
   }
 }
 
+
+function goBackToGameTypeSelection() {
+  const gameSettings = document.getElementById('gameSettings');
+  const gameModeSelection = document.getElementById('gameModeSelection');
+  
+  if (gameSettings && gameModeSelection) {
+    // Hide game settings
+    gameSettings.classList.add('fade-out');
+    
+    setTimeout(() => {
+      gameSettings.style.display = 'none';
+      gameSettings.classList.add('hidden');
+      gameSettings.classList.remove('show', 'fade-out');
+      
+      // Show game mode selection
+      gameModeSelection.style.display = 'block';
+      gameModeSelection.classList.remove('hidden');
+      
+      // Reset game type selection state
+      gameTypeSelected = false;
+    }, 300);
+  }
+}
 
 
 function setupStepNavigation() {
@@ -3060,7 +3110,9 @@ if (isPrivateGame) {
       'pre-1960': 'Pioneer Era'
     };
     
-    displayEra.textContent = eraNames[selectedEra] || 'Modern Era';
+    selectedEra = data.selectedEra || '2000-present';
+    selectedTimeLimit = data.timeLimit || 30;
+    displayEra.textContent = eraNames[data.selectedEra] || 'Modern Era';
     gameInfoDisplay.style.display = 'inline-flex';
   }
 } else {

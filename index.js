@@ -1146,7 +1146,9 @@ async function startGame(roomId, selectedEra = '2000-present', timeLimit = 30) {
         currentPlayerHeadshotUrl: leadoffPlayer.headshot_url || defaultPlayerImage,
         timeLeft: game.timeLeft,
         leadoffPlayer: game.leadoffPlayer,
-        opponentName: opponentUsername
+        opponentName: opponentUsername,
+        selectedEra: game.selectedEra,
+        timeLimit: game.timeLimit
       });
     });
 
