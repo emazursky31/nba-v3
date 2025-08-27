@@ -1249,8 +1249,9 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     
     const game = games[roomId];
     
-    // Store/update era in existing game
-    game.selectedEra = era;
+    if (!game.selectedEra) {
+     game.selectedEra = era;
+      }
     
     // Add player to existing game if not already in it
     if (!game.players.includes(socket.id)) {
@@ -1295,7 +1296,9 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       const finalUsername = username || socket.username || socket.data?.username || 'Unknown';
       game.usernames[socket.id] = finalUsername;
       game.userIds[socket.id] = userId;
-      game.selectedEra = era; // Update era
+      if (!game.selectedEra) {
+        game.selectedEra = era;
+      }
       socket.data.userId = userId;
       socket.username = finalUsername;
       console.log(`[handleJoinGame] Updated existing player ${username} in room ${roomId} with era ${era}`);

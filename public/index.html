@@ -1315,7 +1315,7 @@ function flushEmitQueue() {
   }
 }
 
-function updateTimerStyle(timeLeft, totalTime = 30) {
+function updateTimerStyle(timeLeft, totalTime = selectedTimeLimit || 30) {
   const timerEl = document.getElementById('timer');
   const progressRing = document.querySelector('.progress-ring-circle');
   
@@ -2204,7 +2204,7 @@ if (updatePasswordBtn) {
 
 function showOpponentIncorrectGuess(guesserName, incorrectGuess, currentPlayer) {
   // Use existing message system with opponent-specific styling
-  const message = `"Guessed: ${incorrectGuess}" ❌`;
+  const message = `Incorrect guess: ${incorrectGuess}`;
   showMessage(message, 'opponent-incorrect', false);
   
   // Auto-clear after 4 seconds

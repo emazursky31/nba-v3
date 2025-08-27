@@ -295,7 +295,7 @@ nav {
 .game-setup-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem;
 }
 
 /* Step Progress Indicator */
@@ -1267,7 +1267,7 @@ button:disabled {
 
 .years {
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-family: 'Courier New', monospace;
   background: #e9ecef;
   padding: 3px 8px;
