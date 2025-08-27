@@ -2787,7 +2787,6 @@ function setupGameSettings() {
       // Store selections
       localStorage.setItem('selectedEra', selectedEra);
       localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
-      localStorage.setItem('gameTypeSelected', 'private');
       
       console.log('[DEBUG] Settings selected - Era:', selectedEra, 'Time:', selectedTimeLimit);
       
@@ -3020,6 +3019,7 @@ socket.on('gameStarted', async (data) => {
     displayEra.textContent = eraNames[selectedEra] || 'Modern Era';
     settingsDisplay.style.display = 'block';
   }
+}
 
   // Clear previous headshot storage for new game
   storedHeadshots.clear();
@@ -3575,7 +3575,7 @@ socket.on('rematchRequested', ({ username }) => {
 
 // When rematch actually starts
 socket.on('rematchStarted', () => {
-  resetGameUI(); // ✅ Use resetGameUI (preserves settings) instead of resetAllGameState
+  resetGameUI();
 
   // Clear ALL rematch-related notifications
   const notifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
@@ -3592,18 +3592,16 @@ socket.on('rematchStarted', () => {
   if (myRoomId && myUsername) {
     console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
     socket.emit('joinGame', {
-      roomId: myRoomId,
-      username: myUsername,
-      userId: myUserId,
-      era: selectedEra || localStorage.getItem('selectedEra') || '2000-present', // ✅ Preserve era
-      timeLimit: selectedTimeLimit || localStorage.getItem('selectedTimeLimit') || 30 // ✅ Preserve time limit
-    });
+  roomId: myRoomId,
+  username: myUsername,
+  userId: myUserId,
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present'
+});
     socket.emit('getMatchStats');
   } else {
     console.error('[CLIENT] Missing roomId or username for rematch.');
   }
 });
-
 
 
 // Handle opponent leaving the room - WORKS ON ALL SCREENS
