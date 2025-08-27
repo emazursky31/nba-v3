@@ -646,7 +646,7 @@ socket.on('requestRematch', ({ roomId }) => {
     game.successfulGuesses = [];
     game.currentTurn = 0;
     game.activePlayerSocketId = null;
-    game.timeLeft = timeLimit;
+    game.timeLeft = game.timeLimit;
     game.turnCount = 0;
     game.skipsUsed = {};
 
@@ -1285,7 +1285,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
         
         // Start game with lock protection and era
         try {
-          await startGame(roomId, era, timeLimit);
+          await startGame(roomId, game.selectedEra, timeLimit);
         } finally {
           // Always remove lock and reset starting flag
           gameCreationLocks.delete(roomId);
