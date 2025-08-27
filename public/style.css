@@ -551,6 +551,135 @@ nav {
 }
 
 
+/* Settings page styling */
+.settings-section {
+  margin: 2rem 0;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.era-options, .time-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.era-option, .time-option {
+  cursor: pointer;
+}
+
+.era-option input, .time-option input {
+  display: none;
+}
+
+.era-card, .time-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.era-option input:checked + .era-card,
+.time-option input:checked + .time-card {
+  border-color: var(--primary-color);
+  background: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.era-card:hover, .time-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.era-name, .time-name {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.era-years, .time-duration {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.time-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.settings-actions {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.start-game-btn {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  min-width: 200px;
+}
+
+/* Game settings display during gameplay */
+.game-settings-display {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.settings-info {
+  display: flex;
+  gap: 1rem;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.setting-label {
+  color: var(--text-secondary);
+}
+
+.setting-value {
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* Smooth transitions for selection grids */
+.selection-grid {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.selection-grid.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+#gameSettings {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#gameSettings.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+
 /* Matched Screen Styling */
 #matchedScreen {
   background: var(--bg-card);

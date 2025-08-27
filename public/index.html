@@ -153,32 +153,19 @@
   </section> -->
 
 
-<!-- Home Screen -->
 <!-- Home Screen with Game Setup -->
 <section id="homeSelection" data-route="/home" class="hidden" style="text-align: center; margin-top: 2rem; position: relative;">
   
   <h3 id="home-welcome"></h3>
 
   <div id="gameSetup" class="game-setup-container">
-    <!-- Step indicator -->
-    <div class="setup-progress">
-      <div class="step active" data-step="1">
-        <span class="step-number">1</span>
-        <span class="step-label">Game Type</span>
-      </div>
-      <div class="step" data-step="2">
-        <span class="step-number">2</span>
-        <span class="step-label">Starting Era</span>
-      </div>
-    </div>
-
     <!-- Game type selection -->
     <div id="gameModeSelection" class="selection-grid">
       <div class="selection-card" data-mode="private">
         <div class="selection-icon">🔒</div>
         <h3>Private Game</h3>
         <p class="selection-description">
-          Create a private room and invite a friend to play. Share the room code or invite link to get started.
+          Create a private room with custom game settings. Share with a friend to get started.
         </p>
         <button class="selection-btn" id="privateGameBtn">Start Private Game</button>
       </div>
@@ -193,53 +180,82 @@
       </div>
     </div>
 
-    <!-- Era selection (appears after game type selected) -->
-    <div id="eraSelection" class="selection-grid era-step hidden">
-      <h3 class="era-title">Choose Starting Era</h3>
-      <p class="era-subtitle">Select the era for your leadoff player</p>
-      
-      <div class="era-cards">
-        <div class="selection-card" data-era="2000-present">
-          <!-- <div class="selection-icon">🏀</div> -->
-          <h3>Modern Era</h3>
-          <p class="selection-era">2000-Present</p>
-          <p class="selection-description">
-            Start with players from the modern NBA era featuring superstars like LeBron, Kobe, Durant, and Curry.
-          </p>
-          <button class="selection-btn era-btn" data-era="2000-present">Choose Modern Era</button>
-        </div>
-        
-        <div class="selection-card" data-era="1980-1999">
-          <!-- <div class="selection-icon">👑</div> -->
-          <h3>Golden Era</h3>
-          <p class="selection-era">1980-1999</p>
-          <p class="selection-description">
-            Begin with legends from basketball's golden age including Jordan, Magic, Bird, and the Dream Team era.
-          </p>
-          <button class="selection-btn era-btn" data-era="1980-1999">Choose Golden Era</button>
-        </div>
-        
-        <div class="selection-card" data-era="1960-1979">
-          <!-- <div class="selection-icon">🏆</div> -->
-          <h3>Classic Era</h3>
-          <p class="selection-era">1960-1979</p>
-          <p class="selection-description">
-            Start with classic players from the ABA merger era featuring Kareem, Dr. J, and the early championship dynasties.
-          </p>
-          <button class="selection-btn era-btn" data-era="1960-1979">Choose Classic Era</button>
-        </div>
-        
-        <div class="selection-card" data-era="pre-1960">
-          <!-- <div class="selection-icon">⭐</div> -->
-          <h3>Pioneer Era</h3>
-          <p class="selection-era">Pre-1960</p>
-          <p class="selection-description">
-            Begin with basketball pioneers and early NBA legends who built the foundation of professional basketball.
-          </p>
-          <button class="selection-btn era-btn" data-era="pre-1960">Choose Pioneer Era</button>
-        </div>
-      </div>
+    <!-- Combined settings selection for private games only -->
+<div id="gameSettings" class="selection-grid settings-step hidden">
+  <h3 class="settings-title">Private Game Settings</h3>
+  <p class="settings-subtitle">Customize your game experience</p>
+  
+  <!-- Era Selection Section -->
+  <div class="settings-section">
+    <h4 class="section-title">Starting Era</h4>
+    <div class="era-options">
+      <label class="era-option">
+        <input type="radio" name="era" value="2000-present" checked>
+        <span class="era-card">
+          <span class="era-name">Modern Era</span>
+          <span class="era-years">2000-Present</span>
+        </span>
+      </label>
+      <label class="era-option">
+        <input type="radio" name="era" value="1980-1999">
+        <span class="era-card">
+          <span class="era-name">Golden Era</span>
+          <span class="era-years">1980-1999</span>
+        </span>
+      </label>
+      <label class="era-option">
+        <input type="radio" name="era" value="1960-1979">
+        <span class="era-card">
+          <span class="era-name">Classic Era</span>
+          <span class="era-years">1960-1979</span>
+        </span>
+      </label>
+      <label class="era-option">
+        <input type="radio" name="era" value="pre-1960">
+        <span class="era-card">
+          <span class="era-name">Pioneer Era</span>
+          <span class="era-years">Pre-1960</span>
+        </span>
+      </label>
     </div>
+  </div>
+
+  <!-- Time Limit Selection Section -->
+  <div class="settings-section">
+    <h4 class="section-title">Time Limit</h4>
+    <div class="time-options">
+      <label class="time-option">
+        <input type="radio" name="timeLimit" value="15">
+        <span class="time-card">
+          <span class="time-icon">⚡</span>
+          <span class="time-name">Quick</span>
+          <span class="time-duration">15 seconds</span>
+        </span>
+      </label>
+      <label class="time-option">
+        <input type="radio" name="timeLimit" value="30" checked>
+        <span class="time-card">
+          <span class="time-icon">⏱️</span>
+          <span class="time-name">Standard</span>
+          <span class="time-duration">30 seconds</span>
+        </span>
+      </label>
+      <label class="time-option">
+        <input type="radio" name="timeLimit" value="60">
+        <span class="time-card">
+          <span class="time-icon">🧠</span>
+          <span class="time-name">Relaxed</span>
+          <span class="time-duration">1 minute</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Start Game Button -->
+  <div class="settings-actions">
+    <button class="selection-btn start-game-btn" id="startPrivateGameBtn">Start Private Game</button>
+  </div>
+</div>
   </div>
 </section>
 
@@ -364,6 +380,16 @@
     <span class="player-name opponent" id="playerOpponent">OpponentName</span>
   </div>
 
+  <!-- Game Settings Display for Private Games -->
+<div id="gameSettingsDisplay" class="game-settings-display" style="display: none;">
+  <div class="settings-info">
+    <span class="setting-item">
+      <span class="setting-label">Era:</span>
+      <span class="setting-value" id="displayEra">Modern Era</span>
+    </span>
+  </div>
+</div>
+
   <div id="turnSection">
     <div class="turn-prompt" id="turnPromptText">
       <div class="prompt-header">Name any teammate of:</div>
@@ -463,6 +489,8 @@
   let emitQueue = [];
   let selectedEra = '2000-present'; // Default era
   let gameTypeSelected = false;
+  let selectedTimeLimit = 30; 
+  let gameSettingsSelected = false;
 
   // DOM element references (assigned in DOMContentLoaded)
 let guessInput = null;
@@ -1144,7 +1172,8 @@ async function startPrivateGame() {
   roomId: myRoomId, 
   username: myUsername, 
   userId,
-  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present' 
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+  timeLimit: selectedTimeLimit || localStorage.getItem('selectedTimeLimit') || 30
 });
 }
 
@@ -1422,7 +1451,7 @@ function attachRouteListeners(route) {
       // }
 
       setupGameTypeSelection();
-      setupEraSelection();
+       setupGameSettings();
 
 
       const signoutBtn = document.getElementById('signoutBtn');
@@ -1785,26 +1814,27 @@ function resetAllGameState() {
   localStorage.removeItem('privateRoomId');
   localStorage.removeItem('isLeavingGame');
 
-   gameTypeSelected = false;
-  const eraSelection = document.getElementById('eraSelection');
+  // Reset game setup state
+  gameTypeSelected = false;
+  gameSettingsSelected = false;
+  selectedEra = '2000-present';
+  selectedTimeLimit = 30;
+  
+  const gameSettings = document.getElementById('gameSettings');
   const gameModeSelection = document.getElementById('gameModeSelection');
   
- if (eraSelection) {
-  eraSelection.classList.add('hidden');
-  eraSelection.classList.remove('show');
-  eraSelection.style.display = 'none';
-}
-
-if (gameModeSelection) {
-  gameModeSelection.style.display = 'block';
-  gameModeSelection.style.opacity = '1';
-  gameModeSelection.style.pointerEvents = 'auto';
-  gameModeSelection.classList.remove('fade-out');
-}
-
-// Reset step indicator
-document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-document.querySelector('[data-step="1"]')?.classList.add('active');
+  if (gameSettings) {
+    gameSettings.classList.add('hidden');
+    gameSettings.classList.remove('show');
+    gameSettings.style.display = 'none';
+  }
+  
+  if (gameModeSelection) {
+    gameModeSelection.style.display = 'block';
+    gameModeSelection.style.opacity = '1';
+    gameModeSelection.style.pointerEvents = 'auto';
+    gameModeSelection.classList.remove('fade-out');
+  }
   
   // Reset UI elements
   if (currentPlayerNameEl) currentPlayerNameEl.textContent = '';
@@ -1816,6 +1846,7 @@ document.querySelector('[data-step="1"]')?.classList.add('active');
   
   resetCardSpread();
 }
+
 
 
 
@@ -2657,12 +2688,6 @@ async function loadPlayerStats() {
 }
 
 
-// Update step indicator
-  function updateStepIndicator(step) {
-    console.log('[DEBUG] updateStepIndicator called with step:', step);
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.querySelector(`[data-step="${step}"]`)?.classList.add('active');
-  }
 
 
 function setupGameTypeSelection() {
@@ -2674,11 +2699,8 @@ function setupGameTypeSelection() {
   console.log('[DEBUG] privateGameBtn:', privateGameBtn);
   console.log('[DEBUG] findGameBtn:', findGameBtn);
   
-  
-  
-  // Handle private game selection
+  // Handle private game selection - SHOW settings
   if (privateGameBtn) {
-    // Remove any existing listeners first
     privateGameBtn.replaceWith(privateGameBtn.cloneNode(true));
     const newPrivateBtn = document.getElementById('privateGameBtn');
     
@@ -2686,17 +2708,13 @@ function setupGameTypeSelection() {
       e.preventDefault();
       console.log('[DEBUG] Private game button clicked');
       gameTypeSelected = 'private';
-      showEraSelection();
-      updateStepIndicator(2);
+      showGameSettings();
     });
     console.log('[DEBUG] Private game button listener attached');
-  } else {
-    console.error('[DEBUG] privateGameBtn not found!');
   }
   
-  // Handle public game selection  
+  // Handle public game selection - SKIP settings, use defaults
   if (findGameBtn) {
-    // Remove any existing listeners first
     findGameBtn.replaceWith(findGameBtn.cloneNode(true));
     const newFindBtn = document.getElementById('findGameBtn');
     
@@ -2704,79 +2722,81 @@ function setupGameTypeSelection() {
       e.preventDefault();
       console.log('[DEBUG] Public game button clicked');
       gameTypeSelected = 'public';
-      showEraSelection();
-      updateStepIndicator(2);
+      
+      // Set defaults for public games
+      selectedEra = '2000-present';
+      selectedTimeLimit = 30;
+      localStorage.setItem('selectedEra', selectedEra);
+      localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
+      
+      // Start public game immediately
+      joinPublicGame();
     });
     console.log('[DEBUG] Public game button listener attached');
-  } else {
-    console.error('[DEBUG] findGameBtn not found!');
   }
 }
 
 
-function showEraSelection() {
-    console.log('[DEBUG] showEraSelection called');
+
+function showGameSettings() {
+  console.log('[DEBUG] showGameSettings called');
+  
+  const gameSettings = document.getElementById('gameSettings');
+  const gameModeSelection = document.getElementById('gameModeSelection');
+  
+  if (gameSettings && gameModeSelection) {
+    // Hide game mode selection
+    gameModeSelection.classList.add('fade-out');
     
-    const eraSelection = document.getElementById('eraSelection');
-    const gameModeSelection = document.getElementById('gameModeSelection');
-    
-    if (eraSelection && gameModeSelection) {
-        // Add fade-out class to game mode selection
-        gameModeSelection.classList.add('fade-out');
-        
-        // After fade-out completes, hide game mode and show era selection
-        setTimeout(() => {
-            // Hide game mode selection completely
-            gameModeSelection.style.display = 'none';
-            gameModeSelection.classList.remove('fade-out');
-            
-            // Show era selection with fade-in effect
-            eraSelection.classList.remove('hidden');
-            eraSelection.style.display = 'block';
-            
-            // Trigger fade-in animation
-            requestAnimationFrame(() => {
-                eraSelection.classList.add('show');
-            });
-            
-            // Update step indicator
-            updateStepIndicator(2);
-            
-        }, 300); // Match CSS transition duration
-    }
+    setTimeout(() => {
+      gameModeSelection.style.display = 'none';
+      gameModeSelection.classList.remove('fade-out');
+      
+      // Show game settings
+      gameSettings.classList.remove('hidden');
+      gameSettings.style.display = 'block';
+      
+      requestAnimationFrame(() => {
+        gameSettings.classList.add('show');
+      });
+      
+    }, 300);
+  }
 }
 
 
 
-function setupEraSelection() {
-  console.log('[DEBUG] setupEraSelection called');
+
+function setupGameSettings() {
+  console.log('[DEBUG] setupGameSettings called');
   
-  const eraButtons = document.querySelectorAll('.era-btn');
-  console.log('[DEBUG] Found era buttons:', eraButtons.length);
+  const startBtn = document.getElementById('startPrivateGameBtn');
   
-  eraButtons.forEach((button, index) => {
-    console.log('[DEBUG] Setting up era button', index, button.getAttribute('data-era'));
-    
-    button.addEventListener('click', (e) => {
+  if (startBtn) {
+    startBtn.addEventListener('click', (e) => {
       e.preventDefault();
       
-      const era = button.getAttribute('data-era');
-      selectedEra = era;
-      localStorage.setItem('selectedEra', era);
+      // Get selected era
+      const selectedEraInput = document.querySelector('input[name="era"]:checked');
+      selectedEra = selectedEraInput ? selectedEraInput.value : '2000-present';
       
-      console.log('[DEBUG] Era selected:', era, 'Game type:', gameTypeSelected);
+      // Get selected time limit
+      const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
+      selectedTimeLimit = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
       
-      // Start the appropriate game type
-      if (gameTypeSelected === 'private') {
-        console.log('[DEBUG] Starting private game with era:', era);
-        startPrivateGame();
-      } else if (gameTypeSelected === 'public') {
-        console.log('[DEBUG] Starting public game with era:', era);
-        joinPublicGame();
-      }
+      // Store selections
+      localStorage.setItem('selectedEra', selectedEra);
+      localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
+      localStorage.setItem('gameTypeSelected', 'private');
+      
+      console.log('[DEBUG] Settings selected - Era:', selectedEra, 'Time:', selectedTimeLimit);
+      
+      // Start private game
+      startPrivateGame();
     });
-  });
+  }
 }
+
 
 
 function setupStepNavigation() {
@@ -2983,6 +3003,23 @@ socket.on('gameStarted', async (data) => {
 
   gameStarted = true;
   gameOver = false;
+
+
+  if (isPrivateGame) {
+  const settingsDisplay = document.getElementById('gameSettingsDisplay');
+  const displayEra = document.getElementById('displayEra');
+  
+  if (settingsDisplay && displayEra) {
+    const eraNames = {
+      '2000-present': 'Modern Era',
+      '1980-1999': 'Golden Era', 
+      '1960-1979': 'Classic Era',
+      'pre-1960': 'Pioneer Era'
+    };
+    
+    displayEra.textContent = eraNames[selectedEra] || 'Modern Era';
+    settingsDisplay.style.display = 'block';
+  }
 
   // Clear previous headshot storage for new game
   storedHeadshots.clear();
@@ -3538,7 +3575,7 @@ socket.on('rematchRequested', ({ username }) => {
 
 // When rematch actually starts
 socket.on('rematchStarted', () => {
-  resetGameUI();
+  resetGameUI(); // ✅ Use resetGameUI (preserves settings) instead of resetAllGameState
 
   // Clear ALL rematch-related notifications
   const notifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
@@ -3555,16 +3592,18 @@ socket.on('rematchStarted', () => {
   if (myRoomId && myUsername) {
     console.log('[CLIENT] Rejoining room for rematch:', myRoomId);
     socket.emit('joinGame', {
-  roomId: myRoomId,
-  username: myUsername,
-  userId: myUserId,
-  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present'
-});
+      roomId: myRoomId,
+      username: myUsername,
+      userId: myUserId,
+      era: selectedEra || localStorage.getItem('selectedEra') || '2000-present', // ✅ Preserve era
+      timeLimit: selectedTimeLimit || localStorage.getItem('selectedTimeLimit') || 30 // ✅ Preserve time limit
+    });
     socket.emit('getMatchStats');
   } else {
     console.error('[CLIENT] Missing roomId or username for rematch.');
   }
 });
+
 
 
 // Handle opponent leaving the room - WORKS ON ALL SCREENS
