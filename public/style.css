@@ -655,9 +655,9 @@ nav {
   transform: translateY(-10px);
 }
 
-#gameSettings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+#gameSettings:not(.hidden) {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
   gap: 2rem;
   max-width: 800px;
   margin: 0 auto;
@@ -2553,7 +2553,7 @@ section[data-route="/profile"] {
   max-width: 90vw;
 }
 
-#gameSettings {
+#gameSettings:not(.hidden) {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 2rem !important;
