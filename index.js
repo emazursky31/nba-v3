@@ -646,7 +646,7 @@ socket.on('requestRematch', ({ roomId }) => {
     game.successfulGuesses = [];
     game.currentTurn = 0;
     game.activePlayerSocketId = null;
-    game.timeLeft = 30;
+    game.timeLeft = timeLimit;
     game.turnCount = 0;
     game.skipsUsed = {};
 

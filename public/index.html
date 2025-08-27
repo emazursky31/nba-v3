@@ -638,12 +638,13 @@ async function validateAndCleanupSession() {
       localStorage.setItem('privateRoomId', pendingRoomInvite);
 
       // Join the private room
-     safeEmit('joinGame', { 
-      roomId: myRoomId, 
-      username: myUsername, 
-      userId,
-      era: selectedEra 
-    });
+    safeEmit('joinGame', { 
+  roomId: myRoomId, 
+  username: myUsername, 
+  userId: myUserId,
+  era: selectedEra || localStorage.getItem('selectedEra') || '2000-present',
+  timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
+});
       navigateTo('/waiting');
       return;
     }
@@ -2909,7 +2910,8 @@ socket.on('connect', () => {
         roomId: myRoomId,
         username: myUsername,
         userId: myUserId,
-        era: localStorage.getItem('selectedEra') || '2000-present'
+        era: localStorage.getItem('selectedEra') || '2000-present',
+        timeLimit: selectedTimeLimit || parseInt(localStorage.getItem('selectedTimeLimit')) || 30
       });
     }, 100);
   } else if (gameOver || !gameStarted) {
