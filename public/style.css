@@ -626,36 +626,6 @@ nav {
   min-width: 200px;
 }
 
-/* Game settings display during gameplay */
-.game-settings-display {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-}
-
-.settings-info {
-  display: flex;
-  gap: 1rem;
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.setting-label {
-  color: var(--text-secondary);
-}
-
-.setting-value {
-  color: var(--primary-color);
-  font-weight: bold;
-}
 
 /* Smooth transitions for selection grids */
 .selection-grid {
@@ -678,7 +648,43 @@ nav {
   transform: translateY(0);
 }
 
+/* Integrated game info display */
+.game-info {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1rem;
+  font-size: 0.9rem;
+}
 
+.info-separator {
+  margin: 0 0.5rem;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.era-label {
+  color: var(--text-secondary);
+  margin-right: 0.25rem;
+}
+
+.era-value {
+  color: var(--primary-color);
+  font-weight: 600;
+  background: rgba(var(--primary-color-rgb), 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Hide private-only elements by default */
+.private-only {
+  display: none !important;
+}
+
+/* Show private-only elements when in private game */
+.private-game .private-only {
+  display: inline-flex !important;
+}
 
 /* Matched Screen Styling */
 #matchedScreen {
@@ -831,7 +837,7 @@ h2 {
 }
 
 h3 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 600;
   text-align: center;
   margin-bottom: 1rem;
@@ -2930,11 +2936,20 @@ html {
   }
 
     #playersDisplay {
-    font-size: 0.75rem;
-    padding: 0.2rem 0.4rem;
-    margin: 0.1rem 0;
-    gap: 0.4rem;
+      font-size: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
+
+  .game-info {
+    margin-left: 0;
+  }
+  
+  .info-separator {
+    display: none;
+  }
+  
   
   .opponent-label {
     font-size: 0.75rem;
