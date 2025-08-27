@@ -182,6 +182,7 @@
 
     <!-- Combined settings selection for private games only -->
 <div id="gameSettings" class="selection-grid settings-step hidden">
+  <button class="back-btn secondary-action" id="backToGameTypeBtn">← Back</button>
   <h3 class="settings-title">Private Game Settings</h3>
   <p class="settings-subtitle">Customize your game experience</p>
   
@@ -253,7 +254,6 @@
 
   <!-- Start Game Button -->
   <div class="settings-actions">
-    <button class="selection-btn back-btn" id="backToGameTypeBtn">Back</button>
     <button class="selection-btn start-game-btn" id="startPrivateGameBtn">Start Private Game</button>
   </div>
 </div>
@@ -2885,6 +2885,7 @@ function goBackToGameTypeSelection() {
     }, 300);
   }
 }
+
 
 
 function setupStepNavigation() {
