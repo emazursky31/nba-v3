@@ -182,8 +182,10 @@
 
     <!-- Combined settings selection for private games only -->
 <div id="gameSettings" class="selection-grid settings-step hidden">
-  <button class="back-btn secondary-action" id="backToGameTypeBtn">← Back</button>
-  <h3 class="settings-title">Private Game Settings</h3>
+ <div class="settings-header">
+    <button class="back-btn secondary-action" id="backToGameTypeBtn">← Back</button>
+    <h3 class="settings-title">Private Game Settings</h3>
+  </div>
   <p class="settings-subtitle">Customize your game experience</p>
   
   <!-- Era Selection Section -->
@@ -2863,28 +2865,49 @@ function setupGameSettings() {
 }
 
 
-function goBackToGameTypeSelection() {
-  const gameSettings = document.getElementById('gameSettings');
-  const gameModeSelection = document.getElementById('gameModeSelection');
+function setupGameSettings() {
+  console.log('[DEBUG] setupGameSettings called');
   
-  if (gameSettings && gameModeSelection) {
-    // Hide game settings
-    gameSettings.classList.add('fade-out');
+  const startBtn = document.getElementById('startPrivateGameBtn');
+  const backBtn = document.getElementById('backToGameTypeBtn');
+  
+  // Remove existing listeners to prevent duplicates
+  if (backBtn) {
+    const newBackBtn = backBtn.cloneNode(true);
+    backBtn.parentNode.replaceChild(newBackBtn, backBtn);
     
-    setTimeout(() => {
-      gameSettings.style.display = 'none';
-      gameSettings.classList.add('hidden');
-      gameSettings.classList.remove('show', 'fade-out');
+    newBackBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goBackToGameTypeSelection();
+    });
+  }
+  
+  if (startBtn) {
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       
-      // Show game mode selection
-      gameModeSelection.style.display = 'block';
-      gameModeSelection.classList.remove('hidden');
+      // Get selected era
+      const selectedEraInput = document.querySelector('input[name="era"]:checked');
+      selectedEra = selectedEraInput ? selectedEraInput.value : '2000-present';
       
-      // Reset game type selection state
-      gameTypeSelected = false;
-    }, 300);
+      // Get selected time limit
+      const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
+      selectedTimeLimit = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
+      
+      // Store selections
+      localStorage.setItem('selectedEra', selectedEra);
+      localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
+      
+      console.log('[DEBUG] Settings selected - Era:', selectedEra, 'Time:', selectedTimeLimit);
+      
+      // Start private game
+      startPrivateGame();
+    });
   }
 }
+
+
 
 
 

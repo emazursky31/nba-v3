@@ -623,6 +623,21 @@ nav {
   gap: 1rem;
 }
 
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  grid-column: 1 / -1; /* Span full width */
+}
+
+.settings-header .settings-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 .start-game-btn {
   padding: 1rem 2rem;
   font-size: 1.1rem;
@@ -641,17 +656,35 @@ nav {
 }
 
 #gameSettings {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
-#gameSettings.show {
-  opacity: 1;
-  transform: translateY(0);
+#gameSettings .settings-subtitle {
+  grid-column: 1 / -1; /* Span full width */
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
+#gameSettings .settings-section {
+  margin: 0; /* Remove default margin since grid handles spacing */
+}
+
+#gameSettings .settings-actions {
+  grid-column: 1 / -1; /* Span full width */
+  margin-top: 1rem;
+}
+
+/* Ensure era and time options stack vertically within their columns */
+.era-options, .time-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 /* Integrated game info display */
 .game-info {
   display: inline-flex;
@@ -2730,6 +2763,18 @@ html {
   
   .era-title {
     font-size: 1.5rem;
+  }
+
+    #gameSettings {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .settings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 
   
