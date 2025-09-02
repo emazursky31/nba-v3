@@ -2036,7 +2036,7 @@ if (path === '/home') {
   
   if (gameModeSelection && gameSettings) {
     // Show game type selection
-    gameModeSelection.style.display = 'block';
+    gameModeSelection.style.display = '';
     gameModeSelection.classList.remove('fade-out', 'hidden');
     
     // Hide game settings
@@ -2944,7 +2944,7 @@ function goBackToGameTypeSelection() {
       gameSettings.classList.remove('fade-out');
       
       // Show game mode selection with fade-in
-      gameModeSelection.style.display = 'block';
+      gameModeSelection.style.display = '';
       gameModeSelection.classList.remove('fade-out');
       
       requestAnimationFrame(() => {
