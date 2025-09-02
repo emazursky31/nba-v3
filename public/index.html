@@ -2952,7 +2952,7 @@ function toggleReactionPicker(cardId) {
     return;
   }
 
-  // Hide other open pickers first
+  // Hide all other pickers first
   document.querySelectorAll('.card-reaction-picker').forEach(p => {
     if (p !== picker) {
       p.classList.add('hidden');
@@ -2960,18 +2960,18 @@ function toggleReactionPicker(cardId) {
   });
 
   // Toggle current picker
-  if (picker.classList.contains('hidden')) {
+  const isHidden = picker.classList.contains('hidden');
+  
+  if (isHidden) {
     console.log(`[DEBUG] Showing picker for: ${cardId}`);
     picker.classList.remove('hidden');
     activeReactionPicker = picker;
     
-    // Prevent immediate closure by stopping event propagation
+    // Debug: Check if picker is actually visible
     setTimeout(() => {
-      picker.setAttribute('data-just-opened', 'true');
-      setTimeout(() => {
-        picker.removeAttribute('data-just-opened');
-      }, 100);
-    }, 10);
+      const computedStyle = window.getComputedStyle(picker);
+      console.log(`[DEBUG] Picker visibility: ${computedStyle.visibility}, opacity: ${computedStyle.opacity}`);
+    }, 100);
   } else {
     console.log(`[DEBUG] Hiding picker for: ${cardId}`);
     picker.classList.add('hidden');
@@ -2983,10 +2983,7 @@ function toggleReactionPicker(cardId) {
 function hideAllReactionPickers() {
   console.log(`[DEBUG] Hiding all reaction pickers`);
   document.querySelectorAll('.card-reaction-picker').forEach(picker => {
-    // Don't hide if it was just opened
-    if (!picker.getAttribute('data-just-opened')) {
-      picker.classList.add('hidden');
-    }
+    picker.classList.add('hidden');
   });
   activeReactionPicker = null;
 }
