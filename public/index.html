@@ -1926,7 +1926,7 @@ function renderSuccessfulGuesses() {
     const headshotUrl = guessObj?.headshot_url || DEFAULT_PLAYER_IMAGE;
     const cardId = `card-${index}-${name.replace(/\s+/g, '-')}`;
 
-    console.log(`[DEBUG] Creating card with ID: ${cardId}`); // Debug log
+    console.log(`[DEBUG] Creating card with ID: ${cardId}`);
 
     if (!name) return;
 
@@ -2003,7 +2003,7 @@ function renderSuccessfulGuesses() {
     reactionTrigger.title = 'React to this guess';
     reactionTrigger.setAttribute('data-card-id', cardId);
     
-    // *** CRITICAL FIX: Add event listener immediately ***
+    // Add event listener with proper event handling
     reactionTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -2036,7 +2036,7 @@ function renderSuccessfulGuesses() {
       optionButton.setAttribute('data-reaction', reaction);
       optionButton.setAttribute('data-card-id', cardId);
       
-      // *** CRITICAL FIX: Add event listener immediately ***
+      // Add event listener with proper event handling
       optionButton.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -2054,9 +2054,10 @@ function renderSuccessfulGuesses() {
     deckContainer.appendChild(card);
   });
 
-  // *** IMPORTANT: Also restore any existing reactions ***
+  // Restore any existing reactions
   restoreCardReactions();
 }
+
 
 
 
@@ -2951,16 +2952,26 @@ function toggleReactionPicker(cardId) {
     return;
   }
 
-  // Hide other open pickers
-  if (activeReactionPicker && activeReactionPicker !== picker) {
-    activeReactionPicker.classList.add('hidden');
-  }
+  // Hide other open pickers first
+  document.querySelectorAll('.card-reaction-picker').forEach(p => {
+    if (p !== picker) {
+      p.classList.add('hidden');
+    }
+  });
 
   // Toggle current picker
   if (picker.classList.contains('hidden')) {
     console.log(`[DEBUG] Showing picker for: ${cardId}`);
     picker.classList.remove('hidden');
     activeReactionPicker = picker;
+    
+    // Prevent immediate closure by stopping event propagation
+    setTimeout(() => {
+      picker.setAttribute('data-just-opened', 'true');
+      setTimeout(() => {
+        picker.removeAttribute('data-just-opened');
+      }, 100);
+    }, 10);
   } else {
     console.log(`[DEBUG] Hiding picker for: ${cardId}`);
     picker.classList.add('hidden');
@@ -2968,16 +2979,17 @@ function toggleReactionPicker(cardId) {
   }
 }
 
-
 // Hide all reaction pickers
 function hideAllReactionPickers() {
   console.log(`[DEBUG] Hiding all reaction pickers`);
   document.querySelectorAll('.card-reaction-picker').forEach(picker => {
-    picker.classList.add('hidden');
+    // Don't hide if it was just opened
+    if (!picker.getAttribute('data-just-opened')) {
+      picker.classList.add('hidden');
+    }
   });
   activeReactionPicker = null;
 }
-
 
 // Send card reaction to server
 function sendCardReaction(cardId, reaction) {
@@ -3010,7 +3022,6 @@ function sendCardReaction(cardId, reaction) {
   }
 }
 
-
 // Display card reaction
 function displayCardReaction(cardId, reaction, fromPlayer, reactionData) {
   console.log(`[DEBUG] displayCardReaction: ${cardId}, ${reaction}, ${fromPlayer}`);
@@ -3036,7 +3047,6 @@ function displayCardReaction(cardId, reaction, fromPlayer, reactionData) {
   // Re-render all reactions for this card
   renderCardReactions(cardId);
 }
-
 
 // Render all reactions for a specific card
 function renderCardReactions(cardId) {
@@ -3072,7 +3082,6 @@ function renderCardReactions(cardId) {
   });
 }
 
-
 // Remove card reaction
 function removeCardReaction(cardId, reaction, fromPlayer) {
   if (!cardReactions.has(cardId)) return;
@@ -3088,7 +3097,7 @@ function removeCardReaction(cardId, reaction, fromPlayer) {
   renderCardReactions(cardId);
 }
 
-
+// Restore reactions after cards are re-rendered
 function restoreCardReactions() {
   cardReactions.forEach((reactionMap, cardId) => {
     renderCardReactions(cardId);
@@ -3523,15 +3532,15 @@ socket.on('matchStats', (stats) => {
 
 
 socket.on('cardReactionReceived', ({ cardId, reaction, fromPlayer, reactionData }) => {
-  console.log(`[SOCKET] Received card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
-  displayCardReaction(cardId, reaction, fromPlayer, reactionData);
-});
+    console.log(`[SOCKET] Received card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
+    displayCardReaction(cardId, reaction, fromPlayer, reactionData);
+  });
 
-// Handle card reaction removed
-socket.on('cardReactionRemoved', ({ cardId, reaction, fromPlayer }) => {
-  console.log(`[SOCKET] Removed card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
-  removeCardReaction(cardId, reaction, fromPlayer);
-});
+  // Handle card reaction removed
+  socket.on('cardReactionRemoved', ({ cardId, reaction, fromPlayer }) => {
+    console.log(`[SOCKET] Removed card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
+    removeCardReaction(cardId, reaction, fromPlayer);
+  });
 
 
 socket.on('gameOver', (data) => {
@@ -4124,8 +4133,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupCardReactionListeners();
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('.card-reaction-picker') && !e.target.closest('.card-reaction-trigger')) {
-      hideAllReactionPickers();
+    // Only hide if clicking outside AND not on a trigger that just opened
+    if (!e.target.closest('.card-reaction-picker') && 
+        !e.target.closest('.card-reaction-trigger')) {
+      // Small delay to prevent immediate closure
+      setTimeout(() => {
+        hideAllReactionPickers();
+      }, 50);
     }
   });
 
