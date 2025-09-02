@@ -441,26 +441,6 @@
   </div>
 
   <div id="messageContainer"></div>
-
-  <!-- Reaction Interface -->
-<div id="reactionContainer" class="reaction-container hidden">
-  <div class="reaction-buttons">
-    <button class="reaction-btn" data-reaction="👍" title="Good guess!">👍</button>
-    <button class="reaction-btn" data-reaction="🔥" title="Amazing!">🔥</button>
-    <button class="reaction-btn" data-reaction="😮" title="Surprised!">😮</button>
-    <button class="reaction-btn" data-reaction="🤔" title="Clever!">🤔</button>
-  </div>
-  <div class="reaction-timer">
-    <div class="reaction-timer-bar"></div>
-  </div>
-</div>
-
-<!-- Reaction Display -->
-<div id="reactionDisplay" class="reaction-display hidden">
-  <div class="reaction-emoji"></div>
-  <div class="reaction-message"></div>
-</div>
-
 </section>
 
 
@@ -527,8 +507,6 @@ let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
 let storedHeadshots = new Map();
-let activeReactionPicker = null;
-const cardReactions = new Map();
 const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
@@ -1924,21 +1902,17 @@ function renderSuccessfulGuesses() {
     const guesser = guessObj?.guesser || '';
     const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
     const headshotUrl = guessObj?.headshot_url || DEFAULT_PLAYER_IMAGE;
-    const cardId = `card-${index}-${name.replace(/\s+/g, '-')}`;
 
-    console.log(`[DEBUG] Creating card with ID: ${cardId}`);
+    console.log(`Card ${index}: ${name}, headshot: ${headshotUrl}`);
 
     if (!name) return;
 
     const card = document.createElement('div');
     card.className = 'player-card';
-    card.id = cardId;
     
     // Set the headshot URL as a CSS custom property
     card.style.setProperty('--headshot-url', `url("${headshotUrl}")`);
     card.setAttribute('data-headshot', headshotUrl);
-    card.setAttribute('data-player-name', name);
-    card.setAttribute('data-guesser', guesser);
     
     if (index === 0 && successfulGuesses.length > 1) {
       card.classList.add('new-card');
@@ -1952,19 +1926,17 @@ function renderSuccessfulGuesses() {
       card.classList.add('opponent-guess');
     }
 
-    // Card Header
+    // Rest of the card creation code remains the same...
     const headerEl = document.createElement('div');
     headerEl.className = 'card-header';
     headerEl.textContent = isLeadoff ? 'Leadoff Player' : 'Teammate';
     card.appendChild(headerEl);
 
-    // Player Name
     const nameEl = document.createElement('div');
     nameEl.className = 'card-player-name';
     nameEl.textContent = name;
     card.appendChild(nameEl);
 
-    // Connection Info
     const connectionEl = document.createElement('div');
     connectionEl.className = 'card-connection';
     
@@ -1982,7 +1954,6 @@ function renderSuccessfulGuesses() {
     }
     card.appendChild(connectionEl);
 
-    // Card Footer
     const footerEl = document.createElement('div');
     footerEl.className = 'card-footer';
     if (isLeadoff) {
@@ -1994,83 +1965,9 @@ function renderSuccessfulGuesses() {
     }
     card.appendChild(footerEl);
 
-    // *** REACTION SYSTEM ELEMENTS ***
-    
-    // Reaction Trigger Button
-    const reactionTrigger = document.createElement('button');
-    reactionTrigger.className = 'card-reaction-trigger';
-    reactionTrigger.innerHTML = '😊';
-    reactionTrigger.title = 'React to this guess';
-    reactionTrigger.setAttribute('data-card-id', cardId);
-    
-    // *** SINGLE EVENT LISTENER - ATTACHED DIRECTLY ***
-    reactionTrigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      console.log(`[DEBUG] Reaction trigger clicked for card: ${cardId}`);
-      toggleReactionPicker(cardId);
-    });
-    
-    card.appendChild(reactionTrigger);
-
-    // Reaction Display Area
-    const reactionDisplay = document.createElement('div');
-    reactionDisplay.className = 'card-reaction-display';
-    reactionDisplay.id = `reactions-${cardId}`;
-    card.appendChild(reactionDisplay);
-
-    // Reaction Picker
-    const reactionPicker = document.createElement('div');
-    reactionPicker.className = 'card-reaction-picker hidden';
-    reactionPicker.id = `picker-${cardId}`;
-    
-    // Create reaction options
-    const reactionOptions = ['👍', '🔥', '😮', '🤔', '💯', '❤️', '❌'];
-    const pickerContent = document.createElement('div');
-    pickerContent.className = 'reaction-picker-content';
-    
-    reactionOptions.forEach(reaction => {
-      const optionButton = document.createElement('button');
-      optionButton.className = 'reaction-option';
-      optionButton.textContent = reaction;
-      optionButton.setAttribute('data-reaction', reaction);
-      optionButton.setAttribute('data-card-id', cardId);
-      
-      // *** SINGLE EVENT LISTENER - ATTACHED DIRECTLY ***
-      if (reaction === '❌') {
-        // Close button
-        optionButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          console.log(`[DEBUG] Close button clicked for card: ${cardId}`);
-          hideAllReactionPickers();
-        });
-      } else {
-        // Reaction button
-        optionButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          console.log(`[DEBUG] Reaction ${reaction} clicked for card: ${cardId}`);
-          sendCardReaction(cardId, reaction);
-          hideAllReactionPickers();
-        });
-      }
-      
-      pickerContent.appendChild(optionButton);
-    });
-    
-    reactionPicker.appendChild(pickerContent);
-    card.appendChild(reactionPicker);
-
     deckContainer.appendChild(card);
   });
-
-  // Restore any existing reactions
-  restoreCardReactions();
 }
-
-
-
 
 
 
@@ -2925,200 +2822,8 @@ function showGameSettings() {
   }
 }
 
-// function setupCardReactionListeners() {
-//   // Reaction trigger buttons
-//   document.querySelectorAll('.card-reaction-trigger').forEach(trigger => {
-//     trigger.addEventListener('click', (e) => {
-//       e.stopPropagation();
-//       const cardId = e.target.getAttribute('data-card-id');
-//       toggleReactionPicker(cardId);
-//     });
-//   });
 
-//   // Reaction option buttons
-//   document.querySelectorAll('.reaction-option').forEach(option => {
-//     option.addEventListener('click', (e) => {
-//       e.stopPropagation();
-//       const reaction = e.target.getAttribute('data-reaction');
-//       const cardId = e.target.getAttribute('data-card-id');
-//       sendCardReaction(cardId, reaction);
-//       hideAllReactionPickers();
-//     });
-//   });
 
-//   // Close pickers when clicking outside
-//   document.addEventListener('click', (e) => {
-//     if (!e.target.closest('.card-reaction-picker') && !e.target.closest('.card-reaction-trigger')) {
-//       hideAllReactionPickers();
-//     }
-//   });
-// }
-
-// Toggle reaction picker for a specific card
-function toggleReactionPicker(cardId) {
-  console.log(`[DEBUG] toggleReactionPicker called for: ${cardId}`);
-  
-  const picker = document.getElementById(`picker-${cardId}`);
-  if (!picker) {
-    console.error(`[DEBUG] Picker not found for card: ${cardId}`);
-    return;
-  }
-
-  // Hide all other pickers first
-  document.querySelectorAll('.card-reaction-picker').forEach(p => {
-    if (p !== picker) {
-      p.classList.add('hidden');
-    }
-  });
-
-  // Simple toggle
-  if (picker.classList.contains('hidden')) {
-    console.log(`[DEBUG] Showing picker for: ${cardId}`);
-    picker.classList.remove('hidden');
-    activeReactionPicker = picker;
-  } else {
-    console.log(`[DEBUG] Hiding picker for: ${cardId}`);
-    picker.classList.add('hidden');
-    activeReactionPicker = null;
-  }
-}
-
-// Hide all reaction pickers
-function hideAllReactionPickers() {
-  console.log(`[DEBUG] Hiding all reaction pickers`);
-  document.querySelectorAll('.card-reaction-picker').forEach(picker => {
-    picker.classList.add('hidden');
-  });
-  activeReactionPicker = null;
-}
-
-// Send card reaction to server
-function sendCardReaction(cardId, reaction) {
-  console.log(`[DEBUG] sendCardReaction called: ${cardId}, ${reaction}`);
-  
-  const card = document.getElementById(cardId);
-  if (!card) {
-    console.error(`[DEBUG] Card not found: ${cardId}`);
-    return;
-  }
-
-  const playerName = card.getAttribute('data-player-name');
-  const guesser = card.getAttribute('data-guesser');
-  const currentRoomId = myRoomId || roomId;
-
-  if (socket && socket.connected && currentRoomId) {
-    socket.emit('cardReaction', {
-      roomId: currentRoomId,
-      cardId: cardId,
-      playerName: playerName,
-      guesser: guesser,
-      reaction: reaction,
-      fromPlayer: myUsername,
-      timestamp: Date.now()
-    });
-
-    console.log(`[CARD_REACTION] Sent ${reaction} reaction for ${playerName} card`);
-  }
-}
-
-// Display card reaction
-function displayCardReaction(cardId, reaction, fromPlayer, reactionData) {
-  console.log(`[DEBUG] displayCardReaction: ${cardId}, ${reaction}, ${fromPlayer}`);
-  
-  const reactionsContainer = document.getElementById(`reactions-${cardId}`);
-  if (!reactionsContainer) {
-    console.error(`[DEBUG] Reactions container not found for: ${cardId}`);
-    return;
-  }
-
-  // Update local reaction storage
-  if (!cardReactions.has(cardId)) {
-    cardReactions.set(cardId, new Map());
-  }
-  
-  const cardReactionMap = cardReactions.get(cardId);
-  if (!cardReactionMap.has(reaction)) {
-    cardReactionMap.set(reaction, new Set());
-  }
-  
-  cardReactionMap.get(reaction).add(fromPlayer);
-
-  // Re-render all reactions for this card
-  renderCardReactions(cardId);
-}
-
-// Render all reactions for a specific card
-function renderCardReactions(cardId) {
-  const reactionsContainer = document.getElementById(`reactions-${cardId}`);
-  if (!reactionsContainer) return;
-
-  const cardReactionMap = cardReactions.get(cardId);
-  if (!cardReactionMap) return;
-
-  reactionsContainer.innerHTML = '';
-
-  cardReactionMap.forEach((users, reaction) => {
-    if (users.size === 0) return;
-
-    const reactionItem = document.createElement('div');
-    reactionItem.className = 'card-reaction-item';
-    reactionItem.title = `${Array.from(users).join(', ')} reacted with ${reaction}`;
-
-    const emojiSpan = document.createElement('span');
-    emojiSpan.className = 'card-reaction-emoji';
-    emojiSpan.textContent = reaction;
-
-    const countSpan = document.createElement('span');
-    countSpan.className = 'card-reaction-count';
-    countSpan.textContent = users.size > 1 ? users.size : '';
-
-    reactionItem.appendChild(emojiSpan);
-    if (users.size > 1) {
-      reactionItem.appendChild(countSpan);
-    }
-
-    reactionsContainer.appendChild(reactionItem);
-  });
-}
-
-// Remove card reaction
-function removeCardReaction(cardId, reaction, fromPlayer) {
-  if (!cardReactions.has(cardId)) return;
-  
-  const cardReactionMap = cardReactions.get(cardId);
-  if (cardReactionMap.has(reaction)) {
-    cardReactionMap.get(reaction).delete(fromPlayer);
-    if (cardReactionMap.get(reaction).size === 0) {
-      cardReactionMap.delete(reaction);
-    }
-  }
-  
-  renderCardReactions(cardId);
-}
-
-// Restore reactions after cards are re-rendered
-function restoreCardReactions() {
-  cardReactions.forEach((reactionMap, cardId) => {
-    renderCardReactions(cardId);
-  });
-}
-
-// Debug function for testing
-function testReactionPicker() {
-  const firstCard = document.querySelector('.player-card');
-  if (firstCard) {
-    const cardId = firstCard.id;
-    console.log('Testing picker for card:', cardId);
-    
-    const picker = document.getElementById(`picker-${cardId}`);
-    if (picker) {
-      picker.classList.remove('hidden');
-      picker.style.background = 'yellow';
-      picker.style.border = '3px solid red';
-      console.log('Picker should now be visible with yellow background and red border');
-    }
-  }
-}
 
 function setupGameSettings() {
   console.log('[DEBUG] setupGameSettings called');
@@ -3546,17 +3251,6 @@ socket.on('matchStats', (stats) => {
   updateSplitScoreboard(stats, myUsername, opponentName);
 });
 
-
-socket.on('cardReactionReceived', ({ cardId, reaction, fromPlayer, reactionData }) => {
-    console.log(`[SOCKET] Received card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
-    displayCardReaction(cardId, reaction, fromPlayer, reactionData);
-  });
-
-  // Handle card reaction removed
-  socket.on('cardReactionRemoved', ({ cardId, reaction, fromPlayer }) => {
-    console.log(`[SOCKET] Removed card reaction: ${cardId}, ${reaction}, ${fromPlayer}`);
-    removeCardReaction(cardId, reaction, fromPlayer);
-  });
 
 
 socket.on('gameOver', (data) => {
@@ -4146,17 +3840,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
-
-//  document.addEventListener('click', (e) => {
-//     // Add a small delay to prevent immediate closure
-//     setTimeout(() => {
-//       // Only hide if clicking completely outside reaction system
-//       if (!e.target.closest('.card-reaction-picker') && 
-//           !e.target.closest('.card-reaction-trigger')) {
-//         hideAllReactionPickers();
-//       }
-//     }, 10); // 10ms delay prevents immediate closure
-//   });
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
