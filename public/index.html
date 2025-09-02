@@ -3870,12 +3870,6 @@ socket.on('turnEnded', (data) => {
     renderSuccessfulGuesses();
   }
 
-  if (data.guessedByUsername !== myUsername && data.successfulGuess) {
-    setTimeout(() => {
-      showReactionContainer();
-    }, 1500); // Small delay to let the turn update settle
-  }
-
   if (data.message) {
     showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
   }
