@@ -1635,164 +1635,144 @@ button:disabled {
   }
 }
 
-/* Reaction Container */
-/* Subtle Reaction Container */
-.reaction-container {
-  background: rgba(248, 250, 252, 0.95);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  animation: subtleSlideIn 0.3s ease-out;
-  backdrop-filter: blur(5px);
-  position: relative;
-  max-width: 300px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.reaction-prompt {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  opacity: 0.8;
-}
-
-.reaction-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.reaction-btn {
-  font-size: 1.25rem;
-  padding: 0.4rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-}
-
-.reaction-btn:hover {
-  opacity: 1;
-  background: var(--bg-secondary);
-  border-color: var(--border-hover);
-  transform: translateY(-1px);
-}
-
-.reaction-btn:active {
-  transform: translateY(0);
-  opacity: 0.8;
-}
-
-/* Subtle Reaction Display */
-.reaction-display {
-  position: fixed;
-  top: 20%;
-  right: 2rem;
-  z-index: 1000;
-  pointer-events: none;
-  animation: subtleFadeIn 0.4s ease-out;
-}
-
-.reaction-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 0.75rem;
-  box-shadow: var(--shadow-sm);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.reaction-emoji {
-  font-size: 1.1rem;
-  animation: subtleBounce 0.5s ease-out;
-}
-
-.reaction-text {
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* Subtle Animations */
-@keyframes subtleSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes subtleFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes subtleBounce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-/* Auto-hide animation */
-.reaction-display.fade-out {
-  animation: subtleFadeOut 0.3s ease-in forwards;
-}
-
-@keyframes subtleFadeOut {
-  to {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-}
-
-/* Extra subtle variant for very minimal intrusion */
-.reaction-container.minimal {
-  background: transparent;
+/* Reaction Trigger Button */
+.card-reaction-trigger {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
   border: none;
-  box-shadow: none;
-  padding: 0.5rem;
-}
-
-.reaction-container.minimal .reaction-prompt {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
   font-size: 0.75rem;
-  margin-bottom: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 10;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.reaction-container.minimal .reaction-btn {
-  opacity: 0.5;
-  font-size: 1.1rem;
-  width: 30px;
-  height: 30px;
+.player-card:hover .card-reaction-trigger {
+  opacity: 1;
 }
 
-.reaction-container.minimal .reaction-btn:hover {
-  opacity: 0.8;
-  background: rgba(37, 99, 235, 0.1);
+.card-reaction-trigger:hover {
+  transform: scale(1.1);
+  background: white;
 }
+
+/* Reaction Picker (iMessage style) */
+.card-reaction-picker {
+  position: absolute;
+  top: -3rem;
+  right: 0.5rem;
+  z-index: 1000;
+  animation: reactionPickerSlide 0.2s ease-out;
+}
+
+.card-reaction-picker.hidden {
+  display: none;
+}
+
+.reaction-picker-content {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 0.25rem;
+  display: flex;
+  gap: 0.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.reaction-option {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.reaction-option:hover {
+  background: var(--bg-secondary);
+  transform: scale(1.2);
+}
+
+.reaction-option:active {
+  transform: scale(0.9);
+}
+
+/* Reaction Display on Cards */
+.card-reaction-display {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  max-width: 60px;
+  justify-content: flex-end;
+}
+
+.card-reaction-item {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  animation: reactionAppear 0.3s ease-out;
+}
+
+.card-reaction-emoji {
+  font-size: 0.8rem;
+}
+
+.card-reaction-count {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 8px;
+  text-align: center;
+}
+
+/* Animations */
+@keyframes reactionPickerSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reactionAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 
 /* Messages */
 .message {
@@ -2956,35 +2936,35 @@ html {
     gap: 0.5rem;
   }
 
-   .reaction-container {
-    padding: 0.5rem 0.75rem;
-    margin: 0.25rem 0;
-    max-width: 250px;
+   .card-reaction-trigger {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+    top: 0.25rem;
+    right: 0.25rem;
+    opacity: 1; /* Always visible on mobile */
   }
   
-  .reaction-btn {
-    font-size: 1.1rem;
-    width: 32px;
-    height: 32px;
-    padding: 0.3rem;
+  .reaction-picker-content {
+    padding: 0.2rem;
+    gap: 0.2rem;
   }
   
-  .reaction-buttons {
-    gap: 0.4rem;
-  }
-  
-  .reaction-display {
-    top: 15%;
-    right: 1rem;
-  }
-  
-  .reaction-content {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
-  }
-  
-  .reaction-emoji {
+  .reaction-option {
+    width: 28px;
+    height: 28px;
     font-size: 1rem;
+  }
+  
+  .card-reaction-display {
+    bottom: 0.25rem;
+    right: 0.25rem;
+    max-width: 50px;
+  }
+  
+  .card-reaction-item {
+    padding: 0.1rem 0.25rem;
+    font-size: 0.65rem;
   }
 
   

@@ -523,48 +523,79 @@ socket.on('playerGuess', async ({ guess }) => {
 
 
 
-socket.on('playerReaction', ({ roomId, reaction, message, fromPlayer, timestamp }) => {
+socket.on('cardReaction', ({ roomId, cardId, playerName, guesser, reaction, fromPlayer, timestamp }) => {
   const game = games[roomId];
   if (!game) {
-    console.log(`[REACTION] No game found for room ${roomId}`);
+    console.log(`[CARD_REACTION] No game found for room ${roomId}`);
     return;
   }
   
-  // Validate reaction - updated with success-focused reactions
-  const validReactions = ['👍', '🔥', '😮', '🤔', '💯'];
+  // Validate reaction
+  const validReactions = ['👍', '🔥', '😮', '🤔', '💯', '❤️'];
   if (!validReactions.includes(reaction)) {
-    console.log(`[REACTION] Invalid reaction: ${reaction}`);
+    console.log(`[CARD_REACTION] Invalid reaction: ${reaction}`);
     return;
   }
   
   // Validate that the player is in the game
   if (!game.players.includes(socket.id)) {
-    console.log(`[REACTION] Player ${fromPlayer} not in game ${roomId}`);
+    console.log(`[CARD_REACTION] Player ${fromPlayer} not in game ${roomId}`);
     return;
   }
   
-  // Send reaction to other players in the room
-  socket.to(roomId).emit('reactionReceived', {
-    reaction: reaction,
-    message: message,
-    fromPlayer: fromPlayer,
-    timestamp: timestamp
-  });
-  
-  console.log(`[REACTION] ${fromPlayer} reacted with ${reaction} (${message}) to successful guess in room ${roomId}`);
-  
-  if (!game.reactionHistory) {
-    game.reactionHistory = [];
+  // Initialize card reactions storage
+  if (!game.cardReactions) {
+    game.cardReactions = new Map();
   }
   
-  game.reactionHistory.push({
-    reaction,
-    message,
-    fromPlayer,
-    timestamp,
-    turnCount: game.turnCount,
-    context: 'successful_guess'
-  });
+  if (!game.cardReactions.has(cardId)) {
+    game.cardReactions.set(cardId, new Map());
+  }
+  
+  const cardReactionMap = game.cardReactions.get(cardId);
+  
+  // Check if player already reacted with this emoji
+  if (cardReactionMap.has(reaction) && cardReactionMap.get(reaction).has(fromPlayer)) {
+    // Remove existing reaction (toggle behavior like iMessage)
+    cardReactionMap.get(reaction).delete(fromPlayer);
+    if (cardReactionMap.get(reaction).size === 0) {
+      cardReactionMap.delete(reaction);
+    }
+    
+    // Notify all players of reaction removal
+    io.to(roomId).emit('cardReactionRemoved', {
+      cardId,
+      reaction,
+      fromPlayer,
+      playerName,
+      guesser
+    });
+    
+    console.log(`[CARD_REACTION] ${fromPlayer} removed ${reaction} from ${playerName} card in room ${roomId}`);
+  } else {
+    // Add new reaction
+    if (!cardReactionMap.has(reaction)) {
+      cardReactionMap.set(reaction, new Set());
+    }
+    
+    cardReactionMap.get(reaction).add(fromPlayer);
+    
+    // Notify all players of new reaction
+    io.to(roomId).emit('cardReactionReceived', {
+      cardId,
+      reaction,
+      fromPlayer,
+      playerName,
+      guesser,
+      timestamp,
+      reactionData: {
+        totalCount: cardReactionMap.get(reaction).size,
+        users: Array.from(cardReactionMap.get(reaction))
+      }
+    });
+    
+    console.log(`[CARD_REACTION] ${fromPlayer} reacted with ${reaction} to ${playerName} card in room ${roomId}`);
+  }
 });
 
 

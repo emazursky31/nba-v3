@@ -527,8 +527,8 @@ let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
 let storedHeadshots = new Map();
-let reactionTimeout = null;
-let reactionCooldown = false;
+let activeReactionPicker = null;
+const cardReactions = new Map();
 const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
@@ -1924,17 +1924,19 @@ function renderSuccessfulGuesses() {
     const guesser = guessObj?.guesser || '';
     const sharedTeams = Array.isArray(guessObj?.sharedTeams) ? guessObj.sharedTeams : [];
     const headshotUrl = guessObj?.headshot_url || DEFAULT_PLAYER_IMAGE;
-
-    console.log(`Card ${index}: ${name}, headshot: ${headshotUrl}`);
+    const cardId = `card-${index}-${name.replace(/\s+/g, '-')}`;
 
     if (!name) return;
 
     const card = document.createElement('div');
     card.className = 'player-card';
+    card.id = cardId;
     
     // Set the headshot URL as a CSS custom property
     card.style.setProperty('--headshot-url', `url("${headshotUrl}")`);
     card.setAttribute('data-headshot', headshotUrl);
+    card.setAttribute('data-player-name', name);
+    card.setAttribute('data-guesser', guesser);
     
     if (index === 0 && successfulGuesses.length > 1) {
       card.classList.add('new-card');
@@ -1948,17 +1950,19 @@ function renderSuccessfulGuesses() {
       card.classList.add('opponent-guess');
     }
 
-    // Rest of the card creation code remains the same...
+    // Card Header
     const headerEl = document.createElement('div');
     headerEl.className = 'card-header';
     headerEl.textContent = isLeadoff ? 'Leadoff Player' : 'Teammate';
     card.appendChild(headerEl);
 
+    // Player Name
     const nameEl = document.createElement('div');
     nameEl.className = 'card-player-name';
     nameEl.textContent = name;
     card.appendChild(nameEl);
 
+    // Connection Info
     const connectionEl = document.createElement('div');
     connectionEl.className = 'card-connection';
     
@@ -1976,6 +1980,7 @@ function renderSuccessfulGuesses() {
     }
     card.appendChild(connectionEl);
 
+    // Card Footer
     const footerEl = document.createElement('div');
     footerEl.className = 'card-footer';
     if (isLeadoff) {
@@ -1987,9 +1992,44 @@ function renderSuccessfulGuesses() {
     }
     card.appendChild(footerEl);
 
+    
+    // Reaction Trigger Button (small emoji icon)
+    const reactionTrigger = document.createElement('button');
+    reactionTrigger.className = 'card-reaction-trigger';
+    reactionTrigger.innerHTML = '😊';
+    reactionTrigger.title = 'React to this guess';
+    reactionTrigger.setAttribute('data-card-id', cardId);
+    card.appendChild(reactionTrigger);
+
+    // Reaction Display Area (shows selected reactions)
+    const reactionDisplay = document.createElement('div');
+    reactionDisplay.className = 'card-reaction-display';
+    reactionDisplay.id = `reactions-${cardId}`;
+    card.appendChild(reactionDisplay);
+
+    // Hidden Reaction Picker (appears when trigger is clicked)
+    const reactionPicker = document.createElement('div');
+    reactionPicker.className = 'card-reaction-picker hidden';
+    reactionPicker.id = `picker-${cardId}`;
+    reactionPicker.innerHTML = `
+      <div class="reaction-picker-content">
+        <button class="reaction-option" data-reaction="👍" data-card-id="${cardId}">👍</button>
+        <button class="reaction-option" data-reaction="🔥" data-card-id="${cardId}">🔥</button>
+        <button class="reaction-option" data-reaction="😮" data-card-id="${cardId}">😮</button>
+        <button class="reaction-option" data-reaction="🤔" data-card-id="${cardId}">🤔</button>
+        <button class="reaction-option" data-reaction="💯" data-card-id="${cardId}">💯</button>
+        <button class="reaction-option" data-reaction="❤️" data-card-id="${cardId}">❤️</button>
+      </div>
+    `;
+    card.appendChild(reactionPicker);
+
     deckContainer.appendChild(card);
   });
+
+  // Setup reaction listeners for all cards
+  setupCardReactionListeners();
 }
+
 
 
 
@@ -2844,98 +2884,156 @@ function showGameSettings() {
   }
 }
 
-function setupReactionListeners() {
-  const reactionButtons = document.querySelectorAll('.reaction-btn');
-  
-  reactionButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      if (reactionCooldown) return;
-      
-      const reaction = e.target.dataset.reaction;
-      const title = e.target.title;
-      
-      sendReaction(reaction, title);
-      hideReactionContainer();
-      
-      // Add cooldown to prevent spam
-      reactionCooldown = true;
-      setTimeout(() => {
-        reactionCooldown = false;
-      }, 3000);
+function setupCardReactionListeners() {
+  // Reaction trigger buttons
+  document.querySelectorAll('.card-reaction-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cardId = e.target.getAttribute('data-card-id');
+      toggleReactionPicker(cardId);
     });
+  });
+
+  // Reaction option buttons
+  document.querySelectorAll('.reaction-option').forEach(option => {
+    option.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const reaction = e.target.getAttribute('data-reaction');
+      const cardId = e.target.getAttribute('data-card-id');
+      sendCardReaction(cardId, reaction);
+      hideAllReactionPickers();
+    });
+  });
+
+  // Close pickers when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.card-reaction-picker') && !e.target.closest('.card-reaction-trigger')) {
+      hideAllReactionPickers();
+    }
   });
 }
 
-// Send reaction to server
-function sendReaction(reaction, message) {
+// Toggle reaction picker for a specific card
+function toggleReactionPicker(cardId) {
+  const picker = document.getElementById(`picker-${cardId}`);
+  if (!picker) return;
+
+  // Hide other open pickers
+  if (activeReactionPicker && activeReactionPicker !== picker) {
+    activeReactionPicker.classList.add('hidden');
+  }
+
+  // Toggle current picker
+  if (picker.classList.contains('hidden')) {
+    picker.classList.remove('hidden');
+    activeReactionPicker = picker;
+  } else {
+    picker.classList.add('hidden');
+    activeReactionPicker = null;
+  }
+}
+
+// Hide all reaction pickers
+function hideAllReactionPickers() {
+  document.querySelectorAll('.card-reaction-picker').forEach(picker => {
+    picker.classList.add('hidden');
+  });
+  activeReactionPicker = null;
+}
+
+// Send card reaction to server
+function sendCardReaction(cardId, reaction) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  const playerName = card.getAttribute('data-player-name');
+  const guesser = card.getAttribute('data-guesser');
   const currentRoomId = myRoomId || roomId;
+
   if (socket && socket.connected && currentRoomId) {
-    socket.emit('playerReaction', {
+    socket.emit('cardReaction', {
       roomId: currentRoomId,
+      cardId: cardId,
+      playerName: playerName,
+      guesser: guesser,
       reaction: reaction,
-      message: message,
       fromPlayer: myUsername,
       timestamp: Date.now()
     });
-    
-    console.log(`[REACTION] Sent ${reaction} reaction for successful guess`);
+
+    console.log(`[CARD_REACTION] Sent ${reaction} reaction for ${playerName} card`);
   }
 }
 
-// Show reaction container with auto-hide (only for successful guesses)
-function showReactionContainer() {
-  if (reactionCooldown) return;
-  
-  const container = document.getElementById('reactionContainer');
-  container.classList.remove('hidden');
-  
-  // Clear any existing timeout
-  if (reactionTimeout) {
-    clearTimeout(reactionTimeout);
+// Display card reaction
+function displayCardReaction(cardId, reaction, fromPlayer, reactionData) {
+  const reactionsContainer = document.getElementById(`reactions-${cardId}`);
+  if (!reactionsContainer) return;
+
+  // Update local reaction storage
+  if (!cardReactions.has(cardId)) {
+    cardReactions.set(cardId, new Map());
   }
   
-  // Auto-hide after 4 seconds (shorter for subtlety)
-  reactionTimeout = setTimeout(() => {
-    hideReactionContainer();
-  }, 4000);
-}
-
-// Hide reaction container
-function hideReactionContainer() {
-  const container = document.getElementById('reactionContainer');
-  container.classList.add('hidden');
-  
-  if (reactionTimeout) {
-    clearTimeout(reactionTimeout);
-    reactionTimeout = null;
+  const cardReactionMap = cardReactions.get(cardId);
+  if (!cardReactionMap.has(reaction)) {
+    cardReactionMap.set(reaction, new Set());
   }
+  
+  cardReactionMap.get(reaction).add(fromPlayer);
+
+  // Re-render all reactions for this card
+  renderCardReactions(cardId);
 }
 
-// Display received reaction subtly
-function displayReaction(reaction, message, fromPlayer) {
-  const display = document.getElementById('reactionDisplay');
-  const emojiEl = display.querySelector('.reaction-emoji');
-  const textEl = display.querySelector('.reaction-text');
-  
-  emojiEl.textContent = reaction;
-  textEl.textContent = `${fromPlayer}: ${message}`;
-  
-  display.classList.remove('hidden', 'fade-out');
-  
-  // Hide after 3 seconds with fade out
-  setTimeout(() => {
-    display.classList.add('fade-out');
-    setTimeout(() => {
-      display.classList.add('hidden');
-    }, 300);
-  }, 3000);
+// Render all reactions for a specific card
+function renderCardReactions(cardId) {
+  const reactionsContainer = document.getElementById(`reactions-${cardId}`);
+  if (!reactionsContainer) return;
+
+  const cardReactionMap = cardReactions.get(cardId);
+  if (!cardReactionMap) return;
+
+  reactionsContainer.innerHTML = '';
+
+  cardReactionMap.forEach((users, reaction) => {
+    if (users.size === 0) return;
+
+    const reactionItem = document.createElement('div');
+    reactionItem.className = 'card-reaction-item';
+    reactionItem.title = `${Array.from(users).join(', ')} reacted with ${reaction}`;
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'card-reaction-emoji';
+    emojiSpan.textContent = reaction;
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'card-reaction-count';
+    countSpan.textContent = users.size > 1 ? users.size : '';
+
+    reactionItem.appendChild(emojiSpan);
+    if (users.size > 1) {
+      reactionItem.appendChild(countSpan);
+    }
+
+    reactionsContainer.appendChild(reactionItem);
+  });
 }
 
-function enableMinimalReactions() {
-  const container = document.getElementById('reactionContainer');
-  container.classList.add('minimal');
+// Remove card reaction
+function removeCardReaction(cardId, reaction, fromPlayer) {
+  if (!cardReactions.has(cardId)) return;
+  
+  const cardReactionMap = cardReactions.get(cardId);
+  if (cardReactionMap.has(reaction)) {
+    cardReactionMap.get(reaction).delete(fromPlayer);
+    if (cardReactionMap.get(reaction).size === 0) {
+      cardReactionMap.delete(reaction);
+    }
+  }
+  
+  renderCardReactions(cardId);
 }
-
 
 function setupGameSettings() {
   console.log('[DEBUG] setupGameSettings called');
@@ -3364,10 +3462,13 @@ socket.on('matchStats', (stats) => {
 });
 
 
-socket.on('reactionReceived', ({ reaction, message, fromPlayer }) => {
-  displayReaction(reaction, message, fromPlayer);
+socket.on('cardReactionReceived', ({ cardId, reaction, fromPlayer, reactionData }) => {
+  displayCardReaction(cardId, reaction, fromPlayer, reactionData);
 });
 
+socket.on('cardReactionRemoved', ({ cardId, reaction, fromPlayer }) => {
+  removeCardReaction(cardId, reaction, fromPlayer);
+});
 
 
 socket.on('gameOver', (data) => {
@@ -3963,10 +4064,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
-  setupReactionListeners();
+  setupCardReactionListeners();
 
-  // Optional: Enable minimal mode for extra subtlety
-  enableMinimalReactions();
+
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
