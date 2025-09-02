@@ -1635,6 +1635,164 @@ button:disabled {
   }
 }
 
+/* Reaction Container */
+/* Subtle Reaction Container */
+.reaction-container {
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: subtleSlideIn 0.3s ease-out;
+  backdrop-filter: blur(5px);
+  position: relative;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reaction-prompt {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.reaction-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.reaction-btn {
+  font-size: 1.25rem;
+  padding: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
+
+.reaction-btn:hover {
+  opacity: 1;
+  background: var(--bg-secondary);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+
+.reaction-btn:active {
+  transform: translateY(0);
+  opacity: 0.8;
+}
+
+/* Subtle Reaction Display */
+.reaction-display {
+  position: fixed;
+  top: 20%;
+  right: 2rem;
+  z-index: 1000;
+  pointer-events: none;
+  animation: subtleFadeIn 0.4s ease-out;
+}
+
+.reaction-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.reaction-emoji {
+  font-size: 1.1rem;
+  animation: subtleBounce 0.5s ease-out;
+}
+
+.reaction-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Subtle Animations */
+@keyframes subtleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes subtleBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Auto-hide animation */
+.reaction-display.fade-out {
+  animation: subtleFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes subtleFadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Extra subtle variant for very minimal intrusion */
+.reaction-container.minimal {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0.5rem;
+}
+
+.reaction-container.minimal .reaction-prompt {
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.reaction-container.minimal .reaction-btn {
+  opacity: 0.5;
+  font-size: 1.1rem;
+  width: 30px;
+  height: 30px;
+}
+
+.reaction-container.minimal .reaction-btn:hover {
+  opacity: 0.8;
+  background: rgba(37, 99, 235, 0.1);
+}
 
 /* Messages */
 .message {
@@ -2796,6 +2954,37 @@ html {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+   .reaction-container {
+    padding: 0.5rem 0.75rem;
+    margin: 0.25rem 0;
+    max-width: 250px;
+  }
+  
+  .reaction-btn {
+    font-size: 1.1rem;
+    width: 32px;
+    height: 32px;
+    padding: 0.3rem;
+  }
+  
+  .reaction-buttons {
+    gap: 0.4rem;
+  }
+  
+  .reaction-display {
+    top: 15%;
+    right: 1rem;
+  }
+  
+  .reaction-content {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .reaction-emoji {
+    font-size: 1rem;
   }
 
   

@@ -522,6 +522,53 @@ socket.on('playerGuess', async ({ guess }) => {
 });
 
 
+
+socket.on('playerReaction', ({ roomId, reaction, message, fromPlayer, timestamp }) => {
+  const game = games[roomId];
+  if (!game) {
+    console.log(`[REACTION] No game found for room ${roomId}`);
+    return;
+  }
+  
+  // Validate reaction - updated with success-focused reactions
+  const validReactions = ['👍', '🔥', '😮', '🤔', '💯'];
+  if (!validReactions.includes(reaction)) {
+    console.log(`[REACTION] Invalid reaction: ${reaction}`);
+    return;
+  }
+  
+  // Validate that the player is in the game
+  if (!game.players.includes(socket.id)) {
+    console.log(`[REACTION] Player ${fromPlayer} not in game ${roomId}`);
+    return;
+  }
+  
+  // Send reaction to other players in the room
+  socket.to(roomId).emit('reactionReceived', {
+    reaction: reaction,
+    message: message,
+    fromPlayer: fromPlayer,
+    timestamp: timestamp
+  });
+  
+  console.log(`[REACTION] ${fromPlayer} reacted with ${reaction} (${message}) to successful guess in room ${roomId}`);
+  
+  if (!game.reactionHistory) {
+    game.reactionHistory = [];
+  }
+  
+  game.reactionHistory.push({
+    reaction,
+    message,
+    fromPlayer,
+    timestamp,
+    turnCount: game.turnCount,
+    context: 'successful_guess'
+  });
+});
+
+
+
 socket.on('playerSkip', () => {
     const roomId = socketRoomMap[socket.id];
     const game = games[roomId];

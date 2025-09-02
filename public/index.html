@@ -441,6 +441,26 @@
   </div>
 
   <div id="messageContainer"></div>
+
+  <!-- Reaction Interface -->
+<div id="reactionContainer" class="reaction-container hidden">
+  <div class="reaction-buttons">
+    <button class="reaction-btn" data-reaction="👍" title="Good guess!">👍</button>
+    <button class="reaction-btn" data-reaction="🔥" title="Amazing!">🔥</button>
+    <button class="reaction-btn" data-reaction="😮" title="Surprised!">😮</button>
+    <button class="reaction-btn" data-reaction="🤔" title="Clever!">🤔</button>
+  </div>
+  <div class="reaction-timer">
+    <div class="reaction-timer-bar"></div>
+  </div>
+</div>
+
+<!-- Reaction Display -->
+<div id="reactionDisplay" class="reaction-display hidden">
+  <div class="reaction-emoji"></div>
+  <div class="reaction-message"></div>
+</div>
+
 </section>
 
 
@@ -507,6 +527,8 @@ let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
 let storedHeadshots = new Map();
+let reactionTimeout = null;
+let reactionCooldown = false;
 const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
@@ -2822,7 +2844,97 @@ function showGameSettings() {
   }
 }
 
+function setupReactionListeners() {
+  const reactionButtons = document.querySelectorAll('.reaction-btn');
+  
+  reactionButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      if (reactionCooldown) return;
+      
+      const reaction = e.target.dataset.reaction;
+      const title = e.target.title;
+      
+      sendReaction(reaction, title);
+      hideReactionContainer();
+      
+      // Add cooldown to prevent spam
+      reactionCooldown = true;
+      setTimeout(() => {
+        reactionCooldown = false;
+      }, 3000);
+    });
+  });
+}
 
+// Send reaction to server
+function sendReaction(reaction, message) {
+  const currentRoomId = myRoomId || roomId;
+  if (socket && socket.connected && currentRoomId) {
+    socket.emit('playerReaction', {
+      roomId: currentRoomId,
+      reaction: reaction,
+      message: message,
+      fromPlayer: myUsername,
+      timestamp: Date.now()
+    });
+    
+    console.log(`[REACTION] Sent ${reaction} reaction for successful guess`);
+  }
+}
+
+// Show reaction container with auto-hide (only for successful guesses)
+function showReactionContainer() {
+  if (reactionCooldown) return;
+  
+  const container = document.getElementById('reactionContainer');
+  container.classList.remove('hidden');
+  
+  // Clear any existing timeout
+  if (reactionTimeout) {
+    clearTimeout(reactionTimeout);
+  }
+  
+  // Auto-hide after 4 seconds (shorter for subtlety)
+  reactionTimeout = setTimeout(() => {
+    hideReactionContainer();
+  }, 4000);
+}
+
+// Hide reaction container
+function hideReactionContainer() {
+  const container = document.getElementById('reactionContainer');
+  container.classList.add('hidden');
+  
+  if (reactionTimeout) {
+    clearTimeout(reactionTimeout);
+    reactionTimeout = null;
+  }
+}
+
+// Display received reaction subtly
+function displayReaction(reaction, message, fromPlayer) {
+  const display = document.getElementById('reactionDisplay');
+  const emojiEl = display.querySelector('.reaction-emoji');
+  const textEl = display.querySelector('.reaction-text');
+  
+  emojiEl.textContent = reaction;
+  textEl.textContent = `${fromPlayer}: ${message}`;
+  
+  display.classList.remove('hidden', 'fade-out');
+  
+  // Hide after 3 seconds with fade out
+  setTimeout(() => {
+    display.classList.add('fade-out');
+    setTimeout(() => {
+      display.classList.add('hidden');
+    }, 300);
+  }, 3000);
+}
+
+function enableMinimalReactions() {
+  const container = document.getElementById('reactionContainer');
+  container.classList.add('minimal');
+}
 
 
 function setupGameSettings() {
@@ -3252,6 +3364,11 @@ socket.on('matchStats', (stats) => {
 });
 
 
+socket.on('reactionReceived', ({ reaction, message, fromPlayer }) => {
+  displayReaction(reaction, message, fromPlayer);
+});
+
+
 
 socket.on('gameOver', (data) => {
   console.log('[DEBUG] gameOver received:', data);
@@ -3589,6 +3706,12 @@ socket.on('turnEnded', (data) => {
     renderSuccessfulGuesses();
   }
 
+  if (data.guessedByUsername !== myUsername && data.successfulGuess) {
+    setTimeout(() => {
+      showReactionContainer();
+    }, 1500); // Small delay to let the turn update settle
+  }
+
   if (data.message) {
     showMessage(data.message, data.message.startsWith('Incorrect guess') ? 'error' : 'info');
   }
@@ -3840,6 +3963,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
+  setupReactionListeners();
+
+  // Optional: Enable minimal mode for extra subtlety
+  // enableMinimalReactions();
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
