@@ -644,12 +644,6 @@ nav {
   min-width: 200px;
 }
 
-
-/* Smooth transitions for selection grids */
-.selection-grid {
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
 .selection-grid.fade-out {
   opacity: 0;
   transform: translateY(-10px);
