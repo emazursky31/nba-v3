@@ -1996,14 +1996,14 @@ function renderSuccessfulGuesses() {
 
     // *** REACTION SYSTEM ELEMENTS ***
     
-    // Reaction Trigger Button (small emoji icon)
+    // Reaction Trigger Button
     const reactionTrigger = document.createElement('button');
     reactionTrigger.className = 'card-reaction-trigger';
     reactionTrigger.innerHTML = '😊';
     reactionTrigger.title = 'React to this guess';
     reactionTrigger.setAttribute('data-card-id', cardId);
     
-    // Add event listener with proper event handling
+    // *** SINGLE EVENT LISTENER - ATTACHED DIRECTLY ***
     reactionTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -2013,19 +2013,19 @@ function renderSuccessfulGuesses() {
     
     card.appendChild(reactionTrigger);
 
-    // Reaction Display Area (shows selected reactions)
+    // Reaction Display Area
     const reactionDisplay = document.createElement('div');
     reactionDisplay.className = 'card-reaction-display';
     reactionDisplay.id = `reactions-${cardId}`;
     card.appendChild(reactionDisplay);
 
-    // Hidden Reaction Picker (appears when trigger is clicked)
+    // Reaction Picker
     const reactionPicker = document.createElement('div');
     reactionPicker.className = 'card-reaction-picker hidden';
     reactionPicker.id = `picker-${cardId}`;
     
-    // Create reaction options with individual event listeners
-    const reactionOptions = ['👍', '🔥', '😮', '🤔', '💯', '❤️'];
+    // Create reaction options
+    const reactionOptions = ['👍', '🔥', '😮', '🤔', '💯', '❤️', '❌'];
     const pickerContent = document.createElement('div');
     pickerContent.className = 'reaction-picker-content';
     
@@ -2036,14 +2036,25 @@ function renderSuccessfulGuesses() {
       optionButton.setAttribute('data-reaction', reaction);
       optionButton.setAttribute('data-card-id', cardId);
       
-      // Add event listener with proper event handling
-      optionButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        console.log(`[DEBUG] Reaction ${reaction} clicked for card: ${cardId}`);
-        sendCardReaction(cardId, reaction);
-        hideAllReactionPickers();
-      });
+      // *** SINGLE EVENT LISTENER - ATTACHED DIRECTLY ***
+      if (reaction === '❌') {
+        // Close button
+        optionButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          console.log(`[DEBUG] Close button clicked for card: ${cardId}`);
+          hideAllReactionPickers();
+        });
+      } else {
+        // Reaction button
+        optionButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          console.log(`[DEBUG] Reaction ${reaction} clicked for card: ${cardId}`);
+          sendCardReaction(cardId, reaction);
+          hideAllReactionPickers();
+        });
+      }
       
       pickerContent.appendChild(optionButton);
     });
@@ -2057,6 +2068,7 @@ function renderSuccessfulGuesses() {
   // Restore any existing reactions
   restoreCardReactions();
 }
+
 
 
 
@@ -2913,34 +2925,34 @@ function showGameSettings() {
   }
 }
 
-function setupCardReactionListeners() {
-  // Reaction trigger buttons
-  document.querySelectorAll('.card-reaction-trigger').forEach(trigger => {
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const cardId = e.target.getAttribute('data-card-id');
-      toggleReactionPicker(cardId);
-    });
-  });
+// function setupCardReactionListeners() {
+//   // Reaction trigger buttons
+//   document.querySelectorAll('.card-reaction-trigger').forEach(trigger => {
+//     trigger.addEventListener('click', (e) => {
+//       e.stopPropagation();
+//       const cardId = e.target.getAttribute('data-card-id');
+//       toggleReactionPicker(cardId);
+//     });
+//   });
 
-  // Reaction option buttons
-  document.querySelectorAll('.reaction-option').forEach(option => {
-    option.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const reaction = e.target.getAttribute('data-reaction');
-      const cardId = e.target.getAttribute('data-card-id');
-      sendCardReaction(cardId, reaction);
-      hideAllReactionPickers();
-    });
-  });
+//   // Reaction option buttons
+//   document.querySelectorAll('.reaction-option').forEach(option => {
+//     option.addEventListener('click', (e) => {
+//       e.stopPropagation();
+//       const reaction = e.target.getAttribute('data-reaction');
+//       const cardId = e.target.getAttribute('data-card-id');
+//       sendCardReaction(cardId, reaction);
+//       hideAllReactionPickers();
+//     });
+//   });
 
-  // Close pickers when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.card-reaction-picker') && !e.target.closest('.card-reaction-trigger')) {
-      hideAllReactionPickers();
-    }
-  });
-}
+//   // Close pickers when clicking outside
+//   document.addEventListener('click', (e) => {
+//     if (!e.target.closest('.card-reaction-picker') && !e.target.closest('.card-reaction-trigger')) {
+//       hideAllReactionPickers();
+//     }
+//   });
+// }
 
 // Toggle reaction picker for a specific card
 function toggleReactionPicker(cardId) {
@@ -2959,19 +2971,11 @@ function toggleReactionPicker(cardId) {
     }
   });
 
-  // Toggle current picker
-  const isHidden = picker.classList.contains('hidden');
-  
-  if (isHidden) {
+  // Simple toggle
+  if (picker.classList.contains('hidden')) {
     console.log(`[DEBUG] Showing picker for: ${cardId}`);
     picker.classList.remove('hidden');
     activeReactionPicker = picker;
-    
-    // Debug: Check if picker is actually visible
-    setTimeout(() => {
-      const computedStyle = window.getComputedStyle(picker);
-      console.log(`[DEBUG] Picker visibility: ${computedStyle.visibility}, opacity: ${computedStyle.opacity}`);
-    }, 100);
   } else {
     console.log(`[DEBUG] Hiding picker for: ${cardId}`);
     picker.classList.add('hidden');
@@ -3014,8 +3018,6 @@ function sendCardReaction(cardId, reaction) {
     });
 
     console.log(`[CARD_REACTION] Sent ${reaction} reaction for ${playerName} card`);
-  } else {
-    console.error(`[DEBUG] Cannot send reaction - socket not connected or no room`);
   }
 }
 
@@ -3099,6 +3101,23 @@ function restoreCardReactions() {
   cardReactions.forEach((reactionMap, cardId) => {
     renderCardReactions(cardId);
   });
+}
+
+// Debug function for testing
+function testReactionPicker() {
+  const firstCard = document.querySelector('.player-card');
+  if (firstCard) {
+    const cardId = firstCard.id;
+    console.log('Testing picker for card:', cardId);
+    
+    const picker = document.getElementById(`picker-${cardId}`);
+    if (picker) {
+      picker.classList.remove('hidden');
+      picker.style.background = 'yellow';
+      picker.style.border = '3px solid red';
+      console.log('Picker should now be visible with yellow background and red border');
+    }
+  }
 }
 
 function setupGameSettings() {
@@ -4127,18 +4146,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
-  setupCardReactionListeners();
 
- document.addEventListener('click', (e) => {
-    // Add a small delay to prevent immediate closure
-    setTimeout(() => {
-      // Only hide if clicking completely outside reaction system
-      if (!e.target.closest('.card-reaction-picker') && 
-          !e.target.closest('.card-reaction-trigger')) {
-        hideAllReactionPickers();
-      }
-    }, 10); // 10ms delay prevents immediate closure
-  });
+//  document.addEventListener('click', (e) => {
+//     // Add a small delay to prevent immediate closure
+//     setTimeout(() => {
+//       // Only hide if clicking completely outside reaction system
+//       if (!e.target.closest('.card-reaction-picker') && 
+//           !e.target.closest('.card-reaction-trigger')) {
+//         hideAllReactionPickers();
+//       }
+//     }, 10); // 10ms delay prevents immediate closure
+//   });
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
