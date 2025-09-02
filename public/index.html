@@ -4129,15 +4129,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupStepNavigation();
   setupCardReactionListeners();
 
-document.addEventListener('click', (e) => {
-    // Only hide if clicking outside AND not on a trigger that just opened
-    if (!e.target.closest('.card-reaction-picker') && 
-        !e.target.closest('.card-reaction-trigger')) {
-      // Small delay to prevent immediate closure
-      setTimeout(() => {
+ document.addEventListener('click', (e) => {
+    // Add a small delay to prevent immediate closure
+    setTimeout(() => {
+      // Only hide if clicking completely outside reaction system
+      if (!e.target.closest('.card-reaction-picker') && 
+          !e.target.closest('.card-reaction-trigger')) {
         hideAllReactionPickers();
-      }, 50);
-    }
+      }
+    }, 10); // 10ms delay prevents immediate closure
   });
 
   // Cache DOM element references
