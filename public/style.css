@@ -2152,6 +2152,7 @@ section[data-route="/profile"] {
 /* Ensure home section has relative positioning for absolute button */
 #homeSelection {
   position: relative;
+  flex-shrink: 0;
 }
 
 
