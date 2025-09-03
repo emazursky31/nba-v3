@@ -2551,7 +2551,7 @@ section[data-route="/profile"] {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 2rem !important;
-    max-width: 800px !important;
+    max-width: 1200px !important;
     margin: 0 auto !important;
     padding: 2rem !important;
   }
