@@ -568,6 +568,7 @@ nav {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+  width: 100%;
 }
 
 .era-option, .time-option {
@@ -587,6 +588,8 @@ nav {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  width: 100%; 
+  min-height: 120px;
 }
 
 .era-option input:checked + .era-card,
