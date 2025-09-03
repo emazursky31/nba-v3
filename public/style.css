@@ -2846,7 +2846,16 @@ html {
     .settings-unified-grid {
       grid-template-columns: 1fr;
       gap: 1.5rem;
+      max-width: 100%;
     }
+
+    .settings-section {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  /* Match the selection-card styling for consistency */
+  min-height: auto;
+}
   
  section[data-route] {
     padding: 1rem 1.5rem;  /* Even more compact on mobile */
