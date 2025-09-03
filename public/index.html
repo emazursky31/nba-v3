@@ -491,6 +491,8 @@
   let gameTypeSelected = false;
   let selectedTimeLimit = 30; 
   let gameSettingsSelected = false;
+  let isPageVisible = true;
+  let visibilityTimer = null;
 
   // DOM element references (assigned in DOMContentLoaded)
 let guessInput = null;
@@ -3025,7 +3027,7 @@ socket.on('disconnect', (reason) => {
           });
         }
       }
-    }, 10000); // 10 second grace period
+    }, 30000); // 30 second grace period
   }
 });
 
@@ -4040,18 +4042,39 @@ try {
   await forceSignOut();
 }
 
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Page became hidden (switched to another app)
+    isPageVisible = false;
+    console.log('[DEBUG] Page hidden - user switched apps');
+    
+    // Don't immediately mark as leaving
+    clearTimeout(visibilityTimer);
+  } else {
+    // Page became visible again
+    isPageVisible = true;
+    console.log('[DEBUG] Page visible - user returned');
+    
+    // If socket disconnected while away, try to reconnect
+    if (!socket.connected && (gameStarted && !gameOver)) {
+      console.log('[DEBUG] Attempting to reconnect after returning to app');
+      // Socket.io will automatically try to reconnect
+    }
+  }
+});
+
   // Event listeners for page lifecycle
   window.addEventListener('popstate', () => {
     navigateTo(window.location.pathname, { skipPush: true });
   });
 
-  window.addEventListener('beforeunload', (e) => {
-  // ✅ COVERS: Tab close, browser close, page refresh, navigation away
-  if ((gameStarted && !gameOver) || myRoomId) {
-    console.log('[DEBUG] Page unloading during active game - notifying opponent');
+ window.addEventListener('beforeunload', (e) => {
+  // Only trigger if the page is actually being closed, not just hidden
+  if (isPageVisible && ((gameStarted && !gameOver) || myRoomId)) {
+    console.log('[DEBUG] Page actually unloading during active game');
     
     if (socket && socket.connected) {
-      // Use playerSignedOut for immediate notification
       socket.emit('playerSignedOut', {
         roomId: myRoomId || roomId,
         username: myUsername,
