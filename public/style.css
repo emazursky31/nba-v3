@@ -630,7 +630,8 @@ nav {
   align-items: center;
   gap: 1rem;
   margin-bottom: 1rem;
-  grid-column: 1 / -1; /* Span full width */
+  grid-column: 1 / -1; 
+  justify-content: center;
 }
 
 .settings-header .settings-title {
@@ -952,6 +953,7 @@ section[data-route] {
   margin: 1rem auto;
   border: 2px solid var(--border-color);
   max-width: 1200px;
+  width:100%;
 }
 
 
@@ -2838,8 +2840,13 @@ html {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    justify-content:center;
   }
 
+    .settings-unified-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
   
  section[data-route] {
     padding: 1rem 1.5rem;  /* Even more compact on mobile */
