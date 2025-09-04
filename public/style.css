@@ -204,7 +204,7 @@ nav {
 
 
 .main-content {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -226,7 +226,7 @@ nav {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -293,7 +293,7 @@ nav {
 
 /* Game Setup Container */
 .game-setup-container {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -654,7 +654,7 @@ nav {
 
 #gameSettings:not(.hidden) {
   display: block !important;
-  max-width: 1200px !important;
+  max-width: 800px !important;
   margin: 0 auto !important;
   padding: 2rem !important;
 }
@@ -874,7 +874,7 @@ nav {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -952,7 +952,7 @@ section[data-route] {
   box-shadow: var(--shadow-xl);
   margin: 1rem auto;
   border: 2px solid var(--border-color);
-  max-width: 1200px;
+  max-width: 800px;
   width:100%;
 }
 
@@ -1091,7 +1091,7 @@ button:disabled {
   overflow: visible;
   overflow-x: hidden;
   padding-bottom: 1rem;
-  max-width: 1200px;
+  max-width: 800px;
   min-height: 600px;
   width: 100%;
   margin: 0 auto;
@@ -1841,7 +1841,7 @@ button:disabled {
   box-shadow: var(--shadow-xl);
   position: relative;
   margin-bottom: 1rem;
-  max-width: 1200px;
+  max-width: 800px;
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -1919,7 +1919,7 @@ button:disabled {
 /* Auth Forms */
 .auth-tabs-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 2rem auto;
 }
 
@@ -1999,7 +1999,7 @@ button:disabled {
   box-shadow: var(--shadow-xl);
   padding: 2.5rem 2rem;
   width: 100%; /* Full width of container */
-  max-width: 1200px; /* Match the container max-width */
+  max-width: 800px; /* Match the container max-width */
   display: none;
   flex-direction: column;
   gap: 1.5rem;
@@ -2064,7 +2064,7 @@ button:disabled {
 /* Home Page Tabs - Similar to Auth Tabs */
 .home-tabs-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 2rem auto;
 }
 
@@ -2137,7 +2137,7 @@ button:disabled {
 
 /* Profile Section Styling */
 .profile-container {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 1.5rem;
   display: grid;
@@ -2449,7 +2449,7 @@ section[data-route="/profile"] {
 /* Game End Card Spread Animation */
 /* .card-deck-container.game-ended {
   width: 100%;
-  max-width: 1200px;
+  max-width: 800px;
   height: 350px;
   margin: 2rem auto;
   display: flex;
@@ -2515,7 +2515,7 @@ section[data-route="/profile"] {
   min-height: auto !important;
   max-height: none !important;
   padding-bottom: 2rem;
-  max-width: 1200px !important;
+  max-width: 800px !important;
   width: 100%;
   margin: 0 auto;
   padding-left: 1.5rem;
@@ -2531,7 +2531,7 @@ section[data-route="/profile"] {
     min-height: auto !important;
     max-height: none !important;
     padding-bottom: 1rem;
-    max-width: 1200px;
+    max-width: 800px;
     width: 100%;
     margin: 0 auto;
     padding-left: 1.5rem;
