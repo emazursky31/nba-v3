@@ -2871,7 +2871,6 @@ html {
 
   .timer-skip-row {
     gap: 1rem;
-    grid-template-columns: 1fr auto 1fr;
   }
 
   .skip-link {
@@ -2879,7 +2878,7 @@ html {
     padding: 0.4rem 0.8rem;
     margin-top: 0.5rem;
     grid-column: 3;
-    justify-self: center;
+    /* justify-self: center; */
   }
   
     #currentPlayerHeadshot {
