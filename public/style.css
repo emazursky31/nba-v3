@@ -2871,7 +2871,7 @@ html {
 
   .timer-skip-row {
     gap: 1rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto 1fr;
   }
 
   .skip-link {
