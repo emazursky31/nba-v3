@@ -505,7 +505,7 @@ socket.on('playerGuess', async ({ guess }) => {
 
     startTurnTimer(roomId);
   } else {
-    socket.emit('message', `Incorrect guess: "${guess}"`);
+    socket.emit('message', `Not a valid teammate`);
     
     const opponentSocketId = game.players.find(id => id !== socket.id);
     if (opponentSocketId) {
