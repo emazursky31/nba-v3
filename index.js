@@ -921,6 +921,90 @@ socket.on('getMatchStats', () => {
 });
 
 
+socket.on('requestTimerSync', ({ roomId }) => {
+  const game = games[roomId];
+  if (!game || !game.turnStartTime || game.gameEnded) {
+    return;
+  }
+
+  const now = Date.now();
+  const elapsed = now - game.turnStartTime;
+  const remaining = Math.max(0, game.turnDuration - elapsed);
+
+  socket.emit('timerSync', {
+    turnStartTime: game.turnStartTime,
+    turnDuration: game.turnDuration,
+    currentPlayerName: game.currentPlayerName,
+    timeLeft: Math.ceil(remaining / 1000),
+    activePlayerSocketId: game.activePlayerSocketId
+  });
+});
+
+
+// Add this after the existing socket handlers
+socket.on('playerResign', ({ roomId }) => {
+  const game = games[roomId];
+  if (!game) return;
+  
+  const resigningSocketId = socket.id;
+  const resigningUsername = game.usernames[resigningSocketId] || 'Player';
+  const remainingSocketId = game.players.find(id => id !== resigningSocketId);
+  const remainingUsername = game.usernames[remainingSocketId] || 'Player';
+  
+  console.log(`[RESIGN] ${resigningUsername} resigned from room ${roomId}`);
+  
+  // Clear timer
+  if (game.timer) {
+    clearTimeout(game.timer);
+    game.timer = null;
+  }
+  
+  if (activeTimers.has(roomId)) {
+    clearTimeout(activeTimers.get(roomId));
+    activeTimers.delete(roomId);
+  }
+  
+  game.gameEnded = true;
+  game.timerRunning = false;
+  
+  // Update stats
+  const resigningUserId = game.userIds[resigningSocketId];
+  const remainingUserId = game.userIds[remainingSocketId];
+  
+  if (resigningUserId && remainingUserId && !game.statsUpdated) {
+    updateUserStats(resigningUserId, 'loss');
+    updateUserStats(remainingUserId, 'win');
+    game.statsUpdated = true;
+    console.log(`[RESIGN] Updated stats: ${resigningUsername} loss, ${remainingUsername} win`);
+  }
+  
+  // Send specific messages to each player
+  const resigningSocket = io.sockets.sockets.get(resigningSocketId);
+  const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+  
+  if (resigningSocket) {
+    resigningSocket.emit('gameOver', {
+      reason: 'resigned',
+      role: 'loser',
+      message: 'You resigned from the game.',
+      winnerName: remainingUsername,
+      loserName: resigningUsername,
+      turnCount: game.turnCount
+    });
+  }
+  
+  if (remainingSocket) {
+    remainingSocket.emit('gameOver', {
+      reason: 'opponent_resigned',
+      role: 'winner', 
+      message: `${resigningUsername} resigned. You win!`,
+      winnerName: remainingUsername,
+      loserName: resigningUsername,
+      turnCount: game.turnCount
+    });
+  }
+});
+
 
 
 
@@ -1542,7 +1626,7 @@ async function updateUserStats(userId, result) {
 }
 
 
-// Starts the 30-second countdown timer for a turn
+
 async function startTurnTimer(roomId) {
   const game = games[roomId];
   if (!game) {
@@ -1550,13 +1634,11 @@ async function startTurnTimer(roomId) {
     return;
   }
 
-  // ✅ Check if game has already ended
   if (game.gameEnded) {
     console.warn(`[startTurnTimer] Game already ended for room ${roomId}`);
     return;
   }
 
-  // ✅ NEW: Prevent duplicate timers for the same room
   if (activeTimers.has(roomId)) {
     console.warn(`[startTurnTimer] Timer already active for room ${roomId}, clearing first`);
     const existingTimer = activeTimers.get(roomId);
@@ -1564,16 +1646,18 @@ async function startTurnTimer(roomId) {
     activeTimers.delete(roomId);
   }
 
-  // ✅ Clear any existing timer on game object
   if (game.timer !== null) {
     console.warn(`[startTurnTimer] Clearing existing game timer in room ${roomId}`);
     clearInterval(game.timer);
     game.timer = null;
   }
 
-  // ✅ NEW: Add timer state tracking
+  // NEW: Store turn start timestamp for background sync
+  game.turnStartTime = Date.now();
+  game.turnDuration = (game.timeLimit || 30) * 1000; // Convert to milliseconds
   game.timerRunning = true;
   game.timeLeft = game.timeLimit || 30;
+  
   const socketId = game.players[game.currentTurn];
   game.activePlayerSocketId = socketId;
 
@@ -1581,6 +1665,7 @@ async function startTurnTimer(roomId) {
   const trimmedCurrentPlayerName = game.currentPlayerName.trim();
   const { headshot_url: currentPlayerHeadshotUrl } = await getPlayerByName(trimmedCurrentPlayerName);
 
+  // Send turn started event with timestamp info
   const activeSocket = io.sockets.sockets.get(socketId);
   if (activeSocket) {
     activeSocket.emit('yourTurn', {
@@ -1588,6 +1673,8 @@ async function startTurnTimer(roomId) {
       canSkip: !(game.skipsUsed && game.skipsUsed[socketId]),
       currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
       timeLeft: game.timeLeft,
+      turnStartTime: game.turnStartTime, // NEW: Add timestamp
+      turnDuration: game.turnDuration    // NEW: Add duration
     });
   }
 
@@ -1597,140 +1684,91 @@ async function startTurnTimer(roomId) {
       if (opponentSocket) {
         opponentSocket.emit('opponentTurn', {
           currentPlayerName: game.currentPlayerName,
-          activePlayerName: socket.username || 'Player',
+          activePlayerName: game.usernames[socketId] || 'Player',
           currentPlayerHeadshotUrl: currentPlayerHeadshotUrl || defaultPlayerImage,
+          turnStartTime: game.turnStartTime, // NEW: Add timestamp
+          turnDuration: game.turnDuration    // NEW: Add duration
         });
       }
     }
   });
 
-  // ✅ Start clean interval with enhanced safety
-  const timerId = setInterval(async () => {
-    // ✅ Multiple safety checks
+  // Server timer for timeout handling only
+  const timerId = setTimeout(async () => {
     const currentGame = games[roomId];
     if (!currentGame || currentGame.gameEnded || !currentGame.timerRunning) {
-      console.log(`[TIMER] Stopping timer for room ${roomId} - game ended or missing`);
-      clearInterval(timerId);
       activeTimers.delete(roomId);
-      if (currentGame) {
-        currentGame.timer = null;
-        currentGame.timerRunning = false;
-      }
       return;
     }
 
-    currentGame.timeLeft--;
-    console.log(`[TIMER] Room ${roomId} - timeLeft: ${currentGame.timeLeft}`);
-    io.to(roomId).emit('timerTick', { timeLeft: currentGame.timeLeft });
+    // Handle timeout logic (existing code)
+    currentGame.gameEnded = true;
+    currentGame.timerRunning = false;
+    activeTimers.delete(roomId);
+    
+    console.log(`[TIMER] Room ${roomId} - timer expired`);
 
-    if (currentGame.timeLeft <= 0) {
-      // ✅ Immediately stop timer and cleanup
-      clearInterval(timerId);
-      activeTimers.delete(roomId);
-      currentGame.timer = null;
-      currentGame.timerRunning = false;
-      currentGame.gameEnded = true;
-      
-      console.log(`[TIMER] Room ${roomId} - timer expired`);
+    const playerIds = currentGame.players || [];
+    const loserSocketId = currentGame.activePlayerSocketId;
+    const loserName = currentGame.usernames[loserSocketId];
+    const winnerSocketId = playerIds.find(id => id && id !== loserSocketId);
+    const winnerName = currentGame.usernames[winnerSocketId];
 
-      // Rest of your timeout logic...
-      const playerIds = currentGame.players || [];
-      const loserSocketId = currentGame.activePlayerSocketId;
-      const loserName = currentGame.usernames[loserSocketId];
-      const winnerSocketId = playerIds.find(id => id && id !== loserSocketId);
-      const winnerName = currentGame.usernames[winnerSocketId];
-      if (!winnerSocketId || !loserSocketId) {
-        console.warn(`[TIMER] Could not determine winner/loser socket IDs. Skipping stats update.`);
-      }
+    if (!currentGame.matchStats) {
+      currentGame.matchStats = {};
+    }
 
-      // Your existing timeout handling code...
-      if (!currentGame.matchStats) {
-        currentGame.matchStats = {};
-      }
+    let loserUserId = currentGame.userIds[loserSocketId];
+    let winnerUserId = currentGame.userIds[winnerSocketId];
 
-      let loserUserId = currentGame.userIds[loserSocketId];
-      let winnerUserId = currentGame.userIds[winnerSocketId];
+    if (!loserUserId) {
+      const loserSocket = io.sockets.sockets.get(loserSocketId);
+      loserUserId = loserSocket?.data?.userId;
+    }
 
-      // ✅ ADD: Fallback userId lookup if missing
-      if (!loserUserId) {
-        console.warn('[TIMER] Missing loserUserId, attempting fallback lookup');
-        const loserSocket = io.sockets.sockets.get(loserSocketId);
-        loserUserId = loserSocket?.data?.userId;
-      }
+    if (!winnerUserId) {
+      const winnerSocket = io.sockets.sockets.get(winnerSocketId);
+      winnerUserId = winnerSocket?.data?.userId;
+    }
 
-      if (!winnerUserId) {
-        console.warn('[TIMER] Missing winnerUserId, attempting fallback lookup');
-        const winnerSocket = io.sockets.sockets.get(winnerSocketId);
-        winnerUserId = winnerSocket?.data?.userId;
-      }
+    if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
+      await updateUserStats(winnerUserId, 'win');
+      await updateUserStats(loserUserId, 'loss');
+      currentGame.statsUpdated = true;
+    }
 
-      // Enhanced logging
-      console.log('[TIMER] Final userIds after fallback:', { loserUserId, winnerUserId });
+    currentGame.players.forEach((playerId) => {
+      const socket = io.sockets.sockets.get(playerId);
+      if (!socket) return;
 
-
-      console.log('[TIMER] About to update stats for:', {
-        loserUserId,
-        winnerUserId,
-        statsUpdated: currentGame.statsUpdated,
-        // ✅ Debug info
-        gameUserIds: currentGame.userIds,
-        socketUserIds: {
-          loser: io.sockets.sockets.get(loserSocketId)?.data?.userId,
-          winner: io.sockets.sockets.get(winnerSocketId)?.data?.userId
-        }
-      });   
-
-      if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
-        await updateUserStats(winnerUserId, 'win');
-        await updateUserStats(loserUserId, 'loss');
-        currentGame.statsUpdated = true;
+      if (playerId === winnerSocketId) {
+        socket.emit('gameOver', {
+          message: `${loserName} ran out of time! You win!`,
+          role: 'winner',
+          reason: 'timer_expired',
+          winnerName,
+          loserName,
+          turnCount: currentGame.turnCount
+        });
       } else {
-        console.log('[TIMER] Skipping stats update:', { statsUpdated: currentGame.statsUpdated, loserUserId, winnerUserId });
+        socket.emit('gameOver', {
+          message: `You ran out of time!`,
+          role: 'loser',
+          reason: 'timer_expired',
+          winnerName,
+          loserName,
+          turnCount: currentGame.turnCount
+        });
       }
+    });
+  }, game.turnDuration);
 
-      if (!currentGame.matchStats[loserName]) currentGame.matchStats[loserName] = { wins: 0, losses: 0 };
-      if (!currentGame.matchStats[winnerName]) currentGame.matchStats[winnerName] = { wins: 0, losses: 0 };
-      currentGame.matchStats[winnerName].wins += 1;
-      currentGame.matchStats[loserName].losses += 1;
-
-      io.to(roomId).emit('matchStats', {
-        [winnerName]: { wins: currentGame.matchStats[winnerName] },
-        [loserName]: { wins: currentGame.matchStats[loserName] || 0 },
-      });
-
-      currentGame.players.forEach((playerId) => {
-        const socket = io.sockets.sockets.get(playerId);
-        if (!socket) return;
-
-        if (playerId === winnerSocketId) {
-          socket.emit('gameOver', {
-            message: `${loserName} ran out of time! You win!`,
-            role: 'winner',
-            winnerName,
-            loserName,
-            turnCount: currentGame.turnCount
-          });
-        } else {
-          socket.emit('gameOver', {
-            message: `You ran out of time!`,
-            role: 'loser',
-            winnerName,
-            loserName,
-            turnCount: currentGame.turnCount
-          });
-        }
-      });
-
-      return;
-    }
-  }, 1000);
-
-  // ✅ Store timer references
   game.timer = timerId;
   activeTimers.set(roomId, timerId);
   
-  console.log(`[TIMER] Started new timer for room ${roomId}`);
+  console.log(`[TIMER] Started new timer for room ${roomId} with ${game.turnDuration}ms duration`);
 }
+
 
 
 

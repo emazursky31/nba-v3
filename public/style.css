@@ -1560,6 +1560,40 @@ button:disabled {
   font-style: italic;
 }
 
+.game-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  grid-column: 3;
+  justify-self: start;
+  align-items: flex-start;
+}
+
+.resign-btn {
+  background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 100px;
+}
+
+.resign-btn:hover:not(.disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.resign-btn.hidden {
+  display: none !important;
+}
+
 /* Leadoff Career Section - Compact */
 .leadoff-career-section {
   width: 100%;
@@ -2880,6 +2914,16 @@ html {
     grid-column: 3;
     /* justify-self: center; */
   }
+
+   .game-actions {
+    gap: 0.4rem;
+  }
+  
+  .resign-btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    min-width: 90px;
+  }
   
     #currentPlayerHeadshot {
       width: 50px !important;
@@ -3375,6 +3419,12 @@ html, body {
 .career-link {
   font-size: 0.8rem;
 }
+
+ .resign-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    min-width: 80px;
+  }
 
   /* Ensure guess controls are properly positioned */
   #guessControls {

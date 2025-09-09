@@ -413,7 +413,7 @@
       </div>
     </div>
 
-    <div class="timer-skip-row">
+ <div class="timer-skip-row">
   <div id="timer-container">
     <svg class="progress-ring" viewBox="0 0 80 80">
       <circle class="progress-ring-track" cx="40" cy="40" r="35"/>
@@ -423,8 +423,12 @@
     </svg>
     <div id="timer">30</div>
   </div>
-  <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip</a>
+  <div class="game-actions">
+    <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip</a>
+    <button class="resign-btn hidden" id="resignGameBtn">Resign Game</button>
+  </div>
 </div>
+
 
 
     <div id="guessControls" style="position: relative;">
@@ -1694,6 +1698,11 @@ function resetGameUI() {
   rematchBtn.disabled = false;
   rematchBtn.textContent = 'Rematch';
   rematchBtn.style.backgroundColor = '';
+
+  const resignBtn = document.getElementById('resignGameBtn');
+  if (resignBtn) {
+    resignBtn.style.display = 'none';
+  }
 
   // Reset UI parts
   messagesEl.innerHTML = '';
@@ -3634,9 +3643,213 @@ function renderPlayScreen() {
 
 
 
+// Replace the existing socket.on('timerTick') handler
 socket.on('timerTick', (data) => {
-  timerEl.textContent = `:${data.timeLeft}`;
-  updateTimerStyle(data.timeLeft);
+  if (timerEl) {
+    timerEl.textContent = `:${data.timeLeft}`;
+    updateTimerStyle(data.timeLeft);
+  }
+});
+
+// Add new timer sync functionality
+let clientTimer = null;
+let serverTurnStartTime = null;
+let serverTurnDuration = null;
+
+function startClientTimer(startTime, duration) {
+  serverTurnStartTime = startTime;
+  serverTurnDuration = duration;
+  
+  if (clientTimer) {
+    clearInterval(clientTimer);
+  }
+  
+  function updateClientTimer() {
+    if (!serverTurnStartTime || !serverTurnDuration) return;
+    
+    const now = Date.now();
+    const elapsed = now - serverTurnStartTime;
+    const remaining = Math.max(0, serverTurnDuration - elapsed);
+    const timeLeftSeconds = Math.ceil(remaining / 1000);
+    
+    if (timerEl) {
+      timerEl.textContent = `:${timeLeftSeconds}`;
+      updateTimerStyle(timeLeftSeconds);
+    }
+    
+    if (remaining <= 0) {
+      clearInterval(clientTimer);
+      clientTimer = null;
+    }
+  }
+  
+  // Update immediately
+  updateClientTimer();
+  
+  // Update every 100ms for smooth display
+  clientTimer = setInterval(updateClientTimer, 100);
+}
+
+// Update the yourTurn handler to use new timer system
+socket.on('yourTurn', (data) => {
+  navigateTo('/play');
+
+  const turnSection = document.getElementById('turnSection');
+  turnSection.classList.add('your-turn');
+  turnSection.classList.remove('opponent-turn');
+  turnSection.style.display = 'block';
+
+  document.getElementById('guessControls').style.display = 'block';
+  guessInput.disabled = false;
+  submitGuessBtn.disabled = !guessInput.value.trim();
+
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = data.currentPlayerName || 'Your Turn';
+  }
+
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
+    currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+
+  const promptHeader = turnSection.querySelector('.prompt-header');
+  if (promptHeader) {
+    promptHeader.textContent = 'Name any teammate of:';
+  }
+
+  // NEW: Start client-side timer with timestamp sync
+  if (data.turnStartTime && data.turnDuration) {
+    startClientTimer(data.turnStartTime, data.turnDuration);
+  } else {
+    // Fallback to old method
+    if (timerEl) {
+      timerEl.textContent = `:${data.timeLeft || 30}`;
+      updateTimerStyle(data.timeLeft || 30);
+    }
+  }
+
+  messagesEl.style.display = 'block';
+  showMessage(data.message || "It's your turn to guess!", 'info');
+
+  const skipLink = document.getElementById('skipTurnBtn');
+  if (skipLink) {
+    skipLink.classList.remove('hidden');
+    skipLink.style.display = 'inline-block';
+    skipLink.classList.toggle('disabled', !data.canSkip);
+    skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
+  }
+
+  // Show resign button during your turn
+  const resignBtn = document.getElementById('resignGameBtn');
+  if (resignBtn) {
+    resignBtn.style.display = 'inline-block';
+  }
+
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.add('active-turn');
+    playerOpponentEl.classList.remove('active-turn');
+  }
+
+  setTimeout(() => scrollToGameArea(), 200);
+});
+
+// Update opponentTurn handler similarly
+socket.on('opponentTurn', (data) => {
+  navigateTo('/play');
+
+  const turnSection = document.getElementById('turnSection');
+  turnSection.classList.remove('your-turn');
+  turnSection.classList.add('opponent-turn');
+  turnSection.style.display = 'block';
+
+  document.getElementById('guessControls').style.display = 'none';
+  guessInput.disabled = true;
+  submitGuessBtn.disabled = true;
+
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
+  }
+
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
+    currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+
+  const promptHeader = turnSection.querySelector('.prompt-header');
+  if (promptHeader) {
+    promptHeader.textContent = `Opponent's turn`;
+  }
+
+  // NEW: Start client-side timer with timestamp sync
+  if (data.turnStartTime && data.turnDuration) {
+    startClientTimer(data.turnStartTime, data.turnDuration);
+  }
+
+  messagesEl.style.display = 'block';
+  showMessage(data.message || "Waiting for your opponent to guess...", 'info');
+
+  const skipLink = document.getElementById('skipTurnBtn');
+  if (skipLink) {
+    skipLink.classList.add('hidden');
+    skipLink.style.display = 'none';
+  }
+
+  // Hide resign button during opponent's turn
+  const resignBtn = document.getElementById('resignGameBtn');
+  if (resignBtn) {
+    resignBtn.style.display = 'none';
+  }
+
+  const playerYouEl = document.getElementById('playerYou');
+  const playerOpponentEl = document.getElementById('playerOpponent');
+  if (playerYouEl && playerOpponentEl) {
+    playerYouEl.classList.remove('active-turn');
+    playerOpponentEl.classList.add('active-turn');
+  }
+
+  setTimeout(() => scrollToGameArea(), 200);
+});
+
+// Add timer sync handler
+socket.on('timerSync', (data) => {
+  console.log('[TIMER_SYNC] Received sync data:', data);
+  
+  if (data.turnStartTime && data.turnDuration) {
+    startClientTimer(data.turnStartTime, data.turnDuration);
+  }
+  
+  // Update current player info
+  if (currentPlayerNameEl && data.currentPlayerName) {
+    currentPlayerNameEl.textContent = data.currentPlayerName;
+  }
+  
+  // Update turn state based on active player
+  const isMyTurn = data.activePlayerSocketId === socket.id;
+  const turnSection = document.getElementById('turnSection');
+  
+  if (turnSection) {
+    if (isMyTurn) {
+      turnSection.classList.add('your-turn');
+      turnSection.classList.remove('opponent-turn');
+      document.getElementById('guessControls').style.display = 'block';
+      guessInput.disabled = false;
+    } else {
+      turnSection.classList.remove('your-turn');
+      turnSection.classList.add('opponent-turn');
+      document.getElementById('guessControls').style.display = 'none';
+      guessInput.disabled = true;
+    }
+  }
 });
 
 
@@ -3871,6 +4084,18 @@ if (skipTurnLink) {
     }
   });
 }
+
+
+const resignGameBtn = document.getElementById('resignGameBtn');
+if (resignGameBtn) {
+  resignGameBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (confirm('Are you sure you want to resign? This will end the game and count as a loss.')) {
+      socket.emit('playerResign', { roomId: myRoomId || roomId });
+    }
+  });
+}
+
   
   // Set initial default image
   if (currentPlayerHeadshotEl) {
@@ -4052,12 +4277,46 @@ document.addEventListener('visibilitychange', () => {
     isPageVisible = false;
     console.log('[DEBUG] Page hidden - user switched apps');
     
-    // Don't immediately mark as leaving
+    // Store current game state for restoration
+    if (gameStarted && !gameOver && (myRoomId || roomId)) {
+      localStorage.setItem('gameStateOnHide', JSON.stringify({
+        roomId: myRoomId || roomId,
+        gameStarted,
+        gameOver,
+        timestamp: Date.now(),
+        serverTurnStartTime,
+        serverTurnDuration
+      }));
+    }
+    
+    // Don't immediately mark as leaving - this is just app switching
     clearTimeout(visibilityTimer);
   } else {
     // Page became visible again
     isPageVisible = true;
-    console.log('[DEBUG] Page visible - user returned');
+    console.log('[DEBUG] Page visible - user returned to app');
+    
+    // Restore and sync game state
+    const savedState = localStorage.getItem('gameStateOnHide');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        const timeSinceHidden = Date.now() - state.timestamp;
+        
+        console.log(`[DEBUG] Was hidden for ${timeSinceHidden}ms`);
+        
+        // If we were in an active game, request timer sync
+        if (socket && socket.connected && state.gameStarted && !state.gameOver && state.roomId) {
+          console.log('[DEBUG] Requesting timer sync after returning to app');
+          socket.emit('requestTimerSync', { roomId: state.roomId });
+        }
+        
+        localStorage.removeItem('gameStateOnHide');
+      } catch (e) {
+        console.error('[DEBUG] Error parsing saved game state:', e);
+        localStorage.removeItem('gameStateOnHide');
+      }
+    }
     
     // If socket disconnected while away, try to reconnect
     if (!socket.connected && (gameStarted && !gameOver)) {
@@ -4066,6 +4325,7 @@ document.addEventListener('visibilitychange', () => {
     }
   }
 });
+
 
   // Event listeners for page lifecycle
   window.addEventListener('popstate', () => {
