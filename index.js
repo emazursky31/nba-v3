@@ -1290,12 +1290,96 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     return;
   }
 
-  // Check for reconnection opportunity
+  // Check for existing active session with same userId in ANY room
+  for (const [existingRoomId, game] of Object.entries(games)) {
+    if (game.userIds) {
+      for (const [socketId, existingUserId] of Object.entries(game.userIds)) {
+        if (existingUserId === userId && socketId !== socket.id) {
+          console.log(`[RECONNECTION] Found existing session for ${username} in room ${existingRoomId}`);
+          
+          // Check if this is the same room they're trying to join
+          if (existingRoomId === roomId) {
+            console.log(`[RECONNECTION] ${username} reconnecting to same room with new socket`);
+            
+            // Replace old socket with new one
+            const oldSocketIndex = game.players.indexOf(socketId);
+            if (oldSocketIndex !== -1) {
+              // Update players array
+              game.players[oldSocketIndex] = socket.id;
+              
+              // Transfer user data
+              game.usernames[socket.id] = username;
+              game.userIds[socket.id] = userId;
+              delete game.usernames[socketId];
+              delete game.userIds[socketId];
+              
+              // Update socket mapping
+              delete socketRoomMap[socketId];
+              socketRoomMap[socket.id] = roomId;
+              socket.join(roomId);
+              socket.data.userId = userId;
+              socket.data.username = username;
+              
+              // Remove from disconnected tracking if present
+              if (game.disconnectedPlayers) {
+                game.disconnectedPlayers.delete(socketId);
+              }
+              
+              // Clean up any disconnection tracking
+              disconnectedPlayers.delete(userId);
+              
+              // Get current game state
+              const currentPlayerHeadshotUrl = await getPlayerByName(game.currentPlayerName.trim());
+              
+              // Send current game state to reconnected player
+              socket.emit('gameReconnected', {
+                currentPlayerName: game.currentPlayerName,
+                activePlayerSocketId: game.activePlayerSocketId,
+                successfulGuesses: game.successfulGuesses,
+                currentPlayerHeadshotUrl: currentPlayerHeadshotUrl?.headshot_url || defaultPlayerImage,
+                isYourTurn: socket.id === game.activePlayerSocketId,
+                canSkip: !(game.skipsUsed && game.skipsUsed[socket.id]),
+                leadoffPlayer: game.leadoffPlayer,
+                selectedEra: game.selectedEra,
+                timeLimit: game.timeLimit
+              });
+              
+              // Update activePlayerSocketId if this was the active player
+              if (game.activePlayerSocketId === socketId) {
+                game.activePlayerSocketId = socket.id;
+              }
+              
+              // Notify opponent of reconnection
+              const opponentSocketId = game.players.find(id => id !== socket.id);
+              if (opponentSocketId) {
+                const opponentSocket = io.sockets.sockets.get(opponentSocketId);
+                if (opponentSocket && opponentSocket.connected) {
+                  opponentSocket.emit('opponentReconnected', {
+                    message: `${username} reconnected`
+                  });
+                }
+              }
+              
+              console.log(`[RECONNECTION] Successfully reconnected ${username} to room ${roomId}`);
+              return;
+            }
+          } else {
+            // User is trying to join a different room while in another game
+            console.log(`[RECONNECTION] ${username} trying to join different room while in game`);
+            socket.emit('message', 'You are already in another game. Please finish or leave that game first.');
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  // Check for reconnection opportunity from disconnected players
   if (userId && disconnectedPlayers.has(userId)) {
     const disconnectInfo = disconnectedPlayers.get(userId);
     
     if (disconnectInfo.roomId === roomId && games[roomId]) {
-      console.log(`[RECONNECTION] ${username} reconnecting to active game`);
+      console.log(`[RECONNECTION] ${username} reconnecting to active game from disconnected state`);
       
       const game = games[roomId];
       
@@ -1463,7 +1547,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       turnCount: 0,
       selectedEra: era, 
       timeLimit: timeLimit,
-      disconnectedPlayers: new Set() // Add tracking for disconnected players
+      disconnectedPlayers: new Set()
     };
 
     const game = games[roomId];
@@ -1484,6 +1568,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     gameCreationLocks.delete(roomId);
   }
 }
+
 
 
 
