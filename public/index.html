@@ -3852,6 +3852,7 @@ socket.on('timerSync', (data) => {
   }
 });
 
+// Updated gameReconnected handler
 socket.on('gameReconnected', (data) => {
   console.log('[CLIENT] Received gameReconnected event:', data);
   
@@ -3898,22 +3899,42 @@ socket.on('gameReconnected', (data) => {
     renderSuccessfulGuesses();
   }
   
-  // Update turn state
-  const isMyTurn = data.isYourTurn;
+  // ✅ FIXED: More explicit turn state detection
+  const isMyTurn = data.isYourTurn || (data.activePlayerSocketId === socket.id);
+  console.log('[RECONNECT] Turn state:', {
+    isYourTurn: data.isYourTurn,
+    activePlayerSocketId: data.activePlayerSocketId,
+    mySocketId: socket.id,
+    calculatedIsMyTurn: isMyTurn
+  });
+  
   const turnSection = document.getElementById('turnSection');
+  const guessControls = document.getElementById('guessControls');
+  const skipLink = document.getElementById('skipTurnBtn');
+  const promptHeader = turnSection?.querySelector('.prompt-header');
   
   if (turnSection) {
     if (isMyTurn) {
+      console.log('[RECONNECT] Setting up MY turn');
+      
+      // Set turn classes
       turnSection.classList.add('your-turn');
       turnSection.classList.remove('opponent-turn');
+      turnSection.style.display = 'block';
+      
+      // Update prompt header
+      if (promptHeader) {
+        promptHeader.textContent = 'Name any teammate of:';
+      }
       
       // Enable guess controls
-      document.getElementById('guessControls').style.display = 'block';
+      if (guessControls) {
+        guessControls.style.display = 'block';
+      }
       guessInput.disabled = false;
       submitGuessBtn.disabled = !guessInput.value.trim();
       
-      // Show skip button if available
-      const skipLink = document.getElementById('skipTurnBtn');
+      // Show and configure skip button
       if (skipLink) {
         skipLink.classList.remove('hidden');
         skipLink.style.display = 'inline-block';
@@ -3921,21 +3942,60 @@ socket.on('gameReconnected', (data) => {
         skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
       }
       
+      // Show resign button
+      const resignBtn = document.getElementById('resignGameBtn');
+      if (resignBtn) {
+        resignBtn.style.display = 'inline-block';
+      }
+      
+      // Update player highlights
+      const playerYouEl = document.getElementById('playerYou');
+      const playerOpponentEl = document.getElementById('playerOpponent');
+      if (playerYouEl && playerOpponentEl) {
+        playerYouEl.classList.add('active-turn');
+        playerOpponentEl.classList.remove('active-turn');
+      }
+      
       showMessage("It's your turn to guess!", 'info');
+      
     } else {
+      console.log('[RECONNECT] Setting up OPPONENT turn');
+      
+      // Set turn classes
       turnSection.classList.remove('your-turn');
       turnSection.classList.add('opponent-turn');
+      turnSection.style.display = 'block';
+      
+      // Update prompt header
+      if (promptHeader) {
+        promptHeader.textContent = "Opponent's turn";
+      }
       
       // Disable guess controls
-      document.getElementById('guessControls').style.display = 'none';
+      if (guessControls) {
+        guessControls.style.display = 'none';
+      }
       guessInput.disabled = true;
       submitGuessBtn.disabled = true;
       
       // Hide skip button
-      const skipLink = document.getElementById('skipTurnBtn');
       if (skipLink) {
         skipLink.classList.add('hidden');
         skipLink.style.display = 'none';
+      }
+      
+      // Hide resign button
+      const resignBtn = document.getElementById('resignGameBtn');
+      if (resignBtn) {
+        resignBtn.style.display = 'none';
+      }
+      
+      // Update player highlights
+      const playerYouEl = document.getElementById('playerYou');
+      const playerOpponentEl = document.getElementById('playerOpponent');
+      if (playerYouEl && playerOpponentEl) {
+        playerYouEl.classList.remove('active-turn');
+        playerOpponentEl.classList.add('active-turn');
       }
       
       showMessage("Waiting for your opponent to guess...", 'info');
@@ -3976,6 +4036,7 @@ socket.on('gameReconnected', (data) => {
   
   console.log('[CLIENT] Game state restored after reconnection');
 });
+
 
 
 
