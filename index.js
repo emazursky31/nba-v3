@@ -17,6 +17,8 @@ const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
 const activeTimers = new Map();
 const gameCreationLocks = new Set();
+const disconnectedPlayers = new Map(); // userId -> {roomId, disconnectTime, socketId, username}
+const RECONNECTION_GRACE_PERIOD = 45000; // 45 seconds
 
 const defaultPlayerImage = 
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
@@ -668,6 +670,7 @@ socket.on('requestRematch', ({ roomId }) => {
 
 socket.on('disconnect', async () => {
   const username = socket.data?.username || 'an unnamed player';
+  const userId = socket.data?.userId;
   console.log(`User disconnected: ${socket.id} (${username})`);
 
   // Remove from waitingPlayers queue if waiting
@@ -679,102 +682,71 @@ socket.on('disconnect', async () => {
 
   playersInGame.delete(socket.id);
 
-  // Remove from socketRoomMap
+  // Find the room this player was in
   const roomId = socketRoomMap[socket.id];
+  if (roomId && games[roomId]) {
+    const game = games[roomId];
+    const playerIndex = game.players.indexOf(socket.id);
+    
+    if (playerIndex !== -1) {
+      // Check if this is an active game that should allow reconnection
+      const isActiveGame = game.leadoffPlayer && game.teammates && game.teammates.length > 0;
+      
+      if (isActiveGame && userId) {
+        console.log(`[DISCONNECT] Starting grace period for ${username} in active game`);
+        
+        // Store disconnection info for potential reconnection
+        disconnectedPlayers.set(userId, {
+          roomId,
+          disconnectTime: Date.now(),
+          socketId: socket.id,
+          username,
+          playerIndex
+        });
+        
+        // Mark player as disconnected but keep in game
+        game.disconnectedPlayers = game.disconnectedPlayers || new Set();
+        game.disconnectedPlayers.add(socket.id);
+        
+        // Notify opponent about disconnection (but timer keeps running)
+        const remainingSocketId = game.players.find(id => id !== socket.id);
+        if (remainingSocketId) {
+          const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+          if (remainingSocket && remainingSocket.connected) {
+            remainingSocket.emit('opponentDisconnected', {
+              message: `${username} lost connection. Game continues...`,
+              graceTimeLeft: RECONNECTION_GRACE_PERIOD
+            });
+          }
+        }
+        
+        // Set grace period timer
+        setTimeout(() => {
+          const disconnectInfo = disconnectedPlayers.get(userId);
+          if (disconnectInfo && disconnectInfo.roomId === roomId) {
+            console.log(`[GRACE_EXPIRED] ${username} did not reconnect in time`);
+            disconnectedPlayers.delete(userId);
+            handlePlayerDisconnectFinal(socket, roomId, username);
+          }
+        }, RECONNECTION_GRACE_PERIOD);
+        
+        // Clean up socket mapping but don't remove from game yet
+        delete socketRoomMap[socket.id];
+        return; // Don't process immediate disconnect
+      }
+    }
+  }
+
+  // Handle immediate disconnect for non-active games
   if (roomId) {
     cleanupTimer(roomId);
     delete socketRoomMap[socket.id];
     console.log(`Removed socket ${socket.id} from socketRoomMap for room ${roomId}`);
   }
 
-  for (const [room, game] of Object.entries(games)) {
-    const idx = game.players.indexOf(socket.id);
-    if (idx !== -1) {
-      const disconnectedUsername = game.usernames[socket.id] || username;
-      console.log(`[DISCONNECT] Processing disconnect for ${disconnectedUsername} in room ${room}`);
-
-      // ✅ Notify remaining players BEFORE removing the disconnected player
-      if (game.players.length === 2) {
-        const remainingSocketId = game.players.find(id => id !== socket.id);
-        const remainingSocket = io.sockets.sockets.get(remainingSocketId);
-        
-        if (remainingSocket && remainingSocket.connected) {
-          console.log(`[DISCONNECT] Notifying ${game.usernames[remainingSocketId]} that ${disconnectedUsername} left`);
-          
-          // Simple, consistent message for all scenarios
-          remainingSocket.emit('opponentLeft', {
-            message: 'Your opponent left the game'
-          });
-        } else {
-          console.log(`[DISCONNECT] Remaining socket not found or not connected`);
-        }
-      }
-
-      // Remove player from game
-      game.players.splice(idx, 1);
-      delete game.usernames[socket.id];
-      playersInGame.delete(socket.id);
-
-      io.to(room).emit('playersUpdate', game.players.length);
-      console.log(`${disconnectedUsername} removed from game in room ${room}`);
-
-      // Rest of disconnect logic remains the same...
-      if (game.timer) {
-        clearInterval(game.timer);
-        delete game.timer;
-      }
-
-      if (game.rematchVotes) {
-        game.rematchVotes.delete(disconnectedUsername);
-        if (game.rematchVotes.size === 0) {
-          game.rematchVotes = new Set();
-        }
-      }
-
-      if (game.players.length < 2) {
-        // Notify remaining players with gameOver event
-        game.players.forEach(playerSocketId => {
-          const playerSocket = io.sockets.sockets.get(playerSocketId);
-          if (playerSocket && playerSocket.connected) {
-            playerSocket.emit('gameOver', {
-              reason: 'opponent_left',
-              message: `${disconnectedUsername} left the game.`,
-              winnerName: game.usernames[playerSocketId] || 'Player',
-              loserName: disconnectedUsername,
-              role: 'winner',
-              canRematch: false,
-              turnCount: game.turnCount || 0
-            });
-          }
-          playersInGame.delete(playerSocketId);
-        });
-
-        const preservedUserIds = { ...game.userIds };
-
-        // Reset game state
-        game.players = [];
-        game.usernames = {};
-        game.currentTurn = 0;
-        game.currentPlayerName = null;
-        game.teammates = [];
-        game.successfulGuesses = [];
-        game.rematchVotes = new Set();
-        game.userIds = preservedUserIds;
-
-        if (game.timer) {
-          clearInterval(game.timer);
-          delete game.timer;
-        }
-
-        console.log(`Game in room ${room} reset due to insufficient players`);
-      }
-
-      break;
-    }
-  }
-
   await handlePlayerDisconnect(socket);
 });
+
 
 
 
@@ -1318,6 +1290,69 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     return;
   }
 
+  // Check for reconnection opportunity
+  if (userId && disconnectedPlayers.has(userId)) {
+    const disconnectInfo = disconnectedPlayers.get(userId);
+    
+    if (disconnectInfo.roomId === roomId && games[roomId]) {
+      console.log(`[RECONNECTION] ${username} reconnecting to active game`);
+      
+      const game = games[roomId];
+      
+      // Replace old socket ID with new one
+      const oldSocketIndex = game.players.indexOf(disconnectInfo.socketId);
+      if (oldSocketIndex !== -1) {
+        game.players[oldSocketIndex] = socket.id;
+        game.usernames[socket.id] = username;
+        delete game.usernames[disconnectInfo.socketId];
+        
+        // Remove from disconnected players tracking
+        if (game.disconnectedPlayers) {
+          game.disconnectedPlayers.delete(disconnectInfo.socketId);
+        }
+        
+        // Update socket mapping
+        socketRoomMap[socket.id] = roomId;
+        socket.join(roomId);
+        socket.data.userId = userId;
+        socket.data.username = username;
+        
+        // Get current game state for reconnection
+        const currentPlayerHeadshotUrl = await getPlayerByName(game.currentPlayerName.trim());
+        
+        // Send current game state to reconnected player
+        socket.emit('gameReconnected', {
+          currentPlayerName: game.currentPlayerName,
+          activePlayerSocketId: game.activePlayerSocketId,
+          successfulGuesses: game.successfulGuesses,
+          currentPlayerHeadshotUrl: currentPlayerHeadshotUrl?.headshot_url || defaultPlayerImage,
+          isYourTurn: socket.id === game.activePlayerSocketId,
+          canSkip: !(game.skipsUsed && game.skipsUsed[socket.id]),
+          leadoffPlayer: game.leadoffPlayer,
+          selectedEra: game.selectedEra,
+          timeLimit: game.timeLimit
+        });
+        
+        // Notify opponent of successful reconnection
+        const opponentSocketId = game.players.find(id => id !== socket.id);
+        if (opponentSocketId) {
+          const opponentSocket = io.sockets.sockets.get(opponentSocketId);
+          if (opponentSocket && opponentSocket.connected) {
+            opponentSocket.emit('opponentReconnected', {
+              message: `${username} reconnected`
+            });
+          }
+        }
+        
+        // Clean up disconnection tracking
+        disconnectedPlayers.delete(userId);
+        
+        console.log(`[RECONNECTION] Successfully reconnected ${username} to room ${roomId}`);
+        return;
+      }
+    }
+  }
+
   // Clean up ended games
   if (games[roomId] && games[roomId].gameEnded) {
     console.log(`Cleaning up ended game for room: ${roomId}`);
@@ -1428,6 +1463,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       turnCount: 0,
       selectedEra: era, 
       timeLimit: timeLimit,
+      disconnectedPlayers: new Set() // Add tracking for disconnected players
     };
 
     const game = games[roomId];
@@ -1448,6 +1484,8 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     gameCreationLocks.delete(roomId);
   }
 }
+
+
 
 
 
@@ -1559,6 +1597,61 @@ async function handlePlayerDisconnect(socket) {
     }
   }
 }
+
+
+async function handlePlayerDisconnectFinal(socket, roomId, username) {
+  console.log(`🛑 handlePlayerDisconnectFinal: ${socket.id} (${username})`);
+  
+  const game = games[roomId];
+  if (!game) return;
+  
+  const playerIndex = game.players.indexOf(socket.id);
+  if (playerIndex === -1) return;
+  
+  // Remove player and handle game end
+  game.players.splice(playerIndex, 1);
+  delete game.usernames[socket.id];
+  playersInGame.delete(socket.id);
+  
+  // Clean up disconnected players tracking
+  if (game.disconnectedPlayers) {
+    game.disconnectedPlayers.delete(socket.id);
+  }
+  
+  // Notify remaining players
+  const remainingSocketId = game.players[0];
+  if (remainingSocketId) {
+    const remainingSocket = io.sockets.sockets.get(remainingSocketId);
+    if (remainingSocket && remainingSocket.connected) {
+      const remainingUsername = game.usernames[remainingSocketId] || 'Player';
+      
+      remainingSocket.emit('gameOver', {
+        reason: 'opponent_left',
+        message: `${username} left the game.`,
+        winnerName: remainingUsername,
+        loserName: username,
+        role: 'winner',
+        canRematch: false,
+        turnCount: game.turnCount || 0
+      });
+      
+      // Update stats
+      const remainingUserId = game.userIds[remainingSocketId];
+      const leavingUserId = game.userIds[socket.id];
+      
+      if (remainingUserId && leavingUserId && !game.statsUpdated) {
+        await updateUserStats(remainingUserId, 'win');
+        await updateUserStats(leavingUserId, 'loss');
+        game.statsUpdated = true;
+      }
+    }
+  }
+  
+  // Clean up game
+  delete games[roomId];
+  gameCreationLocks.delete(roomId);
+}
+
 
 
 
@@ -1694,74 +1787,76 @@ async function startTurnTimer(roomId) {
   });
 
   // Server timer for timeout handling only
-  const timerId = setTimeout(async () => {
-    const currentGame = games[roomId];
-    if (!currentGame || currentGame.gameEnded || !currentGame.timerRunning) {
-      activeTimers.delete(roomId);
-      return;
-    }
-
-    // Handle timeout logic (existing code)
-    currentGame.gameEnded = true;
-    currentGame.timerRunning = false;
+const timerId = setTimeout(async () => {
+  const currentGame = games[roomId];
+  if (!currentGame || currentGame.gameEnded || !currentGame.timerRunning) {
     activeTimers.delete(roomId);
-    
-    console.log(`[TIMER] Room ${roomId} - timer expired`);
+    return;
+  }
 
-    const playerIds = currentGame.players || [];
-    const loserSocketId = currentGame.activePlayerSocketId;
-    const loserName = currentGame.usernames[loserSocketId];
-    const winnerSocketId = playerIds.find(id => id && id !== loserSocketId);
-    const winnerName = currentGame.usernames[winnerSocketId];
+  currentGame.gameEnded = true;
+  currentGame.timerRunning = false;
+  activeTimers.delete(roomId);
+  
+  console.log(`[TIMER] Room ${roomId} - timer expired`);
 
-    if (!currentGame.matchStats) {
-      currentGame.matchStats = {};
-    }
+  const playerIds = currentGame.players || [];
+  const loserSocketId = currentGame.activePlayerSocketId;
+  const loserName = currentGame.usernames[loserSocketId];
+  const winnerSocketId = playerIds.find(id => id && id !== loserSocketId);
+  const winnerName = currentGame.usernames[winnerSocketId];
 
-    let loserUserId = currentGame.userIds[loserSocketId];
-    let winnerUserId = currentGame.userIds[winnerSocketId];
+  // Check if the losing player is disconnected
+  const loserIsDisconnected = currentGame.disconnectedPlayers && 
+                              currentGame.disconnectedPlayers.has(loserSocketId);
 
-    if (!loserUserId) {
-      const loserSocket = io.sockets.sockets.get(loserSocketId);
-      loserUserId = loserSocket?.data?.userId;
-    }
+  let loserUserId = currentGame.userIds[loserSocketId];
+  let winnerUserId = currentGame.userIds[winnerSocketId];
 
-    if (!winnerUserId) {
-      const winnerSocket = io.sockets.sockets.get(winnerSocketId);
-      winnerUserId = winnerSocket?.data?.userId;
-    }
-
-    if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
-      await updateUserStats(winnerUserId, 'win');
-      await updateUserStats(loserUserId, 'loss');
-      currentGame.statsUpdated = true;
-    }
-
-    currentGame.players.forEach((playerId) => {
-      const socket = io.sockets.sockets.get(playerId);
-      if (!socket) return;
-
-      if (playerId === winnerSocketId) {
-        socket.emit('gameOver', {
-          message: `${loserName} ran out of time! You win!`,
-          role: 'winner',
-          reason: 'timer_expired',
-          winnerName,
-          loserName,
-          turnCount: currentGame.turnCount
-        });
-      } else {
-        socket.emit('gameOver', {
-          message: `You ran out of time!`,
-          role: 'loser',
-          reason: 'timer_expired',
-          winnerName,
-          loserName,
-          turnCount: currentGame.turnCount
-        });
+  if (!loserUserId && loserIsDisconnected) {
+    // Try to get userId from disconnected players tracking
+    for (const [userId, disconnectInfo] of disconnectedPlayers.entries()) {
+      if (disconnectInfo.socketId === loserSocketId) {
+        loserUserId = userId;
+        break;
       }
-    });
-  }, game.turnDuration);
+    }
+  }
+
+  if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
+    await updateUserStats(winnerUserId, 'win');
+    await updateUserStats(loserUserId, 'loss');
+    currentGame.statsUpdated = true;
+  }
+
+  // Send game over to connected players
+  currentGame.players.forEach((playerId) => {
+    const socket = io.sockets.sockets.get(playerId);
+    if (!socket) return;
+
+    if (playerId === winnerSocketId) {
+      socket.emit('gameOver', {
+        message: loserIsDisconnected ? 
+          `${loserName} was disconnected and ran out of time! You win!` :
+          `${loserName} ran out of time! You win!`,
+        role: 'winner',
+        reason: 'timer_expired',
+        winnerName,
+        loserName,
+        turnCount: currentGame.turnCount
+      });
+    } else {
+      socket.emit('gameOver', {
+        message: `You ran out of time!`,
+        role: 'loser',
+        reason: 'timer_expired',
+        winnerName,
+        loserName,
+        turnCount: currentGame.turnCount
+      });
+    }
+  });
+}, game.turnDuration);
 
   game.timer = timerId;
   activeTimers.set(roomId, timerId);
