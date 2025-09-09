@@ -1328,6 +1328,12 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
               // Clean up any disconnection tracking
               disconnectedPlayers.delete(userId);
               
+              
+              // Update activePlayerSocketId if this was the active player
+              if (game.activePlayerSocketId === socketId) {
+                game.activePlayerSocketId = socket.id;
+              }
+
               // Get current game state
               const currentPlayerHeadshotUrl = await getPlayerByName(game.currentPlayerName.trim());
               
@@ -1349,12 +1355,8 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
                 opponentUsername: game.usernames[game.players.find(id => id !== socket.id)],
                 timeLeft: game.timeLeft,
                 skipsUsed: game.skipsUsed
-              });
+              });              
               
-              // Update activePlayerSocketId if this was the active player
-              if (game.activePlayerSocketId === socketId) {
-                game.activePlayerSocketId = socket.id;
-              }
               
               // Notify opponent of reconnection
               const opponentSocketId = game.players.find(id => id !== socket.id);
@@ -1407,9 +1409,13 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
         socket.join(roomId);
         socket.data.userId = userId;
         socket.data.username = username;
+
+         if (game.activePlayerSocketId === socketId) {
+          game.activePlayerSocketId = socket.id;
+        }
         
         // Get current game state for reconnection
-        const currentPlayerHeadshotUrl = await getPlayerByName(game.currentPlayerName.trim());
+        const currentPlayerHeadshotUrl = await getPlayerByName(game.currentPlayerName.trim());       
         
         // Send current game state to reconnected player
         socket.emit('gameReconnected', {
