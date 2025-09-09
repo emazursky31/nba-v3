@@ -3852,6 +3852,130 @@ socket.on('timerSync', (data) => {
   }
 });
 
+socket.on('gameReconnected', (data) => {
+  console.log('[CLIENT] Received gameReconnected event:', data);
+  
+  if (isLeavingGame) {
+    console.log('[DEBUG] Ignoring gameReconnected because isLeavingGame === true');
+    return;
+  }
+
+  // Navigate to play screen
+  navigateTo('/play');
+  
+  // Update game state
+  gameStarted = true;
+  gameOver = false;
+  
+  // Update current player display
+  if (currentPlayerNameEl) {
+    currentPlayerNameEl.textContent = data.currentPlayerName || 'Loading...';
+  }
+  
+  // Update headshot
+  if (currentPlayerHeadshotEl) {
+    currentPlayerHeadshotEl.src = data.currentPlayerHeadshotUrl || DEFAULT_PLAYER_IMAGE;
+    currentPlayerHeadshotEl.alt = `${data.currentPlayerName || 'Player'} Headshot`;
+  }
+  
+  // Store headshot for future use
+  if (data.currentPlayerName && data.currentPlayerHeadshotUrl) {
+    storedHeadshots.set(data.currentPlayerName, data.currentPlayerHeadshotUrl);
+  }
+  
+  // Restore successful guesses
+  if (Array.isArray(data.successfulGuesses)) {
+    successfulGuesses = data.successfulGuesses.map(guess => {
+      const storedHeadshot = storedHeadshots.get(guess.name);
+      return {
+        ...guess,
+        headshot_url: storedHeadshot || guess.headshot_url || DEFAULT_PLAYER_IMAGE
+      };
+    });
+    
+    // Mark leadoff player
+    successfulGuesses = markLeadoffInGuesses(successfulGuesses, data.leadoffPlayer?.player_name);
+    renderSuccessfulGuesses();
+  }
+  
+  // Update turn state
+  const isMyTurn = data.isYourTurn;
+  const turnSection = document.getElementById('turnSection');
+  
+  if (turnSection) {
+    if (isMyTurn) {
+      turnSection.classList.add('your-turn');
+      turnSection.classList.remove('opponent-turn');
+      
+      // Enable guess controls
+      document.getElementById('guessControls').style.display = 'block';
+      guessInput.disabled = false;
+      submitGuessBtn.disabled = !guessInput.value.trim();
+      
+      // Show skip button if available
+      const skipLink = document.getElementById('skipTurnBtn');
+      if (skipLink) {
+        skipLink.classList.remove('hidden');
+        skipLink.style.display = 'inline-block';
+        skipLink.classList.toggle('disabled', !data.canSkip);
+        skipLink.textContent = data.canSkip ? 'Skip Turn' : 'Skip Used';
+      }
+      
+      showMessage("It's your turn to guess!", 'info');
+    } else {
+      turnSection.classList.remove('your-turn');
+      turnSection.classList.add('opponent-turn');
+      
+      // Disable guess controls
+      document.getElementById('guessControls').style.display = 'none';
+      guessInput.disabled = true;
+      submitGuessBtn.disabled = true;
+      
+      // Hide skip button
+      const skipLink = document.getElementById('skipTurnBtn');
+      if (skipLink) {
+        skipLink.classList.add('hidden');
+        skipLink.style.display = 'none';
+      }
+      
+      showMessage("Waiting for your opponent to guess...", 'info');
+    }
+  }
+  
+  // Show leadoff career section if available
+  if (data.leadoffPlayer?.player_name) {
+    leadoffPlayerName = data.leadoffPlayer.player_name;
+    showLeadoffCareerSection(leadoffPlayerName);
+  }
+  
+  // Update era display for private games
+  if (isPrivateGame && data.selectedEra) {
+    const gameArea = document.getElementById('gameArea');
+    const gameInfoDisplay = document.getElementById('gameInfoDisplay');
+    const displayEra = document.getElementById('displayEra');
+    
+    if (gameArea && gameInfoDisplay && displayEra) {
+      gameArea.classList.add('private-game');
+      
+      const eraNames = {
+        '2000-present': 'Modern Era',
+        '1980-1999': 'Golden Era', 
+        '1960-1979': 'Classic Era',
+        'pre-1960': 'Pioneer Era'
+      };
+      
+      displayEra.textContent = eraNames[data.selectedEra] || 'Modern Era';
+      gameInfoDisplay.style.display = 'inline-flex';
+    }
+  }
+  
+  // Request timer sync to get current time
+  if (socket && socket.connected) {
+    socket.emit('requestTimerSync', { roomId: myRoomId || roomId });
+  }
+  
+  console.log('[CLIENT] Game state restored after reconnection');
+});
 
 
 

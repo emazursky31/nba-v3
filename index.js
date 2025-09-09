@@ -1341,7 +1341,14 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
                 canSkip: !(game.skipsUsed && game.skipsUsed[socket.id]),
                 leadoffPlayer: game.leadoffPlayer,
                 selectedEra: game.selectedEra,
-                timeLimit: game.timeLimit
+                timeLimit: game.timeLimit,
+                // Add these critical fields for proper UI sync
+                turnCount: game.turnCount,
+                currentTurn: game.currentTurn,
+                activePlayerUsername: game.usernames[game.activePlayerSocketId],
+                opponentUsername: game.usernames[game.players.find(id => id !== socket.id)],
+                timeLeft: game.timeLeft,
+                skipsUsed: game.skipsUsed
               });
               
               // Update activePlayerSocketId if this was the active player
@@ -1414,7 +1421,14 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
           canSkip: !(game.skipsUsed && game.skipsUsed[socket.id]),
           leadoffPlayer: game.leadoffPlayer,
           selectedEra: game.selectedEra,
-          timeLimit: game.timeLimit
+          timeLimit: game.timeLimit,
+          // Add these critical fields for proper UI sync
+          turnCount: game.turnCount,
+          currentTurn: game.currentTurn,
+          activePlayerUsername: game.usernames[game.activePlayerSocketId],
+          opponentUsername: game.usernames[game.players.find(id => id !== socket.id)],
+          timeLeft: game.timeLeft,
+          skipsUsed: game.skipsUsed
         });
         
         // Notify opponent of successful reconnection
