@@ -425,7 +425,7 @@
   </div>
   <div class="game-actions">
     <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip</a>
-    <button class="resign-btn hidden" id="resignGameBtn">Resign Game</button>
+    <button class="resign-btn" id="resignGameBtn" style="display: none;">Resign Game</button>
   </div>
 </div>
 
@@ -1701,7 +1701,8 @@ function resetGameUI() {
 
   const resignBtn = document.getElementById('resignGameBtn');
   if (resignBtn) {
-    resignBtn.style.display = 'none';
+    resignBtn.classList.remove('hidden'); 
+    resignBtn.style.display = 'inline-block';
   }
 
   // Reset UI parts
@@ -3189,6 +3190,13 @@ if (isPrivateGame) {
   rematchBtn.disabled = false;
   rematchBtn.textContent = 'Rematch';
 
+
+  const resignBtn = document.getElementById('resignGameBtn');
+if (resignBtn) {
+  resignBtn.classList.remove('hidden');
+  resignBtn.style.display = 'inline-block';
+}
+
   messagesEl.innerHTML = '';
   messagesEl.style.display = 'block';
 
@@ -3510,8 +3518,8 @@ socket.on('opponentTurn', (data) => {
   // Skip button hidden during opponent turn
   const skipLink = document.getElementById('skipTurnBtn');
 if (skipLink) {
-  skipLink.classList.add('hidden'); // ✅ Add hidden class back
-  skipLink.style.display = 'none';
+  skipLink.style.display = 'inline-block'; 
+  skipLink.classList.add('disabled');     
 }
 
   // Highlight opponent
@@ -3807,7 +3815,7 @@ socket.on('opponentTurn', (data) => {
   // Hide resign button during opponent's turn
   const resignBtn = document.getElementById('resignGameBtn');
   if (resignBtn) {
-    resignBtn.style.display = 'none';
+    resignBtn.style.display = 'inline-block';
   }
 
   const playerYouEl = document.getElementById('playerYou');
