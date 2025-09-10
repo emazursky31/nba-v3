@@ -3487,7 +3487,7 @@ socket.on('opponentTurn', (data) => {
 
   // Update player name safely
   if (currentPlayerNameEl) {
-    currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's turn to name a teammate";
+    currentPlayerNameEl.textContent = data.currentPlayerName || "Opponent's Turn";
   }
 
   // Update headshot safely
@@ -3507,22 +3507,34 @@ socket.on('opponentTurn', (data) => {
     promptHeader.textContent = `Opponent's turn`;
   }
 
-  // Timer
-  timerEl.textContent = data.timeLeft || '';
-  if (data.timeLeft) updateTimerStyle(data.timeLeft);
+  // Timer - Enhanced with sync support
+  if (data.turnStartTime && data.turnDuration) {
+    // NEW: Start client-side timer with timestamp sync
+    startClientTimer(data.turnStartTime, data.turnDuration);
+  } else {
+    // Fallback to old method
+    timerEl.textContent = `:${data.timeLeft || 30}`;
+    if (data.timeLeft) updateTimerStyle(data.timeLeft);
+  }
 
   // Messages
   messagesEl.style.display = 'block';
   showMessage(data.message || "Waiting for your opponent to guess...", 'info');
 
-  // Skip button hidden during opponent turn
+  // Skip button visible but disabled during opponent turn
   const skipLink = document.getElementById('skipTurnBtn');
-if (skipLink) {
-  skipLink.classList.remove('hidden');    // ✅ Keep visible
-  skipLink.style.display = 'inline-block'; // ✅ Keep visible
-  skipLink.classList.add('disabled');     // ✅ Make unclickable
-  skipLink.textContent = 'Skip Turn';     // ✅ Keep normal text
-}
+  if (skipLink) {
+    skipLink.classList.remove('hidden');    // ✅ Keep visible
+    skipLink.style.display = 'inline-block'; // ✅ Keep visible
+    skipLink.classList.add('disabled');     // ✅ Make unclickable
+    skipLink.textContent = 'Skip Turn';     // ✅ Keep normal text
+  }
+
+  // Keep resign button visible during opponent's turn
+  const resignBtn = document.getElementById('resignGameBtn');
+  if (resignBtn) {
+    resignBtn.style.display = 'inline-block';
+  }
 
   // Highlight opponent
   const playerYouEl = document.getElementById('playerYou');
@@ -3534,6 +3546,7 @@ if (skipLink) {
 
   setTimeout(() => scrollToGameArea(), 200);
 });
+
 
 
 // Add skip event handlers in the socket setup section
