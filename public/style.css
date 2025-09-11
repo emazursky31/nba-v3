@@ -1327,7 +1327,7 @@ button:disabled {
 }
 
 .leadoff-career-content {
-  padding: 20px;
+  padding: 15px;
   background: #f8f9fa;
   border-top: 1px solid #e9ecef;
   animation: slideDown 0.3s ease-out;
@@ -1370,19 +1370,19 @@ button:disabled {
 
 .team-stints {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .team-stint {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
+  padding: 6px 12px;
   background: white;
   border-radius: 6px;
   border: 1px solid #e9ecef;
   transition: all 0.2s ease;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 .team-stint:last-child {
@@ -1399,7 +1399,7 @@ button:disabled {
   color: #343a40;
   font-size: 14px;
   flex: 0 0 auto; /* Don't shrink */
-  margin-right: 12px; /* Add space between team and years */
+  margin-right: 8px; /* Add space between team and years */
 }
 
 .years {
@@ -1407,7 +1407,7 @@ button:disabled {
   color: var(--text-secondary);
   font-family: 'Courier New', monospace;
   background: #e9ecef;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   flex: 0 0 auto;
   text-align: right;
@@ -1472,6 +1472,8 @@ button:disabled {
   object-fit: cover;
   border: 2px solid var(--primary-color);
   flex-shrink: 0;
+  overflow: hidden;
+  display: block;
 }
 
 .player-details {
@@ -2965,8 +2967,9 @@ html {
   }
   
     #currentPlayerHeadshot {
-      width: 50px !important;
-      height: 50px !important;
+      width: 60px !important;
+      height: 60px !important;
+      flex-shrink: 0;
     }
   
     .turn-player-name {
@@ -3479,11 +3482,6 @@ html, body {
     transition: border-color 0.2s ease;
   }
 
-  #currentPlayerHeadshot {
-    width: 70px !important;   /* Significantly larger - up from 50px */
-    height: 70px !important;  /* Significantly larger - up from 50px */
-    flex-shrink: 0;
-  }
 
   .turn-prompt .turn-player-name {
     font-size: 1.8rem;  /* Much larger - up from 1.4rem */

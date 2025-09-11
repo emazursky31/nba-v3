@@ -420,8 +420,6 @@
   
   <!-- Era display integrated with opponent info (private games only) -->
   <span class="game-info private-only" id="gameInfoDisplay" style="display: none;">
-    <span class="info-separator">•</span>
-    <span class="era-label">Era:</span>
     <span class="era-value" id="displayEra">Modern Era</span>
   </span>
 </div>
@@ -1644,22 +1642,51 @@ function setupMobileInputFocus() {
   guessInput.addEventListener('focus', () => {
     if (window.innerWidth <= 768) {
       setTimeout(() => {
-        // Gentle scroll to ensure input is visible without hiding player info
+        // Get elements and their positions
         const inputRect = guessInput.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
+        const playerInfo = document.querySelector('.player-info');
+        const playerInfoRect = playerInfo?.getBoundingClientRect();
         
         // Only scroll if input is below the fold
         if (inputRect.bottom > viewportHeight - 50) {
-          const scrollAmount = inputRect.bottom - viewportHeight + 100;
-          window.scrollBy({
-            top: scrollAmount,
-            behavior: 'smooth'
-          });
+          let scrollAmount;
+          
+          if (playerInfoRect) {
+            // Smart positioning: keep player info visible
+            const playerInfoBottom = playerInfoRect.bottom + window.scrollY;
+            const minPlayerInfoVisible = 80; // Minimum pixels of player info to keep visible
+            const maxAllowedScroll = Math.max(0, playerInfoBottom - minPlayerInfoVisible);
+            
+            // Calculate needed scroll to show input
+            const neededScroll = inputRect.bottom - viewportHeight + 80;
+            
+            // Use the smaller of the two to ensure player info stays visible
+            scrollAmount = Math.min(neededScroll, maxAllowedScroll);
+            
+            // Also cap at 30% of viewport height to prevent excessive scrolling
+            scrollAmount = Math.min(scrollAmount, viewportHeight * 0.3);
+          } else {
+            // Fallback if player info not found - use conservative scroll
+            scrollAmount = Math.min(
+              inputRect.bottom - viewportHeight + 60,
+              viewportHeight * 0.25
+            );
+          }
+          
+          // Only scroll if we calculated a positive amount
+          if (scrollAmount > 0) {
+            window.scrollBy({
+              top: scrollAmount,
+              behavior: 'smooth'
+            });
+          }
         }
       }, 300);
     }
   });
 }
+
 
 
 
