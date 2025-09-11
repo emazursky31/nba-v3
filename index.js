@@ -278,17 +278,57 @@ async function getPlayerCareerDetails(playerName) {
     `;
     
     const stintsResult = await client.query(stintsQuery, [playerName]);
+    const rawStints = stintsResult.rows;
+
+    // Apply the same merging logic as getSharedTeams to handle duplicate/overlapping stints
+    const rangesByTeam = {};
+    for (const stint of rawStints) {
+      const team = stint.team_abbr;
+      const startYear = parseInt(stint.start_season);
+      const endYear = parseInt(stint.end_season);
+      
+      if (!rangesByTeam[team]) rangesByTeam[team] = [];
+      rangesByTeam[team].push([startYear, endYear]);
+    }
+
+    // Merge overlapping or adjacent ranges per team
+    const mergedStints = [];
+    for (const team in rangesByTeam) {
+      const ranges = rangesByTeam[team];
+      ranges.sort((a, b) => a[0] - b[0]);
+
+      let [curStart, curEnd] = ranges[0];
+      for (let i = 1; i < ranges.length; i++) {
+        const [nextStart, nextEnd] = ranges[i];
+        if (nextStart <= curEnd + 1) {
+          // Overlapping or adjacent
+          curEnd = Math.max(curEnd, nextEnd);
+        } else {
+          mergedStints.push({
+            team: team,
+            startYear: curStart,
+            endYear: curEnd
+          });
+          [curStart, curEnd] = [nextStart, nextEnd];
+        }
+      }
+      // Push the final range
+      mergedStints.push({
+        team: team,
+        startYear: curStart,
+        endYear: curEnd
+      });
+    }
+
+    // Sort by start year
+    mergedStints.sort((a, b) => a.startYear - b.startYear);
     
     return {
       playerName: playerInfo.player_name,
       firstYear: playerInfo.first_year,
       lastYear: playerInfo.last_year,
       totalTeams: parseInt(playerInfo.total_teams),
-      teamStints: stintsResult.rows.map(stint => ({
-        team: stint.team_abbr,
-        startYear: parseInt(stint.start_season),
-        endYear: parseInt(stint.end_season)
-      }))
+      teamStints: mergedStints
     };
     
   } catch (error) {
@@ -296,6 +336,7 @@ async function getPlayerCareerDetails(playerName) {
     throw error;
   }
 }
+
 
 
 
