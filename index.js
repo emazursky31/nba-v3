@@ -50,6 +50,12 @@ client.connect()
 app.use(express.json());
 
 
+function normalizeForSearch(str) {
+  return str.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+
+
 app.get('/players', async (req, res) => {
   const input = (req.query.q || '').trim();
 
@@ -57,7 +63,9 @@ app.get('/players', async (req, res) => {
     return res.json([]);
   }
 
-  const names = input.split(/\s+/);
+  // Normalize the search input
+  const normalizedInput = normalizeForSearch(input);
+  const names = normalizedInput.split(/\s+/);
 
   let query;
   let params;
@@ -77,8 +85,8 @@ app.get('/players', async (req, res) => {
          WHERE pts.player_id = p.player_id) AS last_year
       FROM players p
       WHERE 
-        p.player_name ILIKE $1 || '%'  
-        OR p.player_name ILIKE '% ' || $1 || '%'  
+        LOWER(REGEXP_REPLACE(p.player_name, '[^\\w\\s]', '', 'g')) ILIKE $1 || '%'  
+        OR LOWER(REGEXP_REPLACE(p.player_name, '[^\\w\\s]', '', 'g')) ILIKE '% ' || $1 || '%'  
       ORDER BY p.player_name
       LIMIT 20;
     `;
@@ -98,8 +106,8 @@ app.get('/players', async (req, res) => {
          WHERE pts.player_id = p.player_id) AS last_year
       FROM players p
       WHERE 
-        p.player_name ILIKE $1 || '%'  
-        AND p.player_name ILIKE '% ' || $2 || '%'  
+        LOWER(REGEXP_REPLACE(p.player_name, '[^\\w\\s]', '', 'g')) ILIKE $1 || '%'  
+        AND LOWER(REGEXP_REPLACE(p.player_name, '[^\\w\\s]', '', 'g')) ILIKE '% ' || $2 || '%'  
       ORDER BY p.player_name
       LIMIT 20;
     `;
