@@ -1649,28 +1649,28 @@ function setupMobileInputFocus() {
         const playerInfoRect = playerInfo?.getBoundingClientRect();
         
         // Only scroll if input is below the fold
-        if (inputRect.bottom > viewportHeight - 50) {
+        if (inputRect.bottom > viewportHeight - 30) { // Reduced threshold from 50 to 30
           let scrollAmount;
           
           if (playerInfoRect) {
-            // Smart positioning: keep player info visible
+            // Smart positioning: keep MORE player info visible
             const playerInfoBottom = playerInfoRect.bottom + window.scrollY;
-            const minPlayerInfoVisible = 80; // Minimum pixels of player info to keep visible
+            const minPlayerInfoVisible = 120; // Increased from 80 to 120 - keeps more player info visible
             const maxAllowedScroll = Math.max(0, playerInfoBottom - minPlayerInfoVisible);
             
-            // Calculate needed scroll to show input
-            const neededScroll = inputRect.bottom - viewportHeight + 80;
+            // Calculate needed scroll with LESS space below input
+            const neededScroll = inputRect.bottom - viewportHeight + 40; // Reduced from 80 to 40
             
             // Use the smaller of the two to ensure player info stays visible
             scrollAmount = Math.min(neededScroll, maxAllowedScroll);
             
-            // Also cap at 30% of viewport height to prevent excessive scrolling
-            scrollAmount = Math.min(scrollAmount, viewportHeight * 0.3);
+            // Reduced cap to 20% of viewport height for less scrolling
+            scrollAmount = Math.min(scrollAmount, viewportHeight * 0.2); // Reduced from 0.3 to 0.2
           } else {
-            // Fallback if player info not found - use conservative scroll
+            // Fallback with less aggressive scrolling
             scrollAmount = Math.min(
-              inputRect.bottom - viewportHeight + 60,
-              viewportHeight * 0.25
+              inputRect.bottom - viewportHeight + 30, // Reduced from 60 to 30
+              viewportHeight * 0.15 // Reduced from 0.25 to 0.15
             );
           }
           
@@ -1686,6 +1686,7 @@ function setupMobileInputFocus() {
     }
   });
 }
+
 
 
 
