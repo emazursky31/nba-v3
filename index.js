@@ -140,6 +140,75 @@ app.get('/player-career', async (req, res) => {
   }
 });
 
+app.get('/user-stats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const query = `
+      SELECT 
+        games_played, wins, losses, total_turns,
+        modern_era_wins, modern_era_losses,
+        golden_era_wins, golden_era_losses, 
+        classic_era_wins, classic_era_losses,
+        pioneer_era_wins, pioneer_era_losses
+      FROM user_stats 
+      WHERE user_id = $1
+    `;
+    
+    const result = await client.query(query, [userId]);
+    
+    if (result.rows.length === 0) {
+      return res.json({
+        games_played: 0, wins: 0, losses: 0, total_turns: 0,
+        avg_turns: 0, win_rate: 0,
+        era_stats: {
+          'modern': { wins: 0, losses: 0 },
+          'golden': { wins: 0, losses: 0 },
+          'classic': { wins: 0, losses: 0 }, 
+          'pioneer': { wins: 0, losses: 0 }
+        }
+      });
+    }
+    
+    const stats = result.rows[0];
+    const avgTurns = stats.games_played > 0 ? 
+      Math.round((stats.total_turns / stats.games_played) * 10) / 10 : 0;
+    const winRate = stats.games_played > 0 ? 
+      Math.round((stats.wins / stats.games_played) * 100) : 0;
+    
+    res.json({
+      games_played: stats.games_played,
+      wins: stats.wins,
+      losses: stats.losses,
+      total_turns: stats.total_turns,
+      avg_turns: avgTurns,
+      win_rate: winRate,
+      era_stats: {
+        'modern': { 
+          wins: stats.modern_era_wins || 0, 
+          losses: stats.modern_era_losses || 0 
+        },
+        'golden': { 
+          wins: stats.golden_era_wins || 0, 
+          losses: stats.golden_era_losses || 0 
+        },
+        'classic': { 
+          wins: stats.classic_era_wins || 0, 
+          losses: stats.classic_era_losses || 0 
+        },
+        'pioneer': { 
+          wins: stats.pioneer_era_wins || 0, 
+          losses: stats.pioneer_era_losses || 0 
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 
 
 // Serve index.html for all other routes (SPA fallback)
@@ -846,8 +915,8 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
       
       if (remainingUserId && disconnectedUserId) {
         try {
-          await updateUserStats(remainingUserId, 'win');
-          await updateUserStats(disconnectedUserId, 'loss');
+          await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
+          await updateUserStats(disconnectedUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
           console.log('[SIGNOUT] Stats updated successfully');
         } catch (err) {
           console.error('[SIGNOUT] Error updating stats:', err);
@@ -944,8 +1013,8 @@ socket.on('playerResign', ({ roomId }) => {
   const remainingUserId = game.userIds[remainingSocketId];
   
   if (resigningUserId && remainingUserId && !game.statsUpdated) {
-    updateUserStats(resigningUserId, 'loss');
-    updateUserStats(remainingUserId, 'win');
+    updateUserStats(resigningUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
+    updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
     game.statsUpdated = true;
     console.log(`[RESIGN] Updated stats: ${resigningUsername} loss, ${remainingUsername} win`);
   }
@@ -1745,8 +1814,8 @@ async function handlePlayerDisconnectFinal(socket, roomId, username) {
       const leavingUserId = game.userIds[socket.id];
       
       if (remainingUserId && leavingUserId && !game.statsUpdated) {
-        await updateUserStats(remainingUserId, 'win');
-        await updateUserStats(leavingUserId, 'loss');
+        await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
+        await updateUserStats(leavingUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
         game.statsUpdated = true;
       }
     }
@@ -1793,28 +1862,42 @@ setInterval(cleanupGameCreationLocks, 15000);
 
 
 
-async function updateUserStats(userId, result) {
+async function updateUserStats(userId, result, era = '2000-present', turnCount = 0) {
   if (!userId || !['win', 'loss'].includes(result)) return;
 
-  console.log('[DB] updateUserStats called with:', userId, result);
+  console.log('[DB] updateUserStats called with:', userId, result, era, turnCount);
   
   const winInc = result === 'win' ? 1 : 0;
   const lossInc = result === 'loss' ? 1 : 0;
   
-  console.log('[DB] Will increment:', { winInc, lossInc, gamesInc: 1 });
-
+  // Map era to column names
+  const eraMapping = {
+    '2000-present': 'modern_era',
+    '1980-1999': 'golden_era', 
+    '1960-1979': 'classic_era',
+    'pre-1960': 'pioneer_era'
+  };
+  
+  const eraPrefix = eraMapping[era] || 'modern_era';
+  
   const query = `
-    INSERT INTO user_stats (user_id, wins, losses, games_played, created_at, updated_at)
-    VALUES ($1, $2, $3, 1, NOW(), NOW())
+    INSERT INTO user_stats (
+      user_id, wins, losses, games_played, total_turns,
+      ${eraPrefix}_wins, ${eraPrefix}_losses, created_at, updated_at
+    )
+    VALUES ($1, $2, $3, 1, $4, $2, $3, NOW(), NOW())
     ON CONFLICT (user_id) DO UPDATE
       SET wins = user_stats.wins + $2,
           losses = user_stats.losses + $3,
           games_played = user_stats.games_played + 1,
+          total_turns = user_stats.total_turns + $4,
+          ${eraPrefix}_wins = user_stats.${eraPrefix}_wins + $2,
+          ${eraPrefix}_losses = user_stats.${eraPrefix}_losses + $3,
           updated_at = NOW()
   `;
   
   try {
-    const result = await client.query(query, [userId, winInc, lossInc]);
+    const result = await client.query(query, [userId, winInc, lossInc, turnCount]);
     console.log('[DB] Stats updated successfully for user:', userId);
     return result;
   } catch (err) {
@@ -1822,6 +1905,7 @@ async function updateUserStats(userId, result) {
     throw err;
   }
 }
+
 
 
 
@@ -1929,8 +2013,8 @@ const timerId = setTimeout(async () => {
   }
 
   if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
-    await updateUserStats(winnerUserId, 'win');
-    await updateUserStats(loserUserId, 'loss');
+    await updateUserStats(winnerUserId, 'win', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
+    await updateUserStats(loserUserId, 'loss', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
     currentGame.statsUpdated = true;
   }
 

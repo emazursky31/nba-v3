@@ -290,27 +290,60 @@
     </div>
 
     <!-- Stats Card -->
-    <div class="profile-stats-card">
-      <h2>Game Statistics</h2>
-      <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-number" id="profile-total-games">0</div>
-          <div class="stat-label">Games Played</div>
+   <!-- Replace the existing profile-stats-card section -->
+<div class="profile-stats-card">
+  <h2>Game Statistics</h2>
+  <div class="profile-stats">
+    <div class="stat-card">
+      <div class="stat-number" id="profile-total-games">0</div>
+      <div class="stat-label">Games Played</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="profile-games-won">0</div>
+      <div class="stat-label">Games Won</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="profile-win-rate">0%</div>
+      <div class="stat-label">Win Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="profile-avg-turns">0</div>
+      <div class="stat-label">Avg Turns</div>
+    </div>
+  </div>
+  
+  <!-- New Era Breakdown Section -->
+  <div class="era-breakdown">
+    <h3>Performance by Era</h3>
+    <div class="era-stats-grid">
+      <div class="era-stat-card">
+        <div class="era-name">Modern Era (2000+)</div>
+        <div class="era-record">
+          <span id="modern-wins">0</span>W - <span id="modern-losses">0</span>L
         </div>
-        <div class="stat-card">
-          <div class="stat-number" id="profile-games-won">0</div>
-          <div class="stat-label">Games Won</div>
+      </div>
+      <div class="era-stat-card">
+        <div class="era-name">Golden Era (1980-1999)</div>
+        <div class="era-record">
+          <span id="golden-wins">0</span>W - <span id="golden-losses">0</span>L
         </div>
-        <div class="stat-card">
-          <div class="stat-number" id="profile-win-rate">0%</div>
-          <div class="stat-label">Win Rate</div>
+      </div>
+      <div class="era-stat-card">
+        <div class="era-name">Classic Era (1960-1979)</div>
+        <div class="era-record">
+          <span id="classic-wins">0</span>W - <span id="classic-losses">0</span>L
         </div>
-        <!-- <div class="stat-card">
-          <div class="stat-number" id="profile-avg-guesses">0</div>
-          <div class="stat-label">Avg Guesses</div>
-        </div> -->
+      </div>
+      <div class="era-stat-card">
+        <div class="era-name">Pioneer Era (Pre-1960)</div>
+        <div class="era-record">
+          <span id="pioneer-wins">0</span>W - <span id="pioneer-losses">0</span>L
+        </div>
       </div>
     </div>
+  </div>
+</div>
+
 
     <!-- Actions -->
     <div class="profile-actions">
@@ -831,19 +864,54 @@ async function getUserStats(userId) {
 
 
 async function loadRealProfileStats() {
-  const stats = await getUserStats(myUserId);
+  if (!myUserId) {
+    console.warn('No user ID available for loading stats');
+    return;
+  }
   
-  // Safely update DOM elements only if they exist
-  const updateElement = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  };
-  
-  updateElement('profile-total-games', stats.games_played);
-  updateElement('profile-games-won', stats.wins);
-  updateElement('profile-win-rate', `${stats.win_rate}%`);
-  updateElement('profile-avg-guesses', '0'); // Placeholder
+  try {
+    const response = await fetch(`/user-stats/${myUserId}`);
+    const stats = await response.json();
+    
+    // Update main stats
+    const updateElement = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    
+    updateElement('profile-total-games', stats.games_played);
+    updateElement('profile-games-won', stats.wins);
+    updateElement('profile-win-rate', `${stats.win_rate}%`);
+    updateElement('profile-avg-turns', stats.avg_turns);
+    
+    // Update era-specific stats
+    updateElement('modern-wins', stats.era_stats.modern.wins);
+    updateElement('modern-losses', stats.era_stats.modern.losses);
+    updateElement('golden-wins', stats.era_stats.golden.wins);
+    updateElement('golden-losses', stats.era_stats.golden.losses);
+    updateElement('classic-wins', stats.era_stats.classic.wins);
+    updateElement('classic-losses', stats.era_stats.classic.losses);
+    updateElement('pioneer-wins', stats.era_stats.pioneer.wins);
+    updateElement('pioneer-losses', stats.era_stats.pioneer.losses);
+    
+  } catch (error) {
+    console.error('Error loading profile stats:', error);
+    // Set default values on error
+    const defaultElements = [
+      'profile-total-games', 'profile-games-won', 'profile-avg-turns',
+      'modern-wins', 'modern-losses', 'golden-wins', 'golden-losses',
+      'classic-wins', 'classic-losses', 'pioneer-wins', 'pioneer-losses'
+    ];
+    defaultElements.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '0';
+    });
+    
+    const el = document.getElementById('profile-win-rate');
+    if (el) el.textContent = '0%';
+  }
 }
+
 
 
 async function displayStatsOnHomePage() {
@@ -3504,7 +3572,7 @@ socket.on('opponentTurn', (data) => {
   // Update prompt header text
   const promptHeader = turnSection.querySelector('.prompt-header');
   if (promptHeader) {
-    promptHeader.textContent = `Opponent's turn`;
+    promptHeader.textContent = `Opponent's turn to name a teammate`;
   }
 
   // Timer - Enhanced with sync support
