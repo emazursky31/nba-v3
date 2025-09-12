@@ -50,9 +50,28 @@ client.connect()
 app.use(express.json());
 
 
+// Redirect Render subdomain to custom domain
+app.use((req, res, next) => {
+  // Replace with your Render subdomain
+  const renderDomain = 'nba-head2head-v2.onrender.com';
+  // Replace with your custom domain
+  const customDomain = 'nameateammate.com';
+
+  if (req.hostname === renderDomain) {
+    // Preserve original path
+    return res.redirect(301, `https://${customDomain}${req.originalUrl}`);
+  }
+
+  next();
+});
+
+
+
 function normalizeForSearch(str) {
   return str.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
 }
+
+
 
 
 
