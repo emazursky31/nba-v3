@@ -617,7 +617,7 @@ section[data-route="/profile"]:not(.hidden) ~ .site-footer {
 .game-intro {
   text-align: center;
   margin-bottom: 2rem;
-  padding: 2rem 1rem;
+  padding: 1rem;
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border-radius: var(--radius-xl);
   border: 2px solid var(--border-color);
@@ -3198,7 +3198,7 @@ html {
   }
 
     .how-to-play-column {
-    order: 2;
+    order: 1;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -3249,7 +3249,7 @@ html {
   }
 
   .auth-column {
-    order: 1;
+    order: 2;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
