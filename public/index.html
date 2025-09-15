@@ -1650,7 +1650,6 @@ function navigateTo(path, options = {}) {
     showRouteSection(path);
     updateUIForRoute(path);
     attachRouteListeners(path);
-    updateFooterVisibility();
 
     requestAnimationFrame(() => {
       resolve();
@@ -3096,23 +3095,6 @@ function goBackToGameTypeSelection() {
 }
 
 
-function updateFooterVisibility() {
-  const footer = document.getElementById('site-footer');
-  const currentRoute = window.location.pathname;
-  const showFooterRoutes = ['/signup', '/home', '/profile'];
-  
-  if (footer) {
-    if (showFooterRoutes.includes(currentRoute) || 
-        showFooterRoutes.some(route => currentRoute.startsWith(route))) {
-      footer.style.display = 'block';
-      document.body.classList.add('show-footer');
-    } else {
-      footer.style.display = 'none';
-      document.body.classList.remove('show-footer');
-    }
-  }
-}
-
 
 
 ///////////////////////////////////////////////
@@ -4346,7 +4328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
-  updateFooterVisibility();
+  
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
