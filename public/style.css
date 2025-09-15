@@ -249,9 +249,9 @@ nav {
 
 /* Beta Section in Footer */
 .footer-beta-section {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  /* background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
   border: 2px solid rgba(168, 85, 247, 0.3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg); */
   padding: 2rem;
   margin-bottom: 3rem;
   position: relative;
@@ -3473,17 +3473,17 @@ html {
 
     .settings-unified-grid {
       grid-template-columns: 1fr;
-      gap: 1.5rem;
+      gap: 1rem;
       max-width: 100%;
     }
 
     .settings-section {
-  max-width: 100%;
-  width: 100%;
-  margin: 0 auto;
-  /* Match the selection-card styling for consistency */
-  min-height: auto;
-}
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem; /* Match .selection-card padding */
+    min-height: auto; /* Remove fixed height constraints */
+  }
   
  section[data-route] {
     padding: 1rem 1.5rem;  /* Even more compact on mobile */
