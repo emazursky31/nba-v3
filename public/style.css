@@ -295,6 +295,33 @@ nav {
   font-size: 1.1rem;
 }
 
+.beta-content-centered {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.footer-beta-section .beta-text {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.footer-beta-section .beta-text a {
+  color: #c084fc;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.footer-beta-section .beta-text a:hover {
+  color: #ddd6fe;
+  text-decoration: underline;
+}
+
 .beta-items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
