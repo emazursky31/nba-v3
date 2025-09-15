@@ -486,18 +486,14 @@ section[data-route="/profile"]:not(.hidden) ~ .site-footer {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  padding: 1.5rem;
-  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border-color);
-  transition: all 0.3s ease;
 }
 
-.core-rule:hover {
+/* .core-rule:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--primary-color);
-}
+} */
 
 .rule-icon {
   font-size: 2rem;
@@ -617,7 +613,7 @@ section[data-route="/profile"]:not(.hidden) ~ .site-footer {
 .game-intro {
   text-align: center;
   margin-bottom: 2rem;
-  padding: 1rem;
+  padding: 0.5rem 1rem 1rem 1rem;
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border-radius: var(--radius-xl);
   border: 2px solid var(--border-color);
@@ -2350,7 +2346,6 @@ button:disabled {
   background: var(--bg-secondary);  /* Light container background */
   border-radius: var(--radius-lg);
   padding: 0.5rem;
-  margin-bottom: 2rem;
   box-shadow: var(--shadow-md);
   border: 2px solid var(--border-color);  /* Light border */
   gap: 0.25rem;
@@ -3189,7 +3184,7 @@ html {
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 0 1.5rem 0 !important;
-    padding: 1.5rem 1rem !important;
+    /* padding: 1.5rem 1rem !important; */
     box-sizing: border-box !important;
   }
 
@@ -3301,8 +3296,10 @@ html {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 1.25rem !important;
+    padding: 1rem !important;
     box-sizing: border-box !important;
+    flex-direction: column;
+    text-align: center;
   }
   
   /* Fix form inputs */
@@ -3313,11 +3310,6 @@ html {
     box-sizing: border-box !important;
   }
 
-  .core-rule {
-    flex-direction: column;
-    text-align: center;
-    padding: 1rem;
-  }
   
   .rule-content h4 {
     font-size: 1rem;
@@ -3900,9 +3892,6 @@ html, body {
     grid-template-columns: 1fr;
   }
 
-  .game-intro {
-    padding: 1.5rem 1rem;
-  }
   
   .game-intro h1 {
     font-size: 1.75rem;
