@@ -231,6 +231,388 @@ nav {
 }
 
 
+/* Footer Styles */
+.site-footer {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #e2e8f0;
+  margin-top: 4rem;
+  border-top: 3px solid var(--primary-color);
+  position: relative;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 1.5rem;
+}
+
+/* Beta Section in Footer */
+.footer-beta-section {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-beta-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8b5cf6, #a855f7, #c084fc);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.footer-beta-section .beta-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.footer-beta-section .beta-badge {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+}
+
+.footer-beta-section .beta-title {
+  font-weight: 600;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.beta-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.footer-beta-section .beta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.footer-beta-section .beta-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.footer-beta-section .beta-icon {
+  font-size: 1.2rem;
+  width: 1.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.footer-beta-section .beta-text {
+  font-weight: 500;
+}
+
+.footer-beta-section .beta-text a {
+  color: #c084fc;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.footer-beta-section .beta-text a:hover {
+  color: #ddd6fe;
+  text-decoration: underline;
+}
+
+/* Footer Links Section */
+.footer-links-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-column h4 {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-column a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.footer-column a:hover {
+  color: white;
+  transform: translateX(4px);
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 2rem;
+  border-top: 1px solid #475569;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-logo {
+  font-size: 1.5rem;
+}
+
+.footer-name {
+  font-weight: 600;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.footer-social {
+  display: flex;
+  gap: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.social-link:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.footer-copyright {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Show footer only on specific pages */
+.site-footer {
+  display: none;
+}
+
+/* Show footer on signup, home, and profile pages */
+section[data-route="/signup"]:not(.hidden) ~ .site-footer,
+section[data-route="/home"]:not(.hidden) ~ .site-footer,
+section[data-route="/profile"]:not(.hidden) ~ .site-footer {
+  display: block;
+}
+
+
+/* Main container for side-by-side layout */
+.signup-main-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  align-items: start;
+}
+
+/* Left column: How to Play */
+.how-to-play-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.how-to-play-column .how-to-play {
+  margin-bottom: 0;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+/* Simplified rules styling */
+.rules-simplified {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.core-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.core-rule:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.rule-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.rule-content h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rule-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Full rules toggle */
+.full-rules-toggle {
+  margin-top: 1rem;
+}
+
+.full-rules-toggle summary {
+  cursor: pointer;
+  color: var(--primary-color);
+  font-weight: 500;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
+}
+
+.full-rules-toggle summary:hover {
+  background: rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+
+.full-rules-toggle[open] summary {
+  margin-bottom: 1rem;
+  background: var(--primary-color);
+  color: white;
+}
+
+.full-rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.detailed-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.detailed-rule .rule-number {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.detailed-rule p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Right column: Auth forms */
+.auth-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.auth-column .auth-tabs-container {
+  margin: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.auth-column .auth-form {
+  max-width: none;
+  width: 100%;
+}
+
+
+
 /* Game Introduction Styles */
 .game-intro {
   text-align: center;
@@ -2773,6 +3155,36 @@ html {
     font-size: 0.8rem;
   }
 
+  .footer-container {
+    padding: 2rem 1rem 1rem;
+  }
+  
+  .footer-beta-section {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .beta-items {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .footer-beta-section .beta-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .footer-links-section {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+  }
+
    .game-intro h1 {
     font-size: 2rem;
   }
@@ -2792,6 +3204,33 @@ html {
   
   .how-to-play {
     padding: 1.5rem;
+  }
+
+  .signup-main-container {
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .core-rule {
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem;
+  }
+  
+  .rule-content h4 {
+    font-size: 1rem;
+  }
+  
+  .rule-content p {
+    font-size: 0.9rem;
+  }
+  
+  .trust-signals {
+    padding: 1rem;
+  }
+  
+  .trust-item {
+    font-size: 0.85rem;
   }
   
   h1 {
@@ -3338,6 +3777,16 @@ html, body {
   #nav-home-link {
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
+  }
+
+  .footer-links-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-beta-section .beta-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
   }
 
   .home-tab {

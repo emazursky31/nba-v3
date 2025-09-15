@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NBA Teammate Game</title>
+  <title>Name a Teammate Game</title>
 
   <!-- External CSS -->
   <link rel="stylesheet" href="style.css" />
@@ -53,60 +53,102 @@
     <p class="game-subtitle">Test your NBA knowledge by connecting players through their teammates</p>
   </div>
 
-  <!-- How to Play Section -->
- <div class="how-to-play">
-  <h3>How to Play</h3>
-  <div class="rules-grid">
-    <div class="rule-item">
-      <span class="rule-number">1</span>
-      <p>A random NBA player is chosen as the starting point</p>
+  <!-- NEW: Main container for side-by-side layout -->
+  <div class="signup-main-container">
+    
+    <!-- LEFT COLUMN: Simplified How to Play -->
+    <div class="how-to-play-column">
+      <div class="how-to-play">
+        <h3>How to Play</h3>
+        <div class="rules-simplified">
+          <div class="core-rule">
+            <div class="rule-icon">🎯</div>
+            <div class="rule-content">
+              <h4>Connect Players</h4>
+              <p>Name teammates of the current NBA player</p>
+            </div>
+          </div>
+          
+          <div class="core-rule">
+            <div class="rule-icon">⏱️</div>
+            <div class="rule-content">
+              <h4>Beat the Clock</h4>
+              <p>You have 30 seconds per turn to guess</p>
+            </div>
+          </div>
+          
+          <div class="core-rule">
+            <div class="rule-icon">🔗</div>
+            <div class="rule-content">
+              <h4>Keep the Chain</h4>
+              <p>Each correct guess becomes the new player</p>
+            </div>
+          </div>
+        </div>
+        
+        <details class="full-rules-toggle">
+          <summary>View complete rules</summary>
+          <div class="full-rules-content">
+            <div class="detailed-rule">
+              <span class="rule-number">1</span>
+              <p>A random NBA player is chosen as the starting point</p>
+            </div>
+            <div class="detailed-rule">
+              <span class="rule-number">2</span>
+              <p>Take turns naming a <strong>regular season teammate</strong> of the current player</p>
+            </div>
+            <div class="detailed-rule">
+              <span class="rule-number">3</span>
+              <p>Players must have been active on the same team for at least one regular season game at any point in their career (they don't need to have played together on court)</p>
+            </div>
+            <div class="detailed-rule">
+              <span class="rule-number">4</span>
+              <p>Each correct guess becomes the new current player</p>
+            </div>
+            <div class="detailed-rule">
+              <span class="rule-number">5</span>
+              <p>You have <strong>30 seconds per turn</strong> and can guess as many times as you want within the time limit</p>
+            </div>
+            <div class="detailed-rule">
+              <span class="rule-number">6</span>
+              <p>Don't run out of time - keep the chain going!</p>
+            </div>
+          </div>
+        </details>
+      </div>
     </div>
-    <div class="rule-item">
-      <span class="rule-number">2</span>
-      <p>Take turns naming a <strong>regular season teammate</strong> of the current player</p>
-    </div>
-    <div class="rule-item">
-      <span class="rule-number">3</span>
-      <p>Players must have been active on the same team for at least one regular season game at any point in their career (they don't need to have played together on court)</p>
-    </div>
-    <div class="rule-item">
-      <span class="rule-number">4</span>
-      <p>Each correct guess becomes the new current player</p>
-    </div>
-    <div class="rule-item">
-      <span class="rule-number">5</span>
-      <p>You have <strong>30 seconds per turn</strong> and can guess as many times as you want within the time limit</p>
-    </div>
-    <div class="rule-item">
-      <span class="rule-number">6</span>
-      <p>Don't run out of time - keep the chain going!</p>
-    </div>
-  </div>
-</div>
 
-  <div class="auth-tabs-container">
-    <div class="auth-tabs">
-      <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
-      <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
+    <!-- RIGHT COLUMN: Auth Forms -->
+    <div class="auth-column">
+      <div class="auth-tabs-container">
+        <div class="auth-tabs">
+          <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
+          <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
+        </div>
+        <div class="auth-forms-row">
+          <form id="signupForm" class="auth-form active" autocomplete="off">
+            <h2>Sign Up</h2>
+            <input type="email" id="signup-email" placeholder="Email" required>
+            <input type="password" id="signup-password" placeholder="Password" required>
+            <input id="signup-username" placeholder="Username" required>
+            <button id="signupBtn" type="submit">Sign Up</button>
+          </form>
+          <form id="signinForm" class="auth-form" autocomplete="off">
+            <h2>Sign In</h2>
+            <input type="email" id="signin-email" placeholder="Email" required>
+            <input type="password" id="signin-password" placeholder="Password" required>
+            <button id="signinBtn" type="submit">Sign In</button>
+            <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+          </form>
+        </div>
+        
+    
+      </div>
     </div>
-    <div class="auth-forms-row">
-      <form id="signupForm" class="auth-form active" autocomplete="off">
-        <h2>Sign Up</h2>
-        <input type="email" id="signup-email" placeholder="Email" required>
-        <input type="password" id="signup-password" placeholder="Password" required>
-        <input id="signup-username" placeholder="Username" required>
-        <button id="signupBtn" type="submit">Sign Up</button>
-      </form>
-      <form id="signinForm" class="auth-form" autocomplete="off">
-        <h2>Sign In</h2>
-        <input type="email" id="signin-email" placeholder="Email" required>
-        <input type="password" id="signin-password" placeholder="Password" required>
-        <button id="signinBtn" type="submit">Sign In</button>
-        <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
-      </form>
-    </div>
+
   </div>
 </section>
+
 
 
 
@@ -1626,6 +1668,7 @@ function navigateTo(path, options = {}) {
     showRouteSection(path);
     updateUIForRoute(path);
     attachRouteListeners(path);
+    updateFooterVisibility();
 
     requestAnimationFrame(() => {
       resolve();
@@ -3071,6 +3114,24 @@ function goBackToGameTypeSelection() {
 }
 
 
+function updateFooterVisibility() {
+  const footer = document.getElementById('site-footer');
+  const currentRoute = window.location.pathname;
+  const showFooterRoutes = ['/signup', '/home', '/profile'];
+  
+  if (footer) {
+    if (showFooterRoutes.includes(currentRoute) || 
+        showFooterRoutes.some(route => currentRoute.startsWith(route))) {
+      footer.style.display = 'block';
+      document.body.classList.add('show-footer');
+    } else {
+      footer.style.display = 'none';
+      document.body.classList.remove('show-footer');
+    }
+  }
+}
+
+
 
 ///////////////////////////////////////////////
 // 3. Socket handlers (outside DOMContentLoaded)
@@ -4303,6 +4364,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavUserState();
   setupNavDropdown();
   setupStepNavigation();
+  updateFooterVisibility();
 
   // Cache DOM element references
   statusDiv = document.getElementById('status');
@@ -4602,6 +4664,92 @@ document.addEventListener('visibilitychange', () => {
 
 
 
+<!-- Footer - visible on signup, home, and profile pages -->
+<footer id="site-footer" class="site-footer">
+  <div class="footer-container">
+    
+    <!-- Beta Information Section -->
+    <div class="footer-beta-section">
+      <div class="beta-items">
+        
+<div class="beta-item">
+          
+          <span class="beta-text">We're in beta — <a href="mailto:support@nameateammate.com">share feedback here</a>.</span>
+        </div>
+
+        <div class="beta-item">
+          <span class="beta-text">More sports coming soon (NFL, MLB, NHL)</span>
+        </div>
+        
+        
+      </div>
+    </div>
+    
+    <!-- Footer Links Section -->
+    <!-- <div class="footer-links-section">
+      <div class="footer-column">
+        <h4>Game</h4>
+        <ul>
+          <li><a href="#" onclick="navigateTo('/home')">Play Now</a></li>
+          <li><a href="#" id="footer-how-to-play">How to Play</a></li>
+          <li><a href="#" id="footer-leaderboard">Leaderboard</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-column">
+        <h4>Account</h4>
+        <ul>
+          <li><a href="#" onclick="navigateTo('/profile')">Profile</a></li>
+          <li><a href="#" onclick="navigateTo('/signup')">Sign Up</a></li>
+          <li><a href="#" id="footer-settings">Settings</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-column">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="mailto:support@nameateammate.com">Contact Us</a></li>
+          <li><a href="#" id="footer-faq">FAQ</a></li>
+          <li><a href="#" id="footer-bug-report">Report Bug</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-column">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#" id="footer-privacy">Privacy Policy</a></li>
+          <li><a href="#" id="footer-terms">Terms of Service</a></li>
+          <li><a href="#" id="footer-cookies">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div> -->
+    
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+      <!-- <div class="footer-brand">
+        <span class="footer-logo">🏀</span>
+        <span class="footer-name">Name a Teammate</span>
+      </div> -->
+      
+      <!-- <div class="footer-social">
+        <a href="#" class="social-link" title="Twitter">
+          <span>🐦</span>
+        </a>
+        <a href="#" class="social-link" title="Discord">
+          <span>💬</span>
+        </a>
+        <a href="#" class="social-link" title="Reddit">
+          <span>📱</span>
+        </a>
+      </div> -->
+      
+      <div class="footer-copyright">
+        <span>&copy; 2025 Name a Teammate. All rights reserved.</span>
+      </div>
+    </div>
+    
+  </div>
+</footer>
 
 
 
