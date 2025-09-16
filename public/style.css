@@ -420,7 +420,7 @@ nav {
 /* Footer Bottom */
 .footer-bottom {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding-top: 2rem;
   border-top: 1px solid #475569;
@@ -546,41 +546,77 @@ nav {
   line-height: 1.4;
 }
 
-/* Full rules toggle */
 .full-rules-toggle {
   margin-top: 1rem;
+  background: transparent; /* Remove background */
+  border: none; /* Remove border */
 }
 
 .full-rules-toggle summary {
   cursor: pointer;
   color: var(--primary-color);
   font-weight: 500;
-  padding: 0.75rem;
-  border-radius: var(--radius-md);
-  background: rgba(37, 99, 235, 0.1);
-  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 0.75rem 0; /* Remove horizontal padding, keep vertical */
+  border-radius: 0; /* Remove border radius */
+  background: transparent; /* Remove background */
+  border: none; /* Remove border */
   transition: all 0.2s ease;
+  list-style: none; /* Remove default arrow */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Hide the default disclosure triangle */
+.full-rules-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.full-rules-toggle summary::marker {
+  display: none;
+}
+
+/* Add custom plus/minus icon */
+.full-rules-toggle summary::after {
+  content: "+";
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  transition: transform 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.full-rules-toggle[open] summary::after {
+  content: "−"; /* Use minus sign when open */
+  transform: none; /* Remove any rotation */
 }
 
 .full-rules-toggle summary:hover {
-  background: rgba(37, 99, 235, 0.15);
-  transform: translateY(-1px);
+  background: transparent; /* Keep transparent on hover */
+  transform: none; /* Remove transform */
+  color: var(--primary-hover); /* Just change text color */
+}
+
+.full-rules-toggle summary:hover::after {
+  color: var(--primary-hover);
 }
 
 .full-rules-toggle[open] summary {
   margin-bottom: 1rem;
-  background: var(--primary-color);
-  color: white;
+  background: transparent; /* Keep transparent when open */
+  color: var(--primary-color); /* Keep original color */
+  border: none; /* Remove border */
 }
 
 .full-rules-content {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  padding: 0; /* Remove padding to inherit from parent */
+  background: transparent; /* Remove background to inherit */
+  border-radius: 0; /* Remove border radius */
+  border: none; /* Remove border */
 }
 
 .detailed-rule {
@@ -588,30 +624,10 @@ nav {
   align-items: flex-start;
   gap: 1rem;
   padding: 0.75rem;
-  background: var(--bg-secondary);
+  background: var(--bg-secondary); /* Keep individual rule backgrounds */
   border-radius: var(--radius-md);
 }
 
-.detailed-rule .rule-number {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  color: white;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.detailed-rule p {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
 
 /* Right column: Auth forms */
 .auth-column {
