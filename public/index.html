@@ -60,8 +60,36 @@ window.supabase = supabase // Expose for later use
 
   <!-- NEW: Main container for side-by-side layout -->
   <div class="signup-main-container">
+
+     <!-- LEFT COLUMN: Auth Forms -->
+    <div class="auth-column">
+      <div class="auth-tabs-container">
+        <div class="auth-tabs">
+          <button id="tab-signup" class="auth-tab active" type="button">Create Account</button>
+          <button id="tab-signin" class="auth-tab" type="button">Log In</button>
+        </div>
+        <div class="auth-forms-row">
+          <form id="signupForm" class="auth-form active" autocomplete="off">
+            <h2>Create a free account</h2>
+            <input type="email" id="signup-email" placeholder="Email" required>
+            <input type="password" id="signup-password" placeholder="Password" required>
+            <input id="signup-username" placeholder="Username" required>
+            <button id="signupBtn" type="submit">Sign Up</button>
+          </form>
+          <form id="signinForm" class="auth-form" autocomplete="off">
+            <h2>Log in to your account</h2>
+            <input type="email" id="signin-email" placeholder="Email" required>
+            <input type="password" id="signin-password" placeholder="Password" required>
+            <button id="signinBtn" type="submit">Log In</button>
+            <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+          </form>
+        </div>
+        
     
-    <!-- LEFT COLUMN: Simplified How to Play -->
+      </div>
+    </div>
+    
+    <!-- RIGHT COLUMN: Simplified How to Play -->
     <div class="how-to-play-column">
       <div class="how-to-play">
         <h3>How to Play</h3>
@@ -105,33 +133,7 @@ window.supabase = supabase // Expose for later use
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Auth Forms -->
-    <div class="auth-column">
-      <div class="auth-tabs-container">
-        <div class="auth-tabs">
-          <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
-          <button id="tab-signin" class="auth-tab" type="button">Sign In</button>
-        </div>
-        <div class="auth-forms-row">
-          <form id="signupForm" class="auth-form active" autocomplete="off">
-            <h2>Create Account</h2>
-            <input type="email" id="signup-email" placeholder="Email" required>
-            <input type="password" id="signup-password" placeholder="Password" required>
-            <input id="signup-username" placeholder="Username" required>
-            <button id="signupBtn" type="submit">Sign Up</button>
-          </form>
-          <form id="signinForm" class="auth-form" autocomplete="off">
-            <h2>Log In</h2>
-            <input type="email" id="signin-email" placeholder="Email" required>
-            <input type="password" id="signin-password" placeholder="Password" required>
-            <button id="signinBtn" type="submit">Sign In</button>
-            <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
-          </form>
-        </div>
-        
-    
-      </div>
-    </div>
+   
 
   </div>
 </section>
@@ -141,8 +143,8 @@ window.supabase = supabase // Expose for later use
 
  <!-- 🔗 Check your email after sign up -->
   <section data-route="/verify" class="hidden">
-    <h2>Check your email!</h2>
-    <p>We've sent you a confirmation link. Click it to verify your account.</p>
+    <h2>Confirmation Email Sent</h2>
+    <p>We've sent you a confirmation link. Click it to verify your account. Please check your spam folder if you can't find the email.</p>
   </section>
 
 
@@ -162,8 +164,8 @@ window.supabase = supabase // Expose for later use
 
   <!-- ✅ Reset success -->
   <section data-route="/reset-confirmed" class="hidden">
-    <h2>Password Reset</h2>
-    <p>Check your email for a link to set a new password.</p>
+    <h2>Password Reset Sent</h2>
+    <p>We've sent you a link to reset your password.  Please check your spam folder if you can't find the email.</p>
   </section>
 
 <!-- Set password -->
@@ -334,7 +336,7 @@ window.supabase = supabase // Expose for later use
     </div>
     <div class="stat-card">
       <div class="stat-number" id="profile-avg-turns">0</div>
-      <div class="stat-label">Avg Turns</div>
+      <div class="stat-label">Avg. Turns Per Game</div>
     </div>
   </div>
   

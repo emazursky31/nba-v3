@@ -252,7 +252,7 @@ nav {
 .footer-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 1.5rem 1.5rem;
+  padding: 1.5rem;
 }
 
 /* Beta Section in Footer */
@@ -3182,9 +3182,6 @@ html {
     font-size: 0.8rem;
   }
 
-  .footer-container {
-    padding: 2rem 1rem 1rem;
-  }
   
   .footer-beta-section {
     padding: 1rem;
@@ -3225,7 +3222,7 @@ html {
   }
 
     .how-to-play-column {
-    order: 1;
+    order: 2;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -3276,7 +3273,7 @@ html {
   }
 
   .auth-column {
-    order: 2;
+    order: 1;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
