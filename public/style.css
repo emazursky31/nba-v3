@@ -260,7 +260,7 @@ nav {
   /* background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
   border: 2px solid rgba(168, 85, 247, 0.3);
   border-radius: var(--radius-lg); */
-  padding: 2rem;
+  padding: 1rem;
   margin-bottom: 3rem;
   position: relative;
   overflow: hidden;
@@ -3187,7 +3187,7 @@ html {
   }
   
   .footer-beta-section {
-    padding: 1.5rem;
+    padding: 1rem;
     margin-bottom: 2rem;
   }
   
