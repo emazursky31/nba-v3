@@ -1,31 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head> 
+<meta charset="UTF-8" /> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+<meta name="application-name" content="Name a Teammate"> 
+<title>Name a Teammate Game</title> 
 
-  <!-- Title & Branding -->
-  <title>Name a Teammate Game</title>
-  <meta name="application-name" content="Name a Teammate Game" />
-  <meta name="og:site_name" content="Name a Teammate Game" />
-  <!-- <meta name="twitter:site" content="@NameATeammate" />  -->
+<!-- External CSS --> 
+<link rel="stylesheet" href="style.css" /> 
 
-  <!-- Description -->
-  <meta name="description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
-  <meta property="og:description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
-  <meta name="twitter:description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
+ <!-- Socket.IO --> 
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script> 
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="Name a Teammate Game" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://nameateammate.com" />
-  <!-- <meta property="og:image" content="https://nameateammate.com/og-image.png" /> make a 1200x630 share image -->
-
-  <!-- Favicon -->
-  <link rel="icon" href="/favicon.ico" />
-
-  <!-- External CSS -->
-  <link rel="stylesheet" href="style.css" />
+<!-- Supabase (ES Module) --> 
+<script type="module"> import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm' 
+const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co' 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk' 
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+window.supabase = supabase // Expose for later use 
+</script> 
 </head>
 
 
