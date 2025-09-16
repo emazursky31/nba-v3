@@ -503,7 +503,6 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  margin-bottom: 2rem;
 }
 
 .core-rule {
@@ -624,7 +623,6 @@ nav {
   align-items: flex-start;
   gap: 1rem;
   padding: 0.75rem;
-  background: var(--bg-secondary); /* Keep individual rule backgrounds */
   border-radius: var(--radius-md);
 }
 
@@ -1272,7 +1270,7 @@ nav {
 
 /* How to Play Styles */
 .how-to-play {
-  background: var(--bg-card);
+  background: var(--bg-secondary); 
   border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
   padding: 2rem;
