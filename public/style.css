@@ -2382,7 +2382,8 @@ button:disabled {
 
 .auth-tabs {
   display: flex;
-  background: none; 
+  background: var(--bg-secondary); 
+  color: var(--text-muted);
   /* border-radius: var(--radius-lg); */
   /* padding: 0.5rem; */
   /* box-shadow: var(--shadow-md); */
@@ -2409,7 +2410,7 @@ button:disabled {
 
 .auth-tab.active {
   background: #d6e3f5;
-  color: white;
+  color: var(--text-primary);
   box-shadow: none; 
   border-color: var(--primary-hover);
   /* border-bottom: 3px solid var(--primary-color); */
