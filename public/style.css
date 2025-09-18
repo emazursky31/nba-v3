@@ -2383,10 +2383,10 @@ button:disabled {
 .auth-tabs {
   display: flex;
   background: var(--bg-secondary);  /* Light container background */
-  border-radius: var(--radius-lg);
-  padding: 0.5rem;
-  box-shadow: var(--shadow-md);
-  border: 2px solid var(--border-color);  /* Light border */
+  /* border-radius: var(--radius-lg); */
+  /* padding: 0.5rem; */
+  /* box-shadow: var(--shadow-md); */
+  /* border: 2px solid var(--border-color);   */
   gap: 0.25rem;
 }
 
@@ -2450,10 +2450,10 @@ button:disabled {
 
 .auth-form {
   background: var(--bg-card);
-  border: 2px solid var(--border-color);
+  /* border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
-  padding: 2.5rem 2rem;
+  box-shadow: var(--shadow-xl); */
+  padding: 1.5rem 0;
   width: 100%; /* Full width of container */
   max-width: 800px; /* Match the container max-width */
   display: none;
