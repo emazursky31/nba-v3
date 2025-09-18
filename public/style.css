@@ -1422,8 +1422,8 @@ button {
 }
 
 button:not(:disabled) {
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
   box-shadow: var(--shadow-md);
 }
 
@@ -2385,7 +2385,7 @@ button:disabled {
   background: var(--bg-secondary); 
   color: var(--text-muted);
   /* border-radius: var(--radius-lg); */
-  padding: 0.25rem;
+  /* padding: 0.5rem; */
   /* box-shadow: var(--shadow-md); */
   /* border: 2px solid var(--border-color);   */
   gap: 0.25rem;
@@ -2429,6 +2429,15 @@ button:disabled {
   opacity: 1;  /* Full visibility on hover */
   box-shadow: none;
 }
+
+.auth-tab:not(.active) {
+  background: #f1f5f9 !important; /* Light gray background */
+  color: var(--text-muted) !important; /* Muted text color */
+  box-shadow: none !important; /* Remove any shadows */
+  border: 1px solid var(--border-color); /* Light border */
+  border-bottom: 3px solid transparent; /* Space for active indicator */
+}
+
 
 /* .auth-tab.active::after {
   content: "";
@@ -2496,7 +2505,6 @@ button:disabled {
 
 .auth-form button {
   padding: 1rem;
-  color: white;
   font-size: 1.125rem;
   font-weight: 600;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
