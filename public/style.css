@@ -2385,7 +2385,7 @@ button:disabled {
   background: var(--bg-secondary); 
   color: var(--text-muted);
   /* border-radius: var(--radius-lg); */
-  /* padding: 0.5rem; */
+  padding: 0.25rem;
   /* box-shadow: var(--shadow-md); */
   /* border: 2px solid var(--border-color);   */
   gap: 0.25rem;
@@ -2496,6 +2496,7 @@ button:disabled {
 
 .auth-form button {
   padding: 1rem;
+  color: white;
   font-size: 1.125rem;
   font-weight: 600;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
