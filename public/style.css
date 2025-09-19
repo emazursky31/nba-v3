@@ -12,7 +12,7 @@
   --success-color: #22c55e;
   --warning-color: #f59e0b;
   
-  --text-primary: #1e293b;        /* Dark text on light backgrounds */
+  --text-primary: #18262b;        /* Dark text on light backgrounds */
   --text-secondary: #475569;      /* Medium gray text */
   --text-muted: #64748b;          /* Light gray text */
   
@@ -652,10 +652,10 @@ nav {
   text-align: center;
   margin-bottom: 2rem;
   padding: 0.5rem 1rem 1rem 1rem;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
-  border-radius: var(--radius-xl);
+  /* background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%); */
+  /* border-radius: var(--radius-xl);
   border: 2px solid var(--border-color);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md); */
 }
 
 .game-intro h1 {
@@ -2389,7 +2389,7 @@ button:disabled {
   /* box-shadow: var(--shadow-md); */
   /* border: 2px solid var(--border-color);   */
   gap: 0.25rem;
-  border-bottom: 2px solid var(--border-color);
+  /* border-bottom: 2px solid var(--border-color); */
 }
 
 .auth-tab {
@@ -3316,8 +3316,8 @@ html {
   .auth-tabs {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 0 1.5rem 0 !important;
-    padding: 0.5rem !important;
+    /* margin: 0 0 1.5rem 0 !important; */
+    /* padding: 0.5rem !important; */
     box-sizing: border-box !important;
   }
   
