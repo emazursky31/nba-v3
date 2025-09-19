@@ -650,7 +650,7 @@ nav {
 .game-intro {
   text-align: center;
   margin-bottom: 2rem;
-  padding: 0.5rem 1rem 1rem 1rem;
+  /* padding: 0.5rem 1rem 1rem 1rem; */
   /* background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%); */
   /* border-radius: var(--radius-xl);
   border: 2px solid var(--border-color);
@@ -710,7 +710,7 @@ nav {
 .game-setup-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 1rem;
+  /* padding: 1rem; */
 }
 
 /* Step Progress Indicator */
@@ -1087,7 +1087,7 @@ nav {
   backdrop-filter: blur(10px);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-xl);
-  padding: 2rem;
+  padding: 0 2rem;
   text-align: center;
   transition: all 0.3s ease;
   min-height: 400px;
