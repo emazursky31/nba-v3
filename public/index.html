@@ -193,7 +193,7 @@ window.supabase = supabase // Expose for later use
     <!-- Game type selection -->
     <div id="gameModeSelection" class="selection-grid">
       <div class="selection-card" data-mode="private">
-        <div class="selection-icon">🔒</div>
+        <!-- <div class="selection-icon">🔒</div> -->
         <h3>Private Game</h3>
         <p class="selection-description">
           Create a private room with custom game settings. Share with a friend to get started.
@@ -202,7 +202,7 @@ window.supabase = supabase // Expose for later use
       </div>
       
       <div class="selection-card" data-mode="public">
-        <div class="selection-icon">🌐</div>
+        <!-- <div class="selection-icon">🌐</div> -->
         <h3>Public Game</h3>
         <p class="selection-description">
           Join the matchmaking queue and get paired with another player looking for a game.
@@ -1220,6 +1220,7 @@ async function startPrivateGame() {
   isPrivateGame = true;
   isLeavingGame = false;
   console.log('[DEBUG] Reset isLeavingGame to false for private game');
+  
 
   if (!myUsername) {
     alert('Missing username');
@@ -2444,57 +2445,115 @@ function setupCopyInviteListeners() {
     console.log('[Share] Share button hidden - desktop or no Web Share API');
   }
 
-  // Copy functionality
-  copyInviteBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(inviteInput.value)
-      .then(() => {
-        copyToast.textContent = 'Link copied!';
-        copyToast.style.display = 'block';
-        copyInviteBtn.disabled = true;
+ // Copy functionality with enhanced message
+copyInviteBtn.addEventListener('click', () => {
+  // Get current game settings
+  const selectedEraInput = document.querySelector('input[name="era"]:checked');
+  const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
+  
+  const eraValue = selectedEraInput ? selectedEraInput.value : '2000-present';
+  const timeValue = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
+  
+  const eraNames = {
+    '2000-present': 'Modern Era (2000-Present)',
+    '1980-1999': 'Golden Era (1980-1999)',
+    '1960-1979': 'Classic Era (1960-1979)',
+    'pre-1960': 'Pioneer Era (Pre-1960)'
+  };
+  
+  const timeNames = {
+    15: 'Quick (15 seconds)',
+    30: 'Standard (30 seconds)',
+    60: 'Relaxed (1 minute)'
+  };
+  
+  const eraName = eraNames[eraValue] || 'Modern Era';
+  const timeName = timeNames[timeValue] || '30 seconds';
+  
+  // Create enhanced message with settings
+  const enhancedMessage = `🏀 Join my NBA Teammate Game!
 
-        setTimeout(() => {
-          copyToast.style.display = 'none';
-          copyInviteBtn.disabled = false;
-        }, 2000);
-      })
-      .catch(err => {
-        // Fallback for older browsers
-        inviteInput.select();
-        inviteInput.setSelectionRange(0, 99999);
-        document.execCommand('copy');
-        
-        copyToast.textContent = 'Link copied!';
+⚙️ Game Settings:
+📅 Era: ${eraName}
+⏱️ Turn Timer: ${timeName}
+
+${inviteInput.value}`;
+
+  navigator.clipboard.writeText(enhancedMessage)
+    .then(() => {
+      copyToast.textContent = 'Link and settings copied!';
+      copyToast.style.display = 'block';
+      copyInviteBtn.disabled = true;
+
+      setTimeout(() => {
+        copyToast.style.display = 'none';
+        copyInviteBtn.disabled = false;
+      }, 2000);
+    })
+    .catch(err => {
+      // Fallback for older browsers
+      inviteInput.select();
+      inviteInput.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+      
+      copyToast.textContent = 'Link copied!';
+      copyToast.style.display = 'block';
+      setTimeout(() => copyToast.style.display = 'none', 2000);
+    });
+});
+
+
+ // Native share functionality
+if (shareInviteBtn) {
+  shareInviteBtn.addEventListener('click', async () => {
+    // Get current game settings
+    const selectedEraInput = document.querySelector('input[name="era"]:checked');
+    const selectedTimeInput = document.querySelector('input[name="timeLimit"]:checked');
+    
+    const eraValue = selectedEraInput ? selectedEraInput.value : '2000-present';
+    const timeValue = selectedTimeInput ? parseInt(selectedTimeInput.value) : 30;
+    
+    // Map era values to friendly names
+    const eraNames = {
+      '2000-present': 'Modern Era (2000-Present)',
+      '1980-1999': 'Golden Era (1980-1999)',
+      '1960-1979': 'Classic Era (1960-1979)',
+      'pre-1960': 'Pioneer Era (Pre-1960)'
+    };
+    
+    const timeNames = {
+      15: 'Quick (15 seconds)',
+      30: 'Standard (30 seconds)',
+      60: 'Relaxed (1 minute)'
+    };
+    
+    const eraName = eraNames[eraValue] || 'Modern Era';
+    const timeName = timeNames[timeValue] || '30 seconds';
+    
+    const shareData = {
+      title: 'Join my NBA Teammate Game!',
+      text: `🏀 Join my private NBA game!\n\n⚙️ Game Settings:\n📅 Era: ${eraName}\n⏱️ Turn Timer: ${timeName}\n\nCan you guess NBA teammates? Let's play!`,
+      url: inviteInput.value
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        copyToast.textContent = 'Shared successfully!';
         copyToast.style.display = 'block';
         setTimeout(() => copyToast.style.display = 'none', 2000);
-      });
-  });
-
-  // Native share functionality
-  if (shareInviteBtn) {
-    shareInviteBtn.addEventListener('click', async () => {
-      const shareData = {
-        title: 'Join my NBA Teammate Game!',
-        text: 'Can you guess NBA teammates? Join my private game!',
-        url: inviteInput.value
-      };
-
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-          copyToast.textContent = 'Shared successfully!';
-          copyToast.style.display = 'block';
-          setTimeout(() => copyToast.style.display = 'none', 2000);
-        }
-      } catch (err) {
-        // User cancelled or error occurred
-        if (err.name !== 'AbortError') {
-          console.log('Share failed, falling back to copy');
-          // Fallback to copy
-          copyInviteBtn.click();
-        }
       }
-    });
-  }
+    } catch (err) {
+      // User cancelled or error occurred
+      if (err.name !== 'AbortError') {
+        console.log('Share failed, falling back to copy');
+        // Fallback to copy
+        copyInviteBtn.click();
+      }
+    }
+  });
+}
+
 
   // Re-check on window resize (for device rotation)
   window.addEventListener('resize', () => {
