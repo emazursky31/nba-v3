@@ -2352,7 +2352,6 @@ if (updatePasswordBtn) {
     console.warn('[WARN] updatePasswordForm not found - may not be on update-password route');
   }
 
-  // Username form (if you have one for setting username)
   const usernameForm = document.getElementById('usernameForm');
   if (usernameForm) {
     usernameForm.addEventListener('submit', setUsername);
@@ -2473,9 +2472,8 @@ copyInviteBtn.addEventListener('click', () => {
   // Create enhanced message with settings
   const enhancedMessage = `🏀 Join my NBA Teammate Game!
 
-⚙️ Game Settings:
-📅 Era: ${eraName}
-⏱️ Turn Timer: ${timeName}
+Era: ${eraName}
+Turn Time: ${timeName}
 
 ${inviteInput.value}`;
 
@@ -2532,7 +2530,7 @@ if (shareInviteBtn) {
     
     const shareData = {
       title: 'Join my NBA Teammate Game!',
-      text: `🏀 Join my private NBA game!\n\n⚙️ Game Settings:\n📅 Era: ${eraName}\n⏱️ Turn Timer: ${timeName}\n\nCan you guess NBA teammates? Let's play!`,
+      text: `🏀 Join my private NBA game!\n\nEra: ${eraName}\n⏱Turn Time: ${timeName}\n\nCan you guess NBA teammates? Let's play!`,
       url: inviteInput.value
     };
 
