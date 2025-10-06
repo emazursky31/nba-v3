@@ -1787,6 +1787,8 @@ button:disabled {
 .team-stints {
   display: grid;
   gap: 4px;
+  align-items: flex-start;
+  width: fit-content;
 }
 
 .team-stint {
