@@ -1784,7 +1784,7 @@ button:disabled {
   font-weight: 600;
 }
 
-.team-stints {
+.team-stints-section {
   display: grid;
   gap: 4px;
   align-items: flex-start;
