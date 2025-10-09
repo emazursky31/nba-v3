@@ -3156,6 +3156,98 @@ function goBackToGameTypeSelection() {
 }
 
 
+function showGameOverScreen(data) {
+  console.log('[showGameOverScreen] Displaying game over screen with data:', data);
+  
+  gameOver = true;
+  localStorage.removeItem('privateRoomId');
+
+  // Stop input & timer
+  if (guessInput) guessInput.disabled = true;
+  if (submitGuessBtn) submitGuessBtn.disabled = true;
+
+  if (window.timerInterval) {
+    clearInterval(window.timerInterval);
+    window.timerInterval = null;
+  }
+  if (timerEl) timerEl.textContent = ':--';
+
+  // Show game over container
+  const container = document.getElementById('gameOverContainer');
+  if (!container) return;
+  
+  container.style.display = 'flex';
+  container.innerHTML = '';
+
+  // Create the layout structure
+  
+  // 1. "Game Over" header
+  const gameOverHeader = document.createElement('div');
+  gameOverHeader.style.fontSize = '2rem';
+  gameOverHeader.style.fontWeight = 'bold';
+  gameOverHeader.style.textAlign = 'center';
+  gameOverHeader.style.marginBottom = '1rem';
+  gameOverHeader.textContent = 'Game Over';
+  container.appendChild(gameOverHeader);
+
+  // 2. Winner/Loser message
+  const resultMessage = document.createElement('div');
+  resultMessage.style.fontSize = '1.5rem';
+  resultMessage.style.textAlign = 'center';
+  resultMessage.style.marginBottom = '1rem';
+  resultMessage.style.fontWeight = 'bold';
+
+  // Use gameOverMessage if available (from gameEndedReconnection), otherwise use message
+  const message = data.gameOverMessage || data.message;
+  
+  if (data.role === 'winner') {
+    resultMessage.textContent = 'You won!';
+    resultMessage.style.color = 'green';
+  } else if (data.role === 'loser') {
+    resultMessage.textContent = message || 'You lost.';
+    resultMessage.style.color = 'darkred';
+  } else {
+    resultMessage.textContent = message || 'Game ended.';
+    resultMessage.style.color = 'gray';
+  }
+
+  container.appendChild(resultMessage);
+
+  // 3. Turn count display
+  if (data.turnCount !== undefined && data.turnCount > 0) {
+    const turnDisplay = document.createElement('div');
+    turnDisplay.style.fontSize = '1.2rem';
+    turnDisplay.style.textAlign = 'center';
+    turnDisplay.style.marginBottom = '1.5rem';
+    turnDisplay.style.fontWeight = 'bold';
+    turnDisplay.textContent = `Turns: ${data.turnCount}`;
+    container.appendChild(turnDisplay);
+  }
+
+  // Handle rematch button visibility
+  const rematchBtn = document.getElementById('rematchBtn');
+  if (rematchBtn) {
+    const canRematch = data.canRematch !== false;
+    if (canRematch) {
+      rematchBtn.style.display = 'block';
+      rematchBtn.disabled = false;
+      rematchBtn.textContent = 'Rematch';
+    } else {
+      rematchBtn.style.display = 'none';
+    }
+  }
+
+  // Display game stats if available
+  if (data.successfulGuesses) {
+    successfulGuesses = data.successfulGuesses;
+    renderSuccessfulGuesses();
+  }
+
+  // Navigate and trigger card spread
+  navigateTo('/gameover');
+  triggerGameEndCardSpread();
+}
+
 
 
 ///////////////////////////////////////////////
@@ -4357,7 +4449,17 @@ socket.on('opponentLeft', ({ message }) => {
   }, 5000);
 });
 
-
+socket.on('gameEndedReconnection', (data) => {
+  console.log('[CLIENT] Received gameEndedReconnection:', data);
+  
+  // Hide any active game UI
+  document.getElementById('game-container').style.display = 'none';
+  document.getElementById('waiting-container').style.display = 'none';
+  document.getElementById('matched-container').style.display = 'none';
+  
+  // Show game over screen with the same logic as regular gameOver event
+  showGameOverScreen(data);
+});
 
 
 
