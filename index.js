@@ -1460,7 +1460,9 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
               const opponentSocketId = Object.keys(game.userIds).find(key => game.userIds[key] === opponentUserId);
               const opponentUsername = game.usernames[opponentSocketId] || game.winnerName === username ? game.loserName : game.winnerName || 'Opponent';
               
-              // Send ended game state
+              const isWinner = game.winnerUserId === userId;
+              
+              // Send ended game state with complete gameOver information
               socket.emit('gameEndedReconnection', {
                 message: 'This game has ended.',
                 canRematch: true,
@@ -1469,11 +1471,19 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
                 leadoffPlayer: game.leadoffPlayer,
                 selectedEra: game.selectedEra,
                 opponentUsername: opponentUsername,
-                // Determine winner/loser for display
-                role: game.winnerUserId === userId ? 'winner' : 'loser',
-                winnerName: game.winnerUserId === userId ? username : opponentUsername,
-                loserName: game.winnerUserId === userId ? opponentUsername : username,
-                turnCount: game.turnCount || 0
+                role: isWinner ? 'winner' : 'loser',
+                winnerName: isWinner ? username : opponentUsername,
+                loserName: isWinner ? opponentUsername : username,
+                turnCount: game.turnCount || 0,
+                reason: game.gameEndReason || 'timer_expired',
+                gameOverMessage: isWinner 
+                  ? (game.gameEndReason === 'timer_expired' 
+                      ? `${game.loserName || opponentUsername} ran out of time! You win!`
+                      : 'You won!')
+                  : (game.gameEndReason === 'timer_expired'
+                      ? 'You ran out of time!'
+                      : 'You lost!'),
+                isReconnectionToEndedGame: true
               });
               
               console.log(`[RECONNECTION] Successfully reconnected ${username} to ended game ${roomId}`);
@@ -1584,6 +1594,8 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
         const opponentSocketId = Object.keys(game.userIds).find(key => game.userIds[key] === opponentUserId);
         const opponentUsername = game.usernames[opponentSocketId] || game.winnerName === username ? game.loserName : game.winnerName || 'Opponent';
         
+        const isWinner = game.winnerUserId === userId;
+        
         socket.emit('gameEndedReconnection', {
           message: 'This game has ended.',
           canRematch: true,
@@ -1592,10 +1604,19 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
           leadoffPlayer: game.leadoffPlayer,
           selectedEra: game.selectedEra,
           opponentUsername: opponentUsername,
-          role: game.winnerUserId === userId ? 'winner' : 'loser',
-          winnerName: game.winnerUserId === userId ? username : opponentUsername,
-          loserName: game.winnerUserId === userId ? opponentUsername : username,
-          turnCount: game.turnCount || 0
+          role: isWinner ? 'winner' : 'loser',
+          winnerName: isWinner ? username : opponentUsername,
+          loserName: isWinner ? opponentUsername : username,
+          turnCount: game.turnCount || 0,
+          reason: game.gameEndReason || 'timer_expired',
+          gameOverMessage: isWinner 
+            ? (game.gameEndReason === 'timer_expired' 
+                ? `${game.loserName || opponentUsername} ran out of time! You win!`
+                : 'You won!')
+            : (game.gameEndReason === 'timer_expired'
+                ? 'You ran out of time!'
+                : 'You lost!'),
+          isReconnectionToEndedGame: true
         });
         return;
       }
@@ -1700,6 +1721,8 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
         const opponentSocketId = Object.keys(game.userIds).find(key => game.userIds[key] === opponentUserId);
         const opponentUsername = game.usernames[opponentSocketId] || 'Opponent';
         
+        const isWinner = game.winnerUserId === userId;
+        
         // Send ended game state
         socket.emit('gameEndedReconnection', {
           message: 'This game has ended.',
@@ -1709,11 +1732,19 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
           leadoffPlayer: game.leadoffPlayer,
           selectedEra: game.selectedEra,
           opponentUsername: opponentUsername,
-          // Determine winner/loser for display
-          role: game.winnerUserId === userId ? 'winner' : 'loser',
-          winnerName: game.winnerUserId === userId ? username : opponentUsername,
-          loserName: game.winnerUserId === userId ? opponentUsername : username,
-          turnCount: game.turnCount || 0
+          role: isWinner ? 'winner' : 'loser',
+          winnerName: isWinner ? username : opponentUsername,
+          loserName: isWinner ? opponentUsername : username,
+          turnCount: game.turnCount || 0,
+          reason: game.gameEndReason || 'timer_expired',
+          gameOverMessage: isWinner 
+            ? (game.gameEndReason === 'timer_expired' 
+                ? `${game.loserName || opponentUsername} ran out of time! You win!`
+                : 'You won!')
+            : (game.gameEndReason === 'timer_expired'
+                ? 'You ran out of time!'
+                : 'You lost!'),
+          isReconnectionToEndedGame: true
         });
         
         // Update the game's player tracking for potential rematch
@@ -2056,6 +2087,7 @@ async function handlePlayerDisconnectFinal(socket, roomId, username) {
   delete games[roomId];
   gameCreationLocks.delete(roomId);
 }
+
 
 
 
