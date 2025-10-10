@@ -1789,11 +1789,13 @@ button:disabled {
   gap: 4px;
   align-items: flex-start;
   width: fit-content;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .team-stint {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
   background: white;
@@ -1802,6 +1804,7 @@ button:disabled {
   transition: all 0.2s ease;
   min-height: 24px;
   margin-bottom: 3px;
+  min-width: 200px;
 }
 
 .team-stint:last-child {
