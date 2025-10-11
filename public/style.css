@@ -1676,13 +1676,9 @@ button:disabled {
 /* Leadoff career section in main game area */
 .leadoff-career-content {
   padding: 12px;
-  /* background: #fafafa; */
-  border: 1px solid #ddd;
-  border-radius: 0 0 4px 4px;
   font-size: 13px;
   width: 100%; /* Ensure it matches header width */
   box-sizing: border-box; /* Include padding in width calculation */
-  border-top: 1px solid #e9ecef;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -2019,15 +2015,6 @@ button:disabled {
   width: 100%;
   margin: 0.5rem 0;
 }
-
-.leadoff-career-content {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-top: 0.5rem;
-}
-
 
 
 /* Guess Controls */
