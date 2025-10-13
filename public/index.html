@@ -622,41 +622,83 @@ async function validateAndCleanupSession() {
 
 
  // ✅ Sign Up handler
-  async function signUp(e) {
+// ✅ Enhanced Sign Up handler
+async function signUp(e) {
     e.preventDefault(); // 🛑 Stop default form submit
+
+    // Add rate limiting check
+    const lastAttempt = localStorage.getItem('lastSignUpAttempt');
+    const now = Date.now();
+    if (lastAttempt && (now - parseInt(lastAttempt)) < 60000) { // 60 second cooldown
+        alert('Please wait 60 seconds before trying again');
+        return;
+    }
 
     const email = document.getElementById('signup-email').value.trim();
     const password = document.getElementById('signup-password').value.trim();
     const username = document.getElementById('signup-username').value.trim();
 
     if (!email || !password || !username) {
-      alert('Please fill in all fields.');
-      return;
+        alert('Please fill in all fields.');
+        return;
     }
 
     if (password.length < 6) {
-      alert('Password must be at least 6 characters.');
-      return;
+        alert('Password must be at least 6 characters.');
+        return;
     }
+
+    // Disable the submit button to prevent multiple clicks
+    const submitBtn = document.getElementById('signupBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing up...';
 
     console.log('[DEBUG] SignUp data =>', email, username);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username }
-      }
-    });
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { username }
+            }
+        });
 
-    if (error) {
-      console.error('SignUp error:', error.message);
-      return;
+        if (error) {
+            console.error('SignUp error:', error.message);
+            
+            // Handle specific error types with user-friendly messages
+            if (error.message.includes('rate limit') || error.message.includes('Too Many Requests')) {
+                alert('Too many sign-up attempts. Please wait a minute before trying again.');
+            } else if (error.message.includes('confirmation email') || error.message.includes('email')) {
+                alert('Email service temporarily unavailable. Please try again later or contact support.');
+            } else if (error.message.includes('already registered') || error.message.includes('already exists')) {
+                alert('This email is already registered. Try signing in instead.');
+            } else if (error.message.includes('invalid email')) {
+                alert('Please enter a valid email address.');
+            } else {
+                alert(`Sign-up failed: ${error.message}`);
+            }
+            return;
+        }
+
+        // Store successful attempt time
+        localStorage.setItem('lastSignUpAttempt', now.toString());
+        
+        console.log('✅ Sign Up successful:', data);
+        navigateTo('/verify'); // 👈 Show verification screen
+        
+    } catch (err) {
+        console.error('Unexpected sign-up error:', err);
+        alert('An unexpected error occurred. Please try again or contact support.');
+    } finally {
+        // Re-enable the submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
     }
+}
 
-    console.log('✅ Sign Up successful:', data);
-    navigateTo('/verify'); // 👈 Show verification screen
-  }
 
   // ✅ Sign In handler
   async function signIn(e) {
@@ -4461,7 +4503,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ✅ INITIALIZE SOCKET FIRST - Before any routing logic
   console.log('[DOMContentLoaded] Initializing socket connection...');
-  socket = io();
+  socket = io('wss://nameateammate.com', {
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 5,
+    timeout: 20000,
+    forceNew: false
+});
   setupSocketHandlers();
 
   let justConfirmed = false;
@@ -4763,6 +4812,17 @@ document.addEventListener('visibilitychange', () => {
       });
     }
   }
+});
+
+
+window.addEventListener('error', function(event) {
+    console.error('Uncaught error:', event.error);
+    console.error('Stack trace:', event.error?.stack);
+    console.error('At line:', event.lineno, 'column:', event.colno);
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
 });
 
 });

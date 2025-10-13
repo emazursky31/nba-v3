@@ -1797,9 +1797,6 @@ button:disabled {
   min-width: 200px;
 }
 
-.team-stint:last-child {
-  border-bottom: none;
-}
 
 .team-stint:hover {
   background: #f1f3f4;
