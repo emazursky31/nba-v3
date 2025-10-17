@@ -287,6 +287,51 @@ app.get('/share/:shareId', (req, res) => {
 });
 
 
+app.get('/s/:shareId', (req, res) => {
+  try {
+    const { shareId } = req.params;
+    // Handle the compressed/shortened format
+    const gameData = JSON.parse(decodeURIComponent(atob(shareId)));
+    
+    const eraNames = {
+      'M': 'Modern Era',
+      'G': 'Golden Era', 
+      'C': 'Classic Era',
+      'P': 'Pioneer Era'
+    };
+    
+    const fullEraName = eraNames[gameData.e] || 'Modern Era';
+    
+    const metaTags = `
+      <meta property="og:title" content="NBA Teammate Game Results" />
+      <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! ${gameData.s} ➜ ${gameData.f} (${fullEraName})" />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="${req.protocol}://${req.get('host')}/s/${shareId}" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content="NBA Teammate Game Results" />
+      <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns!" />
+    `;
+    
+    const fs = require('fs');
+    const path = require('path');
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    
+    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('</head>', `
+      <script>
+        window.sharedGameData = ${JSON.stringify(gameData)};
+      </script>
+      </head>
+    `);
+    
+    res.send(html);
+  } catch (error) {
+    console.error('Error parsing short share link:', error);
+    res.redirect('/');
+  }
+});
+
+
 
 
 // Serve index.html for all other routes (SPA fallback)

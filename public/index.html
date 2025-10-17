@@ -3252,12 +3252,12 @@ function setupGameSharing() {
         'pre-1960': 'Pioneer Era'
       };
       
-      const shareText = `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns!
+      const shareText = `🏀 I just played the Name a Teammate Game!
 
 ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
-(${eraNames[gameData.era]})
+${gameData.turnCount} turns
 
-View full game flow: ${shareUrl}`;
+See the full game: ${shareUrl}`;
 
       // Try native share first on mobile, fallback to copy
       if (navigator.share && isMobileOrTablet()) {
@@ -3274,39 +3274,68 @@ View full game flow: ${shareUrl}`;
       }
       
       // Copy to clipboard
-      try {
-        await navigator.clipboard.writeText(shareText);
-        showMessage('Share link copied to clipboard!', 'info');
-      } catch (err) {
-        const textArea = document.createElement('textarea');
-        textArea.value = shareText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showMessage('Share link copied!', 'info');
-      }
+     try {
+  await navigator.clipboard.writeText(shareText);
+  showMessage('Share link copied to clipboard!', 'info');
+} catch (err) {
+  console.log('Clipboard API failed, using fallback:', err);
+  // Fallback for older browsers or when clipboard API fails
+  const textArea = document.createElement('textarea');
+  textArea.value = shareText;
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-999999px';
+  textArea.style.top = '-999999px';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) {
+      showMessage('Share link copied!', 'info');
+    } else {
+      showMessage('Could not copy to clipboard', 'error');
+    }
+  } catch (fallbackErr) {
+    document.body.removeChild(textArea);
+    console.error('Fallback copy failed:', fallbackErr);
+    showMessage('Copy failed. Please copy manually.', 'error');
+  }
+}
     });
   }
 }
 
 function generateShareUrl() {
   const gameData = window.lastGameData;
-  const shareData = {
-    w: gameData.winner,
-    l: gameData.loser,
-    t: gameData.turnCount,
-    s: gameData.leadoffPlayer,
-    f: gameData.finalPlayer,
-    e: gameData.era,
-    ts: gameData.timestamp,
-    chain: gameData.fullChain
+  
+  const compactData = {
+    w: gameData.winner?.substring(0, 20) || 'Unknown', // Limit name length
+    l: gameData.loser?.substring(0, 20) || 'Unknown',
+    t: gameData.turnCount || 0,
+    s: gameData.leadoffPlayer?.substring(0, 20) || 'Unknown',
+    f: gameData.finalPlayer?.substring(0, 20) || 'Unknown',
+    e: gameData.era?.charAt(0) || 'M', // Just first letter: M=Modern, G=Golden, C=Classic, P=Pioneer
+    ts: Math.floor(Date.now() / 1000), // Unix timestamp (shorter)
+    // Skip the full chain to make URL much shorter
   };
   
-  const jsonString = JSON.stringify(shareData);
-  const shareId = btoa(encodeURIComponent(jsonString)).replace(/[+/=]/g, '');
-  return `${window.location.origin}/share/${shareId}`;
+  try {
+    const jsonString = JSON.stringify(compactData);
+    // Use LZ-string compression if available, otherwise just encode
+    const compressed = typeof LZString !== 'undefined' ? 
+      LZString.compressToEncodedURIComponent(jsonString) :
+      encodeURIComponent(jsonString);
+    
+    const shareId = btoa(compressed).replace(/[+/=]/g, '').substring(0, 32); // Limit to 32 chars
+    return `${window.location.origin}/s/${shareId}`;
+  } catch (error) {
+    console.error('Error generating share URL:', error);
+    return `${window.location.origin}`;
+  }
 }
+
 
 
 function displayFullGameFlow(gameData) {
