@@ -2482,16 +2482,6 @@ function handleGoHome() {
 }
 
 
-function setupCopyInviteListeners() {
-  const copyInviteBtn = document.getElementById('copyInviteBtn');
-  const shareInviteBtn = document.getElementById('shareInviteBtn');
-  const copyToast = document.getElementById('copyToast');
-  const inviteInput = document.getElementById('inviteLink');
-
-  if (!copyInviteBtn || !copyToast || !inviteInput) {
-    return;
-  }
-
   // Enhanced mobile/tablet detection
   function isMobileOrTablet() {
     // Check for touch capability
@@ -2511,6 +2501,19 @@ function setupCopyInviteListeners() {
     // Device must have touch AND (be mobile-sized OR have mobile user agent)
     return hasTouch && (isMobileSize || hasMobileUA);
   }
+
+
+
+function setupCopyInviteListeners() {
+  const copyInviteBtn = document.getElementById('copyInviteBtn');
+  const shareInviteBtn = document.getElementById('shareInviteBtn');
+  const copyToast = document.getElementById('copyToast');
+  const inviteInput = document.getElementById('inviteLink');
+
+  if (!copyInviteBtn || !copyToast || !inviteInput) {
+    return;
+  }
+
 
   // Show share button only on mobile/tablet with Web Share API support
   if (shareInviteBtn && navigator.share && isMobileOrTablet()) {
