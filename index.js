@@ -236,6 +236,51 @@ app.get('/user-stats/:userId', async (req, res) => {
 });
 
 
+app.get('/share/:shareId', (req, res) => {
+  try {
+    const { shareId } = req.params;
+    const gameData = JSON.parse(atob(shareId));
+    
+    const eraNames = {
+      '2000-present': 'Modern Era',
+      '1980-1999': 'Golden Era',
+      '1960-1979': 'Classic Era',
+      'pre-1960': 'Pioneer Era'
+    };
+    
+    // Generate meta tags for social sharing
+    const metaTags = `
+      <meta property="og:title" content="NBA Teammate Game Results" />
+      <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! Connected ${gameData.s} to ${gameData.f} (${eraNames[gameData.e]}). View the full game flow!" />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="${req.protocol}://${req.get('host')}/share/${shareId}" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content="NBA Teammate Game Results" />
+      <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns connecting ${gameData.s} to ${gameData.f}!" />
+    `;
+    
+    // Read the main HTML file and inject meta tags
+    const fs = require('fs');
+    const path = require('path');
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    
+    // Inject meta tags and game data
+    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('</head>', `
+      <script>
+        window.sharedGameData = ${JSON.stringify(gameData)};
+      </script>
+      </head>
+    `);
+    
+    res.send(html);
+  } catch (error) {
+    console.error('Error parsing share link:', error);
+    res.redirect('/');
+  }
+});
+
+
 
 
 // Serve index.html for all other routes (SPA fallback)

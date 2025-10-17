@@ -522,11 +522,34 @@ window.supabase = supabase // Expose for later use
 <section data-route="/gameover" class="hidden" style="text-align: center; margin-top: 2rem;">
   <div id="gameOverContainer" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem;">
     <!-- Game over message will be dynamically added here -->
-
-    <!-- Add this container for winner/loser details -->
     <div id="gameOverResults" style="font-size: 1.2rem; margin-top: 1rem;"></div>
+    
+    <!-- Add share section -->
+    <div class="share-section" style="margin-top: 1.5rem;">
+      <button id="shareGameBtn" class="share-btn">📤 Share Game Results</button>
+      <div id="shareOptions" class="share-options hidden">
+        <button id="copyShareLinkBtn">📋 Copy Link</button>
+        <button id="shareNativeBtn" class="mobile-only">📱 Share</button>
+      </div>
+    </div>
   </div>
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
+</section>
+
+
+<!-- Full Game Flow Display -->
+<section data-route="/game-flow" class="hidden">
+  <div class="game-flow-container">
+    <div class="flow-header">
+      <h2>Game Recap</h2>
+    </div>
+    <div id="fullGameFlow">
+      <!-- Full game flow will be populated here -->
+    </div>
+    <div class="flow-actions">
+      <button id="playAgainFromFlowBtn" class="selection-btn">Play Your Own Game</button>
+    </div>
+  </div>
 </section>
 
 </div>
@@ -1669,6 +1692,20 @@ function attachRouteListeners(route) {
       // No specific listeners needed for matched screen
       // Countdown handles automatic transition
       break;
+
+
+      case '/game-flow':
+  const playAgainFromFlowBtn = document.getElementById('playAgainFromFlowBtn');
+  if (playAgainFromFlowBtn) {
+    playAgainFromFlowBtn.addEventListener('click', () => {
+      if (myUsername && myUserId) {
+        navigateTo('/home');
+      } else {
+        navigateTo('/signup');
+      }
+    });
+  }
+  break;
 
 
     // Add other route handlers as needed
@@ -3198,6 +3235,136 @@ function goBackToGameTypeSelection() {
 }
 
 
+function setupGameSharing() {
+  const shareBtn = document.getElementById('shareGameBtn');
+  
+  if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+      const shareUrl = generateShareUrl();
+      const gameData = window.lastGameData;
+      const eraNames = {
+        '2000-present': 'Modern Era',
+        '1980-1999': 'Golden Era',
+        '1960-1979': 'Classic Era',
+        'pre-1960': 'Pioneer Era'
+      };
+      
+      const shareText = `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns!
+
+${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
+(${eraNames[gameData.era]})
+
+View full game flow: ${shareUrl}`;
+
+      // Try native share first on mobile, fallback to copy
+      if (navigator.share && isMobileOrTablet()) {
+        try {
+          await navigator.share({
+            title: 'NBA Teammate Game Results',
+            text: shareText
+          });
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // User cancelled
+          // Fall through to copy
+        }
+      }
+      
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareText);
+        showMessage('Share link copied to clipboard!', 'info');
+      } catch (err) {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showMessage('Share link copied!', 'info');
+      }
+    });
+  }
+}
+
+function generateShareUrl() {
+  const gameData = window.lastGameData;
+  const shareData = {
+    w: gameData.winner,
+    l: gameData.loser,
+    t: gameData.turnCount,
+    s: gameData.leadoffPlayer,
+    f: gameData.finalPlayer,
+    e: gameData.era,
+    ts: gameData.timestamp,
+    chain: gameData.fullChain
+  };
+  
+  const shareId = btoa(JSON.stringify(shareData)).replace(/[+/=]/g, '');
+  return `${window.location.origin}/share/${shareId}`;
+}
+
+
+function displayFullGameFlow(gameData) {
+  const container = document.getElementById('fullGameFlow');
+  if (!container) return;
+  
+  const eraNames = {
+    '2000-present': 'Modern Era',
+    '1980-1999': 'Golden Era',
+    '1960-1979': 'Classic Era',
+    'pre-1960': 'Pioneer Era'
+  };
+  
+  let flowHtml = `
+    <div class="game-flow-summary">
+      <div class="flow-game-info">
+        <h3>${gameData.w} defeated ${gameData.l} in ${gameData.t} turns</h3>
+        <p class="flow-era">${eraNames[gameData.e]} • ${new Date(gameData.ts).toLocaleDateString()}</p>
+      </div>
+      
+      <div class="flow-chain">
+        <h4>Complete Player Chain:</h4>
+        <div class="flow-steps">
+  `;
+  
+  if (gameData.chain && gameData.chain.length > 0) {
+    gameData.chain.forEach((player, index) => {
+      const isLeadoff = player.isLeadoff;
+      const guesser = player.guesser;
+      const sharedTeams = player.sharedTeams || [];
+      
+      flowHtml += `
+        <div class="flow-step ${isLeadoff ? 'leadoff-step' : ''}">
+          <div class="step-number">${index + 1}</div>
+          <div class="step-content">
+            <div class="step-player">${player.name}</div>
+            ${isLeadoff ? 
+              '<div class="step-info">Starting Player</div>' : 
+              `<div class="step-info">Guessed by ${guesser}</div>`
+            }
+            ${!isLeadoff && sharedTeams.length > 0 ? 
+              `<div class="step-connection">Connected via: ${sharedTeams.map(team => 
+                typeof team === 'object' ? `${team.team} (${team.years})` : team
+              ).join(', ')}</div>` : ''
+            }
+          </div>
+          ${index < gameData.chain.length - 1 ? '<div class="step-arrow">↓</div>' : ''}
+        </div>
+      `;
+    });
+  }
+  
+  flowHtml += `
+        </div>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = flowHtml;
+}
+
+
 
 
 ///////////////////////////////////////////////
@@ -3502,7 +3669,6 @@ socket.on('matchStats', (stats) => {
 socket.on('gameOver', (data) => {
   console.log('[DEBUG] gameOver received:', data);
 
-  // If I intentionally left, skip handling
   if (isLeavingGame) {
     console.debug('[DEBUG] Ignoring gameOver because isLeavingGame === true');
     isLeavingGame = false;
@@ -3512,7 +3678,28 @@ socket.on('gameOver', (data) => {
   gameOver = true;
   localStorage.removeItem('privateRoomId');
 
-  // Stop input & timer
+  // Store complete game data for sharing
+  const leadoffPlayer = successfulGuesses.find(g => g.isLeadoff)?.name || 'Unknown';
+  const finalPlayer = successfulGuesses.length > 1 ? 
+    successfulGuesses[successfulGuesses.length - 1]?.name || 'Unknown' : leadoffPlayer;
+  
+  window.lastGameData = {
+    winner: data.winnerName,
+    loser: data.loserName,
+    turnCount: data.turnCount,
+    leadoffPlayer: leadoffPlayer,
+    finalPlayer: finalPlayer,
+    era: selectedEra || '2000-present',
+    timestamp: Date.now(),
+    fullChain: successfulGuesses.map(g => ({
+      name: g.name,
+      guesser: g.guesser,
+      isLeadoff: g.isLeadoff,
+      sharedTeams: g.sharedTeams
+    }))
+  };
+
+  // Rest of existing gameOver logic...
   guessInput.disabled = true;
   submitGuessBtn.disabled = true;
 
@@ -3540,8 +3727,6 @@ socket.on('gameOver', (data) => {
   container.style.display = 'flex';
   container.innerHTML = '';
 
-  // Create the layout structure
-  
   // 1. "Game Over" header
   const gameOverHeader = document.createElement('div');
   gameOverHeader.style.fontSize = '2rem';
@@ -3559,11 +3744,7 @@ socket.on('gameOver', (data) => {
   resultMessage.style.fontWeight = 'bold';
 
   if (data.role === 'winner') {
-    if (data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
-      resultMessage.textContent = 'You won!';
-    } else {
-      resultMessage.textContent = 'You won!';
-    }
+    resultMessage.textContent = 'You won!';
     resultMessage.style.color = 'green';
   } else if (data.role === 'loser') {
     if (data.reason === 'timer_expired') {
@@ -3593,24 +3774,21 @@ socket.on('gameOver', (data) => {
     container.appendChild(turnDisplay);
   }
 
-  // ✅ ADD OPPONENT LEFT MESSAGE IN GAME OVER SCREEN TOO
-  if (data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
-    const opponentLeftMsg = document.createElement('div');
-    opponentLeftMsg.style.cssText = `
-      // background: #ffebee;
-      // border: 2px solid #f44336;
-      // border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-      text-align: center;
-      font-weight: bold;
-      color: #475569;
-    `;
-    opponentLeftMsg.innerHTML = `
-      <div>Opponent left the game</div>
-    `;
-    container.appendChild(opponentLeftMsg);
-  }
+  // Add share section
+  const shareSection = document.createElement('div');
+  shareSection.className = 'share-section';
+  shareSection.style.marginTop = '1.5rem';
+  
+  const shareBtn = document.createElement('button');
+  shareBtn.id = 'shareGameBtn';
+  shareBtn.className = 'share-btn';
+  shareBtn.textContent = '📤 Share Game Results';
+  
+  shareSection.appendChild(shareBtn);
+  container.appendChild(shareSection);
+
+  // Setup share functionality
+  setupGameSharing();
 
   // Handle rematch button visibility
   if (data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
@@ -3625,7 +3803,6 @@ socket.on('gameOver', (data) => {
   navigateTo('/gameover');
   triggerGameEndCardSpread();
 });
-
 
 
 
@@ -4726,6 +4903,12 @@ try {
   } else {
     console.log('[DEBUG] Ignoring room invite - game is over');
   }
+}
+
+
+if (window.sharedGameData) {
+  displayFullGameFlow(window.sharedGameData);
+  navigateTo('/game-flow');
 }
   
   // No room invite, go to home
