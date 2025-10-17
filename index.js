@@ -11,7 +11,14 @@ const waitingPlayers = [];
 const app = express();
 const server = http.createServer(app);
 
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: ["https://nameateammate.com"], // Add "https://www.nameateammate.com" too if you enable www
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
 
 const socketRoomMap = {};
 const playersInGame = new Set(); // socket.id values
@@ -52,13 +59,13 @@ app.use(express.json());
 
 // Redirect Render subdomain to custom domain
 app.use((req, res, next) => {
-  // Replace with your Render subdomain
   const renderDomain = 'nba-head2head-v2.onrender.com';
-  // Replace with your custom domain
   const customDomain = 'nameateammate.com';
 
-  if (req.hostname === renderDomain) {
-    // Preserve original path
+  if (
+    req.hostname === renderDomain &&
+    !req.originalUrl.startsWith("/socket.io") // 🛑 Don't redirect WebSocket handshakes
+  ) {
     return res.redirect(301, `https://${customDomain}${req.originalUrl}`);
   }
 
