@@ -3300,7 +3300,8 @@ function generateShareUrl() {
     chain: gameData.fullChain
   };
   
-  const shareId = btoa(JSON.stringify(shareData)).replace(/[+/=]/g, '');
+  const jsonString = JSON.stringify(shareData);
+  const shareId = btoa(encodeURIComponent(jsonString)).replace(/[+/=]/g, '');
   return `${window.location.origin}/share/${shareId}`;
 }
 

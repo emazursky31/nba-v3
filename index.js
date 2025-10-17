@@ -239,7 +239,8 @@ app.get('/user-stats/:userId', async (req, res) => {
 app.get('/share/:shareId', (req, res) => {
   try {
     const { shareId } = req.params;
-    const gameData = JSON.parse(atob(shareId));
+    // Fix: Use decodeURIComponent + atob instead of direct atob
+    const gameData = JSON.parse(decodeURIComponent(atob(shareId)));
     
     const eraNames = {
       '2000-present': 'Modern Era',
@@ -248,7 +249,7 @@ app.get('/share/:shareId', (req, res) => {
       'pre-1960': 'Pioneer Era'
     };
     
-    // Generate meta tags for social sharing
+    // Rest of the route code remains the same...
     const metaTags = `
       <meta property="og:title" content="NBA Teammate Game Results" />
       <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! Connected ${gameData.s} to ${gameData.f} (${eraNames[gameData.e]}). View the full game flow!" />
@@ -259,12 +260,10 @@ app.get('/share/:shareId', (req, res) => {
       <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns connecting ${gameData.s} to ${gameData.f}!" />
     `;
     
-    // Read the main HTML file and inject meta tags
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
-    // Inject meta tags and game data
     html = html.replace('<head>', `<head>${metaTags}`);
     html = html.replace('</head>', `
       <script>
