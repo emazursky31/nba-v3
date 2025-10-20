@@ -2506,6 +2506,34 @@ button:disabled {
   margin: 0.5rem 0;
 }
 
+.step-player-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.step-player-headshot {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-color);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.leadoff-step .step-player-headshot {
+  border-color: var(--accent-color);
+}
+
+.step-player-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .flow-actions {
   text-align: center;
   margin-top: 2rem;
@@ -3658,6 +3686,16 @@ html {
   
   .step-label {
     font-size: 0.9rem;
+  }
+
+
+  .step-player-headshot {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .step-player-info {
+    gap: 0.75rem;
   }
   
   .selection-grid,

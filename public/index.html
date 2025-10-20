@@ -3463,21 +3463,27 @@ function displayFullGameFlow(gameData) {
       const isLeadoff = player.isLeadoff;
       const guesser = player.guesser;
       const sharedTeams = player.sharedTeams || [];
+      const headshotUrl = player.headshot_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
       
       flowHtml += `
         <div class="flow-step ${isLeadoff ? 'leadoff-step' : ''}">
           <div class="step-number">${index + 1}</div>
           <div class="step-content">
-            <div class="step-player">${player.name}</div>
-            ${isLeadoff ? 
-              '<div class="step-info">Starting Player</div>' : 
-              `<div class="step-info">Guessed by ${guesser}</div>`
-            }
-            ${!isLeadoff && sharedTeams.length > 0 ? 
-              `<div class="step-connection">Connected via: ${sharedTeams.map(team => 
-                typeof team === 'object' ? `${team.team} (${team.years})` : team
-              ).join(', ')}</div>` : ''
-            }
+            <div class="step-player-info">
+              <img class="step-player-headshot" src="${headshotUrl}" alt="${player.name} headshot" />
+              <div class="step-player-details">
+                <div class="step-player">${player.name}</div>
+                ${isLeadoff ? 
+                  '<div class="step-info">Starting Player</div>' : 
+                  `<div class="step-info">Guessed by ${guesser}</div>`
+                }
+                ${!isLeadoff && sharedTeams.length > 0 ? 
+                  `<div class="step-connection">Connected via: ${sharedTeams.map(team => 
+                    typeof team === 'object' ? `${team.team} (${team.years})` : team
+                  ).join(', ')}</div>` : ''
+                }
+              </div>
+            </div>
           </div>
           ${index < gameData.chain.length - 1 ? '<div class="step-arrow">↓</div>' : ''}
         </div>
@@ -3493,6 +3499,7 @@ function displayFullGameFlow(gameData) {
   
   container.innerHTML = flowHtml;
 }
+
 
 
 
@@ -3825,7 +3832,8 @@ socket.on('gameOver', (data) => {
       name: g.name,
       guesser: g.guesser,
       isLeadoff: g.isLeadoff,
-      sharedTeams: g.sharedTeams
+      sharedTeams: g.sharedTeams,
+      headshot_url: g.headshot_url || DEFAULT_PLAYER_IMAGE
     }))
   };
 
