@@ -337,6 +337,8 @@ app.get('/share/:shareId', (req, res) => {
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+
+    html = html.replace('href="style.css"', 'href="/style.css"');
     
     html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     html = html.replace('</head>', `
@@ -403,6 +405,8 @@ app.get('/s/:shareId', (req, res) => {
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+
+    html = html.replace('href="style.css"', 'href="/style.css"');
     
     html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     html = html.replace('</head>', `
@@ -482,7 +486,9 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
-    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
+     html = html.replace('href="style.css"', 'href="/style.css"');
+     
+     html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     
     // Parse full_chain safely
     let fullChain = [];
