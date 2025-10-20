@@ -31,13 +31,6 @@ const defaultPlayerImage =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
 
 
-// Serve static files first
-app.use(express.static(path.join(__dirname, 'public')));
-
-
-
-
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
@@ -419,6 +412,8 @@ app.get('/g/:shareId', async (req, res) => {
 });
 
 
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
 
 
 // Serve index.html for all other routes (SPA fallback)
