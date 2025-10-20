@@ -4714,6 +4714,39 @@ socket.on('gameEndedReconnection', (data) => {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[DEBUG] DOMContentLoaded');
 
+
+ // CHECK FOR SHARED GAME DATA FIRST - before anything else
+  if (window.sharedGameData) {
+    console.log('[SHARE] Found sharedGameData, displaying game flow immediately');
+    
+    // Hide ALL sections immediately
+    const allSections = document.querySelectorAll('section[data-route]');
+    allSections.forEach(section => {
+      section.classList.add('hidden');
+    });
+    
+    // Show only the game-flow section
+    const gameFlowSection = document.querySelector('section[data-route="/game-flow"]');
+    if (gameFlowSection) {
+      gameFlowSection.classList.remove('hidden');
+    }
+    
+    // Display the game flow and navigate
+    displayFullGameFlow(window.sharedGameData);
+    currentRoute = '/game-flow';
+    history.replaceState({}, '', '/game-flow');
+    
+    // Setup the play again button
+    const playAgainBtn = document.getElementById('playAgainFromFlowBtn');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    }
+    
+    return; // Exit early - don't do any other initialization
+  }
+
   selectedEra = localStorage.getItem('selectedEra') || '2000-present';
   gameTypeSelected = false;
 
@@ -4846,14 +4879,6 @@ if (resignGameBtn) {
     }
     return;
   }
-
-
-if (window.sharedGameData) {
-  console.log('[SHARE] Found sharedGameData, displaying game flow');
-  displayFullGameFlow(window.sharedGameData);
-  navigateTo('/game-flow');
-  return; // Exit early, don't do session validation
-}
 
   
 
