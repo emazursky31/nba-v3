@@ -317,11 +317,28 @@ app.get('/share/:shareId', (req, res) => {
       <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns connecting ${gameData.s} to ${gameData.f}!" />
     `;
     
+    const hideAllCSS = `
+      <style>
+        /* Hide all sections except game flow */
+        section[data-route]:not([data-route="/game-flow"]) { 
+          display: none !important; 
+        }
+        /* Keep nav and footer visible with normal styling */
+        nav, footer { 
+          display: block !important; 
+        }
+        /* Ensure game flow section is visible */
+        section[data-route="/game-flow"] {
+          display: block !important;
+        }
+      </style>
+    `;
+    
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
-    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     html = html.replace('</head>', `
       <script>
         window.sharedGameData = ${JSON.stringify(gameData)};
@@ -337,6 +354,7 @@ app.get('/share/:shareId', (req, res) => {
     res.redirect('/');
   }
 });
+
 
 
 
@@ -365,11 +383,28 @@ app.get('/s/:shareId', (req, res) => {
       <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns!" />
     `;
     
+    const hideAllCSS = `
+      <style>
+        /* Hide all sections except game flow */
+        section[data-route]:not([data-route="/game-flow"]) { 
+          display: none !important; 
+        }
+        /* Keep nav and footer visible with normal styling */
+        nav, footer { 
+          display: block !important; 
+        }
+        /* Ensure game flow section is visible */
+        section[data-route="/game-flow"] {
+          display: block !important;
+        }
+      </style>
+    `;
+    
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
-    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     html = html.replace('</head>', `
       <script>
         window.sharedGameData = ${JSON.stringify(gameData)};
@@ -426,11 +461,28 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
       <meta property="og:url" content="${req.protocol}://${req.get('host')}/g/${shareId}" />
     `;
     
+    const hideAllCSS = `
+      <style>
+        /* Hide all sections except game flow */
+        section[data-route]:not([data-route="/game-flow"]) { 
+          display: none !important; 
+        }
+        /* Keep nav and footer visible with normal styling */
+        nav, footer { 
+          display: block !important; 
+        }
+        /* Ensure game flow section is visible */
+        section[data-route="/game-flow"] {
+          display: block !important;
+        }
+      </style>
+    `;
+    
     const fs = require('fs');
     const path = require('path');
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
-    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
     
     // Parse full_chain safely
     let fullChain = [];
@@ -472,6 +524,7 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
     res.redirect('/');
   }
 });
+
 
 
 
