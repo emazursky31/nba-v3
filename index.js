@@ -358,14 +358,18 @@ app.get('/g/:shareId', async (req, res) => {
   try {
     const { shareId } = req.params;
     
+    console.log(`[SHARE] Request for shareId: ${shareId}`);
+    
     const query = 'SELECT * FROM game_results WHERE share_id = $1';
     const result = await client.query(query, [shareId]);
     
     if (result.rows.length === 0) {
+      console.log(`[SHARE] No game found for shareId: ${shareId}`);
       return res.redirect('/');
     }
     
     const gameData = result.rows[0];
+    console.log(`[SHARE] Found game data:`, gameData);
     
     const eraNames = {
       '2000-present': 'Modern Era',
@@ -374,9 +378,19 @@ app.get('/g/:shareId', async (req, res) => {
       'pre-1960': 'Pioneer Era'
     };
     
+    // Safely escape strings for HTML attributes
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+    };
+    
     const metaTags = `
       <meta property="og:title" content="NBA Teammate Game Results" />
-      <meta property="og:description" content="${gameData.winner} beat ${gameData.loser} in ${gameData.turn_count} turns! ${gameData.leadoff_player} ➜ ${gameData.final_player} (${eraNames[gameData.era]})" />
+      <meta property="og:description" content="${escapeHtml(gameData.winner)} beat ${escapeHtml(gameData.loser)} in ${gameData.turn_count} turns! ${escapeHtml(gameData.leadoff_player)} ➜ ${escapeHtml(gameData.final_player)} (${eraNames[gameData.era] || 'Modern Era'})" />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="${req.protocol}://${req.get('host')}/g/${shareId}" />
     `;
@@ -386,30 +400,58 @@ app.get('/g/:shareId', async (req, res) => {
     let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     
     html = html.replace('<head>', `<head>${metaTags}`);
+    
+    // Parse the full_chain JSON safely
+    let fullChain = [];
+    try {
+      if (gameData.full_chain) {
+        fullChain = typeof gameData.full_chain === 'string' 
+          ? JSON.parse(gameData.full_chain) 
+          : gameData.full_chain;
+      }
+    } catch (e) {
+      console.error(`[SHARE] Error parsing full_chain for ${shareId}:`, e);
+      fullChain = [];
+    }
+    
+    // Safely escape strings for JavaScript
+    const escapeJs = (str) => {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\')
+                .replace(/"/g, '\\"')
+                .replace(/'/g, "\\'")
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
+    };
+    
     html = html.replace('</head>', `
       <script>
+        console.log('[SHARE] Injecting sharedGameData for shareId: ${shareId}');
         window.sharedGameData = {
-          w: "${gameData.winner}",
-          l: "${gameData.loser}",
-          t: ${gameData.turn_count},
-          s: "${gameData.leadoff_player}",
-          f: "${gameData.final_player}",
-          e: "${gameData.era}",
-          ts: ${Date.parse(gameData.created_at)},
-          chain: ${gameData.full_chain}
+          w: "${escapeJs(gameData.winner)}",
+          l: "${escapeJs(gameData.loser)}",
+          t: ${gameData.turn_count || 0},
+          s: "${escapeJs(gameData.leadoff_player)}",
+          f: "${escapeJs(gameData.final_player)}",
+          e: "${escapeJs(gameData.era)}",
+          ts: ${Date.parse(gameData.created_at) || Date.now()},
+          chain: ${JSON.stringify(fullChain)}
         };
+        console.log('[SHARE] sharedGameData set:', window.sharedGameData);
       </script>
       </head>
     `);
     
-    // Set proper content type to ensure HTML is rendered correctly
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
+    
   } catch (error) {
-    console.error('Error loading shared game:', error);
+    console.error(`[SHARE] Error loading shared game for ${req.params.shareId}:`, error);
+    console.error(`[SHARE] Stack trace:`, error.stack);
     res.redirect('/');
   }
 });
+
 
 
 // Serve static files
