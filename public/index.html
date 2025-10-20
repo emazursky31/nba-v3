@@ -3244,73 +3244,76 @@ function setupGameSharing() {
   if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
       try {
+        // Add missing eraNames definition
         const eraNames = {
           '2000-present': 'Modern Era',
           '1980-1999': 'Golden Era',
           '1960-1979': 'Classic Era',
           'pre-1960': 'Pioneer Era'
         };
-    const shareUrl = await generateShareUrl();
-    const gameData = window.lastGameData;
-    
-    const shareText = `🏀 I just played the Name a Teammate Game!
+        
+        const shareUrl = await generateShareUrl();
+        const gameData = window.lastGameData;
+        
+        const shareText = `🏀 I just played the Name a Teammate Game!
 
 ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
 (${eraNames[gameData.era]})
 
-See the full game:${shareUrl}`;
+See the full game: ${shareUrl}`;
 
-      // Try native share first on mobile, fallback to copy
-      if (navigator.share && isMobileOrTablet()) {
-        try {
-          await navigator.share({
-            title: 'NBA Teammate Game Results',
-            text: shareText
-          });
-          return;
-        } catch (err) {
-          if (err.name === 'AbortError') return; // User cancelled
-          // Fall through to copy
+        // Try native share first on mobile, fallback to copy
+        if (navigator.share && isMobileOrTablet()) {
+          try {
+            await navigator.share({
+              title: 'NBA Teammate Game Results',
+              text: shareText
+            });
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') return; // User cancelled
+            // Fall through to copy
+          }
         }
+        
+        // Copy to clipboard
+        try {
+          await navigator.clipboard.writeText(shareText);
+          showMessage('Share link copied to clipboard!', 'info');
+        } catch (err) {
+          console.log('Clipboard API failed, using fallback:', err);
+          // Fallback for older browsers or when clipboard API fails
+          const textArea = document.createElement('textarea');
+          textArea.value = shareText;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          
+          try {
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+              showMessage('Share link copied!', 'info');
+            } else {
+              showMessage('Could not copy to clipboard', 'error');
+            }
+          } catch (fallbackErr) {
+            document.body.removeChild(textArea);
+            console.error('Fallback copy failed:', fallbackErr);
+            showMessage('Copy failed. Please copy manually.', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('Error generating share:', error);
+        showMessage('Error creating share link', 'error');
       }
-      
-      // Copy to clipboard
-     try {
-  await navigator.clipboard.writeText(shareText);
-  showMessage('Share link copied to clipboard!', 'info');
-} catch (err) {
-  console.log('Clipboard API failed, using fallback:', err);
-  // Fallback for older browsers or when clipboard API fails
-  const textArea = document.createElement('textarea');
-  textArea.value = shareText;
-  textArea.style.position = 'fixed';
-  textArea.style.left = '-999999px';
-  textArea.style.top = '-999999px';
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-  
-  try {
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    if (successful) {
-      showMessage('Share link copied!', 'info');
-    } else {
-      showMessage('Could not copy to clipboard', 'error');
-    }
-  } catch (fallbackErr) {
-    document.body.removeChild(textArea);
-    console.error('Fallback copy failed:', fallbackErr);
-    showMessage('Copy failed. Please copy manually.', 'error');
+    });
   }
 }
-    } catch (error) {
-    console.error('Error generating share:', error);
-    showMessage('Error creating share link', 'error');
-  }
-});
-  }
-}
+
 
 
 

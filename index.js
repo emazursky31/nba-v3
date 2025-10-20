@@ -279,12 +279,15 @@ app.get('/share/:shareId', (req, res) => {
       </head>
     `);
     
+    // Set proper content type to ensure HTML is rendered correctly
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (error) {
     console.error('Error parsing share link:', error);
     res.redirect('/');
   }
 });
+
 
 
 app.get('/s/:shareId', (req, res) => {
@@ -324,12 +327,16 @@ app.get('/s/:shareId', (req, res) => {
       </head>
     `);
     
+    // Set proper content type to ensure HTML is rendered correctly
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (error) {
     console.error('Error parsing short share link:', error);
     res.redirect('/');
   }
 });
+
+
 
 app.post('/api/create-share', async (req, res) => {
   try {
@@ -402,6 +409,8 @@ app.get('/g/:shareId', async (req, res) => {
       </head>
     `);
     
+    // Set proper content type to ensure HTML is rendered correctly
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   } catch (error) {
     console.error('Error loading shared game:', error);
