@@ -66,6 +66,29 @@ app.use((req, res, next) => {
 });
 
 
+app.post('/api/create-share', async (req, res) => {
+  try {
+    const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = req.body;
+    
+    // Generate short random ID
+    const shareId = Math.random().toString(36).substring(2, 8);
+    
+    const query = `
+      INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING share_id
+    `;
+    
+    const result = await client.query(query, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
+    
+    res.json({ shareId: result.rows[0].share_id });
+  } catch (error) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: 'Failed to create share link' });
+  }
+});
+
+
 
 function normalizeForSearch(str) {
   return str.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
@@ -331,27 +354,7 @@ app.get('/s/:shareId', (req, res) => {
 
 
 
-app.post('/api/create-share', async (req, res) => {
-  try {
-    const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = req.body;
-    
-    // Generate short random ID
-    const shareId = Math.random().toString(36).substring(2, 8);
-    
-    const query = `
-      INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING share_id
-    `;
-    
-    const result = await client.query(query, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
-    
-    res.json({ shareId: result.rows[0].share_id });
-  } catch (error) {
-    console.error('Error creating share:', error);
-    res.status(500).json({ error: 'Failed to create share link' });
-  }
-});
+
 
 // Short URL route
 app.get('/g/:shareId', async (req, res) => {
