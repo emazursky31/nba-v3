@@ -331,6 +331,84 @@ app.get('/s/:shareId', (req, res) => {
   }
 });
 
+app.post('/api/create-share', async (req, res) => {
+  try {
+    const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = req.body;
+    
+    // Generate short random ID
+    const shareId = Math.random().toString(36).substring(2, 8);
+    
+    const query = `
+      INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING share_id
+    `;
+    
+    const result = await client.query(query, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
+    
+    res.json({ shareId: result.rows[0].share_id });
+  } catch (error) {
+    console.error('Error creating share:', error);
+    res.status(500).json({ error: 'Failed to create share link' });
+  }
+});
+
+// Short URL route
+app.get('/g/:shareId', async (req, res) => {
+  try {
+    const { shareId } = req.params;
+    
+    const query = 'SELECT * FROM game_results WHERE share_id = $1';
+    const result = await client.query(query, [shareId]);
+    
+    if (result.rows.length === 0) {
+      return res.redirect('/');
+    }
+    
+    const gameData = result.rows[0];
+    
+    const eraNames = {
+      '2000-present': 'Modern Era',
+      '1980-1999': 'Golden Era',
+      '1960-1979': 'Classic Era',
+      'pre-1960': 'Pioneer Era'
+    };
+    
+    const metaTags = `
+      <meta property="og:title" content="NBA Teammate Game Results" />
+      <meta property="og:description" content="${gameData.winner} beat ${gameData.loser} in ${gameData.turn_count} turns! ${gameData.leadoff_player} ➜ ${gameData.final_player} (${eraNames[gameData.era]})" />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="${req.protocol}://${req.get('host')}/g/${shareId}" />
+    `;
+    
+    const fs = require('fs');
+    const path = require('path');
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    
+    html = html.replace('<head>', `<head>${metaTags}`);
+    html = html.replace('</head>', `
+      <script>
+        window.sharedGameData = {
+          w: "${gameData.winner}",
+          l: "${gameData.loser}",
+          t: ${gameData.turn_count},
+          s: "${gameData.leadoff_player}",
+          f: "${gameData.final_player}",
+          e: "${gameData.era}",
+          ts: ${Date.parse(gameData.created_at)},
+          chain: ${gameData.full_chain}
+        };
+      </script>
+      </head>
+    `);
+    
+    res.send(html);
+  } catch (error) {
+    console.error('Error loading shared game:', error);
+    res.redirect('/');
+  }
+});
+
 
 
 

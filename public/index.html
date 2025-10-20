@@ -3243,21 +3243,16 @@ function setupGameSharing() {
   
   if (shareBtn) {
     shareBtn.addEventListener('click', async () => {
-      const shareUrl = generateShareUrl();
-      const gameData = window.lastGameData;
-      const eraNames = {
-        '2000-present': 'Modern Era',
-        '1980-1999': 'Golden Era',
-        '1960-1979': 'Classic Era',
-        'pre-1960': 'Pioneer Era'
-      };
-      
-      const shareText = `🏀 I just played the Name a Teammate Game!
+      try {
+    const shareUrl = await generateShareUrl();
+    const gameData = window.lastGameData;
+    
+    const shareText = `🏀 I just played the Name a Teammate Game!
 
 ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
-${gameData.turnCount} turns
+(${eraNames[gameData.era]})
 
-See the full game: ${shareUrl}`;
+See the full game:${shareUrl}`;
 
       // Try native share first on mobile, fallback to copy
       if (navigator.share && isMobileOrTablet()) {
@@ -3303,27 +3298,40 @@ See the full game: ${shareUrl}`;
     showMessage('Copy failed. Please copy manually.', 'error');
   }
 }
-    });
+    } catch (error) {
+    console.error('Error generating share:', error);
+    showMessage('Error creating share link', 'error');
+  }
+});
   }
 }
 
+
+
 function generateShareUrl() {
   const gameData = window.lastGameData;
-  const shareData = {
-    w: gameData.winner,
-    l: gameData.loser,
-    t: gameData.turnCount,
-    s: gameData.leadoffPlayer,
-    f: gameData.finalPlayer,
-    e: gameData.era,
-    ts: gameData.timestamp,
-    chain: gameData.fullChain
-  };
   
-  const jsonString = JSON.stringify(shareData);
-  const shareId = btoa(encodeURIComponent(jsonString)).replace(/[+/=]/g, '');
-  return `${window.location.origin}/share/${shareId}`;
+  return fetch('/api/create-share', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      winner: gameData.winner,
+      loser: gameData.loser,
+      turnCount: gameData.turnCount,
+      leadoffPlayer: gameData.leadoffPlayer,
+      finalPlayer: gameData.finalPlayer,
+      era: gameData.era,
+      fullChain: gameData.fullChain
+    })
+  })
+  .then(res => res.json())
+  .then(data => `${window.location.origin}/g/${data.shareId}`)
+  .catch(err => {
+    console.error('Error creating share link:', err);
+    return `${window.location.origin}`;
+  });
 }
+
 
 
 
