@@ -356,8 +356,7 @@ app.get('/s/:shareId', (req, res) => {
 
 
 
-// Short URL route
-app.get('/g/:shareId', async (req, res) => {
+app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
   try {
     const { shareId } = req.params;
     
@@ -381,14 +380,9 @@ app.get('/g/:shareId', async (req, res) => {
       'pre-1960': 'Pioneer Era'
     };
     
-    // Safely escape strings for HTML attributes
     const escapeHtml = (str) => {
       if (!str) return '';
-      return str.replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
     
     const metaTags = `
@@ -404,27 +398,18 @@ app.get('/g/:shareId', async (req, res) => {
     
     html = html.replace('<head>', `<head>${metaTags}`);
     
-    // Parse the full_chain JSON safely
+    // Parse full_chain safely
     let fullChain = [];
     try {
-      if (gameData.full_chain) {
-        fullChain = typeof gameData.full_chain === 'string' 
-          ? JSON.parse(gameData.full_chain) 
-          : gameData.full_chain;
-      }
+      fullChain = Array.isArray(gameData.full_chain) ? gameData.full_chain : JSON.parse(gameData.full_chain || '[]');
     } catch (e) {
-      console.error(`[SHARE] Error parsing full_chain for ${shareId}:`, e);
+      console.error(`[SHARE] Error parsing full_chain:`, e);
       fullChain = [];
     }
     
-    // Safely escape strings for JavaScript
     const escapeJs = (str) => {
       if (!str) return '';
-      return str.replace(/\\/g, '\\\\')
-                .replace(/"/g, '\\"')
-                .replace(/'/g, "\\'")
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '\\r');
+      return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
     };
     
     html = html.replace('</head>', `
@@ -449,8 +434,7 @@ app.get('/g/:shareId', async (req, res) => {
     res.send(html);
     
   } catch (error) {
-    console.error(`[SHARE] Error loading shared game for ${req.params.shareId}:`, error);
-    console.error(`[SHARE] Stack trace:`, error.stack);
+    console.error(`[SHARE] Error:`, error);
     res.redirect('/');
   }
 });

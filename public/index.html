@@ -4847,7 +4847,17 @@ if (resignGameBtn) {
     return;
   }
 
-  // --- 3️⃣ Validate session state FIRST ---
+
+if (window.sharedGameData) {
+  console.log('[SHARE] Found sharedGameData, displaying game flow');
+  displayFullGameFlow(window.sharedGameData);
+  navigateTo('/game-flow');
+  return; // Exit early, don't do session validation
+}
+
+  
+
+  // --- 3️⃣ Validate session state  ---
 console.log('[DEBUG] Starting session validation...');
 
 // ✅ FIRST: Check for room invite in URL and preserve it
@@ -4945,11 +4955,7 @@ try {
 }
 
 
-if (window.sharedGameData) {
-  displayFullGameFlow(window.sharedGameData);
-  navigateTo('/game-flow');
-}
-  
+
   // No room invite, go to home
   navigateTo('/home');
   
