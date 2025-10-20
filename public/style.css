@@ -2511,6 +2511,48 @@ button:disabled {
   margin-top: 2rem;
 }
 
+/* Share Toast Notification */
+.share-toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 10000;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: center;
+  animation: shareToastSlide 0.4s ease-out;
+  min-width: 280px;
+  max-width: 90vw;
+}
+
+@keyframes shareToastSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.share-toast.fade-out {
+  animation: shareToastFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes shareToastFadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+
 
 
 /* Auth Forms */

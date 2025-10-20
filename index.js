@@ -70,23 +70,57 @@ app.post('/api/create-share', async (req, res) => {
   try {
     const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = req.body;
     
-    // Generate short random ID
-    const shareId = Math.random().toString(36).substring(2, 8);
+    // Create a deterministic hash based on game data
+    const crypto = require('crypto');
+    const gameDataString = `${winner}-${loser}-${turnCount}-${leadoffPlayer}-${finalPlayer}-${era}`;
+    const gameHash = crypto.createHash('md5').update(gameDataString).digest('hex');
+    const shareId = gameHash.substring(0, 6); // Use first 6 characters of hash
     
-    const query = `
+    // Check if this exact game already has a share link
+    const existingQuery = 'SELECT share_id FROM game_results WHERE share_id = $1';
+    const existingResult = await client.query(existingQuery, [shareId]);
+    
+    if (existingResult.rows.length > 0) {
+      // Return existing share ID
+      console.log(`[SHARE] Returning existing share ID: ${shareId}`);
+      return res.json({ shareId: existingResult.rows[0].share_id });
+    }
+    
+    // Create new share entry
+    const insertQuery = `
       INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING share_id
     `;
     
-    const result = await client.query(query, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
+    const result = await client.query(insertQuery, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
     
+    console.log(`[SHARE] Created new share ID: ${shareId}`);
     res.json({ shareId: result.rows[0].share_id });
+    
   } catch (error) {
     console.error('Error creating share:', error);
+    
+    // If there's a conflict (unlikely with MD5), generate a random fallback
+    if (error.code === '23505') { // Unique constraint violation
+      const fallbackId = Math.random().toString(36).substring(2, 8);
+      try {
+        const fallbackQuery = `
+          INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING share_id
+        `;
+        const fallbackResult = await client.query(fallbackQuery, [fallbackId, req.body.winner, req.body.loser, req.body.turnCount, req.body.leadoffPlayer, req.body.finalPlayer, req.body.era, JSON.stringify(req.body.fullChain)]);
+        return res.json({ shareId: fallbackResult.rows[0].share_id });
+      } catch (fallbackError) {
+        console.error('Fallback share creation failed:', fallbackError);
+      }
+    }
+    
     res.status(500).json({ error: 'Failed to create share link' });
   }
 });
+
 
 
 
