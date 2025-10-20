@@ -740,18 +740,6 @@ nav {
   opacity: 1;
 }
 
-.step-number {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
 
 .step-label {
   font-weight: 600;
@@ -2440,7 +2428,7 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.5rem;
   background: var(--bg-card);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
@@ -2460,15 +2448,16 @@ button:disabled {
 .step-number {
   background: var(--primary-color);
   color: white;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1rem;
   flex-shrink: 0;
+  margin-top: 0.75rem; 
 }
 
 .leadoff-step .step-number {
@@ -2477,26 +2466,34 @@ button:disabled {
 
 .step-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevent overflow */
 }
 
 .step-player {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.25rem;
+  margin: 0;
+  word-wrap: break-word;
 }
 
 .step-info {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-bottom: 0.25rem;
+  margin: 0;
+  font-weight: 500;
 }
 
 .step-connection {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-style: italic;
+  margin-top: 0.25rem;
+  line-height: 1.4;
 }
+
 
 .step-arrow {
   align-self: center;
@@ -2504,6 +2501,7 @@ button:disabled {
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0.5rem 0;
+  text-align: center;
 }
 
 .step-player-info {
@@ -2511,7 +2509,9 @@ button:disabled {
   align-items: center;
   gap: 1rem;
   width: 100%;
+  margin-bottom: 0.5rem;
 }
+
 
 .step-player-headshot {
   width: 60px;
@@ -2532,6 +2532,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .flow-actions {
@@ -3683,6 +3684,11 @@ html {
     padding: 0.5rem 1rem;
     gap: 0.5rem;
   }
+
+   .flow-step {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
   
   .step-label {
     font-size: 0.9rem;
@@ -3696,6 +3702,13 @@ html {
   
   .step-player-info {
     gap: 0.75rem;
+  }
+
+  .step-number {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem; 
   }
   
   .selection-grid,
