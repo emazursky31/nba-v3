@@ -2506,7 +2506,7 @@ button:disabled {
 
 .step-player-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   width: 100%;
   margin-bottom: 0.5rem;
@@ -2521,6 +2521,7 @@ button:disabled {
   border: 2px solid var(--primary-color);
   flex-shrink: 0;
   box-shadow: var(--shadow-md);
+  margin-top: 0;
 }
 
 .leadoff-step .step-player-headshot {
@@ -2533,6 +2534,8 @@ button:disabled {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
+  justify-content: flex-start; 
+  padding-top: 0.25rem; 
 }
 
 .flow-actions {
@@ -2969,6 +2972,11 @@ section[data-route="/profile"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: none;
   -webkit-overscroll-behavior-x: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .player-card {
@@ -2989,6 +2997,8 @@ section[data-route="/profile"] {
   min-width: 200px;
   margin-right: -1px;
   opacity: 1 !important;
+   transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 
