@@ -510,6 +510,72 @@ window.supabase = supabase // Expose for later use
 </section>
 
 
+<!-- Game Results Page -->
+<section data-route="/results" class="hidden">
+  <div class="results-container">
+    <div class="results-header">
+      <h2>Game Results</h2>
+      <button id="backToHomeBtn" class="back-btn">← Back to Home</button>
+    </div>
+    
+    <div class="results-summary">
+      <div class="game-outcome">
+        <h3 id="resultsGameOutcome">Game Outcome</h3>
+        <div class="outcome-details">
+          <div class="winner-section">
+            <span class="label">Winner:</span>
+            <span id="resultsWinner" class="winner-name">Player</span>
+          </div>
+          <div class="loser-section">
+            <span class="label">Opponent:</span>
+            <span id="resultsLoser" class="loser-name">Player</span>
+          </div>
+          <div class="turns-section">
+            <span class="label">Total Turns:</span>
+            <span id="resultsTurns" class="turns-count">0</span>
+          </div>
+          <div class="era-section">
+            <span class="label">Era:</span>
+            <span id="resultsEra" class="era-name">Modern Era</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-chain">
+      <h4>Complete Player Chain</h4>
+      <div id="resultsPlayerChain" class="results-chain-container">
+        <!-- Player chain will be populated here -->
+      </div>
+    </div>
+
+    <div class="enhanced-share-section">
+      <h4>Share Your Results</h4>
+      <div class="share-options-grid">
+        <button id="shareResultsCopyBtn" class="share-option-btn">
+          <span class="share-icon">📋</span>
+          <span class="share-text">Copy Link</span>
+        </button>
+        <button id="shareResultsNativeBtn" class="share-option-btn mobile-only">
+          <span class="share-icon">📱</span>
+          <span class="share-text">Share</span>
+        </button>
+        <button id="shareResultsTextBtn" class="share-option-btn">
+          <span class="share-icon">📝</span>
+          <span class="share-text">Copy Summary</span>
+        </button>
+        <button id="shareResultsImageBtn" class="share-option-btn">
+          <span class="share-icon">🖼️</span>
+          <span class="share-text">Save Image</span>
+        </button>
+      </div>
+      <div id="shareResultsToast" class="share-toast hidden">Copied to clipboard!</div>
+    </div>
+  </div>
+</section>
+
+
+
 <div id="successful-guesses-container" style="text-align: center; margin-top: 2rem;">
   
   <div id="card-deck" class="card-deck-container"></div>
@@ -525,13 +591,9 @@ window.supabase = supabase // Expose for later use
     <div id="gameOverResults" style="font-size: 1.2rem; margin-top: 1rem;"></div>
     
     <!-- Add share section -->
-    <div class="share-section" style="margin-top: 1.5rem;">
-      <button id="shareGameBtn" class="share-btn">📤 Share Game Results</button>
-      <div id="shareOptions" class="share-options hidden">
-        <button id="copyShareLinkBtn">📋 Copy Link</button>
-        <button id="shareNativeBtn" class="mobile-only">📱 Share</button>
-      </div>
-    </div>
+  <div class="game-results-section" style="margin-top: 1.5rem;">
+    <button id="viewResultsBtn" class="results-btn">View Game Recap</button>
+  </div>
   </div>
   <button id="rematchBtn" style="margin-top: 1rem;">Request Rematch</button>
 </section>
@@ -582,6 +644,7 @@ window.supabase = supabase // Expose for later use
   let gameSettingsSelected = false;
   let isPageVisible = true;
   let visibilityTimer = null;
+  let currentGameResults = null;
 
   // DOM element references (assigned in DOMContentLoaded)
 let guessInput = null;
@@ -1706,6 +1769,32 @@ function attachRouteListeners(route) {
     });
   }
   break;
+
+
+  case '/results':
+      setupResultsPageSharing();
+      
+      const backBtn = document.getElementById('backToHomeBtn');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          if (myUsername && myUserId) {
+            navigateTo('/home');
+          } else {
+            navigateTo('/signup');
+          }
+        });
+      }
+      
+      const viewResultsBtn = document.getElementById('viewResultsBtn');
+      if (viewResultsBtn) {
+        viewResultsBtn.addEventListener('click', () => {
+          if (window.lastGameData) {
+            displayGameResults(window.lastGameData);
+            navigateTo('/results');
+          }
+        });
+      }
+      break;
 
 
     // Add other route handlers as needed
@@ -3502,6 +3591,166 @@ function displayFullGameFlow(gameData) {
 
 
 
+// Function to setup view results button
+function setupViewResultsButton() {
+  const viewResultsBtn = document.getElementById('viewResultsBtn');
+  if (viewResultsBtn) {
+    viewResultsBtn.addEventListener('click', () => {
+      if (currentGameResults) {
+        displayGameResults(currentGameResults);
+        navigateTo('/results');
+      }
+    });
+  }
+}
+
+// Function to display game results on the results page
+function displayGameResults(gameData) {
+  // Update outcome section
+  const resultsWinner = document.getElementById('resultsWinner');
+  const resultsLoser = document.getElementById('resultsLoser');
+  const resultsTurns = document.getElementById('resultsTurns');
+  const resultsEra = document.getElementById('resultsEra');
+  
+  if (resultsWinner) resultsWinner.textContent = gameData.winner || 'Unknown';
+  if (resultsLoser) resultsLoser.textContent = gameData.loser || 'Unknown';
+  if (resultsTurns) resultsTurns.textContent = gameData.turnCount || 0;
+  if (resultsEra) {
+    const eraNames = {
+      '2000-present': 'Modern Era',
+      '1980-1999': 'Golden Era',
+      '1960-1979': 'Classic Era',
+      'pre-1960': 'Pioneer Era'
+    };
+    resultsEra.textContent = eraNames[gameData.era] || 'Modern Era';
+  }
+
+  // Display player chain
+  const chainContainer = document.getElementById('resultsPlayerChain');
+  if (chainContainer && gameData.fullChain) {
+    chainContainer.innerHTML = '';
+    
+    gameData.fullChain.forEach((player, index) => {
+      const stepDiv = document.createElement('div');
+      stepDiv.className = `results-chain-step ${player.isLeadoff ? 'leadoff-step' : ''}`;
+      
+      stepDiv.innerHTML = `
+        <div class="chain-step-number">${index + 1}</div>
+        <div class="chain-step-content">
+          <div class="chain-step-player">${player.name}</div>
+          <div class="chain-step-info">
+            ${player.isLeadoff ? 'Starting Player' : `Guessed by ${player.guesser}`}
+          </div>
+        </div>
+      `;
+      
+      chainContainer.appendChild(stepDiv);
+    });
+  }
+}
+
+// Enhanced share functionality for results page
+function setupResultsPageSharing() {
+  const copyBtn = document.getElementById('shareResultsCopyBtn');
+  const nativeBtn = document.getElementById('shareResultsNativeBtn');
+  const textBtn = document.getElementById('shareResultsTextBtn');
+  const imageBtn = document.getElementById('shareResultsImageBtn');
+  const toast = document.getElementById('shareResultsToast');
+
+  // Copy link functionality
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        const shareUrl = await generateShareUrl();
+        await navigator.clipboard.writeText(shareUrl);
+        showResultsToast('Link copied to clipboard!');
+      } catch (error) {
+        console.error('Error copying link:', error);
+        showResultsToast('Failed to copy link', 'error');
+      }
+    });
+  }
+
+  // Native share functionality
+  if (nativeBtn && navigator.share) {
+    nativeBtn.addEventListener('click', async () => {
+      try {
+        const shareUrl = await generateShareUrl();
+        const gameData = currentGameResults;
+        
+        await navigator.share({
+          title: 'NBA Teammate Game Results',
+          text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
+          url: shareUrl
+        });
+        
+        showResultsToast('Shared successfully!');
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error sharing:', error);
+          showResultsToast('Failed to share', 'error');
+        }
+      }
+    });
+  } else if (nativeBtn) {
+    nativeBtn.style.display = 'none';
+  }
+
+  // Copy text summary functionality
+  if (textBtn) {
+    textBtn.addEventListener('click', async () => {
+      try {
+        const gameData = currentGameResults;
+        const eraNames = {
+          '2000-present': 'Modern Era',
+          '1980-1999': 'Golden Era',
+          '1960-1979': 'Classic Era',
+          'pre-1960': 'Pioneer Era'
+        };
+        
+        const summary = `🏀 NBA Teammate Game Results
+
+Winner: ${gameData.winner}
+Opponent: ${gameData.loser}
+Turns: ${gameData.turnCount}
+Era: ${eraNames[gameData.era] || 'Modern Era'}
+Chain: ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
+
+Play your own game at nameateammate.com`;
+
+        await navigator.clipboard.writeText(summary);
+        showResultsToast('Summary copied to clipboard!');
+      } catch (error) {
+        console.error('Error copying summary:', error);
+        showResultsToast('Failed to copy summary', 'error');
+      }
+    });
+  }
+
+  // Save image functionality (placeholder)
+  if (imageBtn) {
+    imageBtn.addEventListener('click', () => {
+      showResultsToast('Image save feature coming soon!', 'info');
+    });
+  }
+}
+
+// Show toast notification on results page
+function showResultsToast(message, type = 'success') {
+  const toast = document.getElementById('shareResultsToast');
+  if (!toast) return;
+  
+  toast.textContent = message;
+  toast.className = `share-toast ${type}`;
+  toast.classList.remove('hidden');
+  
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+}
+
+
+
 
 
 ///////////////////////////////////////////////
@@ -3815,12 +4064,12 @@ socket.on('gameOver', (data) => {
   gameOver = true;
   localStorage.removeItem('privateRoomId');
 
-  // Store complete game data for sharing
+  // Store game results for the results page
   const leadoffPlayer = successfulGuesses.find(g => g.isLeadoff)?.name || 'Unknown';
   const finalPlayer = successfulGuesses.length > 1 ? 
     successfulGuesses[successfulGuesses.length - 1]?.name || 'Unknown' : leadoffPlayer;
   
-  window.lastGameData = {
+  currentGameResults = {
     winner: data.winnerName,
     loser: data.loserName,
     turnCount: data.turnCount,
@@ -3834,8 +4083,13 @@ socket.on('gameOver', (data) => {
       isLeadoff: g.isLeadoff,
       sharedTeams: g.sharedTeams,
       headshot_url: g.headshot_url || DEFAULT_PLAYER_IMAGE
-    }))
+    })),
+    role: data.role,
+    reason: data.reason
   };
+
+  // Store for sharing
+  window.lastGameData = currentGameResults;
 
   // Rest of existing gameOver logic...
   guessInput.disabled = true;
@@ -3846,19 +4100,6 @@ socket.on('gameOver', (data) => {
     window.timerInterval = null;
   }
   timerEl.textContent = ':--';
-
-  // Ensure myUsername & opponentName
-  if (!myUsername && data.winnerName && data.loserName) {
-    if (data.role === 'winner') {
-      myUsername = data.winnerName;
-      opponentName = data.loserName;
-    } else {
-      myUsername = data.loserName;
-      opponentName = data.winnerName;
-    }
-  } else if (!opponentName && data.winnerName && data.loserName) {
-    opponentName = (myUsername === data.winnerName) ? data.loserName : data.winnerName;
-  }
 
   // Show game over container
   const container = document.getElementById('gameOverContainer');
@@ -3912,21 +4153,21 @@ socket.on('gameOver', (data) => {
     container.appendChild(turnDisplay);
   }
 
-  // Add share section
-  const shareSection = document.createElement('div');
-  shareSection.className = 'share-section';
-  shareSection.style.marginTop = '1.5rem';
+  // 4. NEW: View Results button instead of direct share
+  const resultsSection = document.createElement('div');
+  resultsSection.className = 'game-results-section';
+  resultsSection.style.marginTop = '1.5rem';
   
-  const shareBtn = document.createElement('button');
-  shareBtn.id = 'shareGameBtn';
-  shareBtn.className = 'share-btn';
-  shareBtn.textContent = '📤 Share Game Results';
+  const viewResultsBtn = document.createElement('button');
+  viewResultsBtn.id = 'viewResultsBtn';
+  viewResultsBtn.className = 'results-btn';
+  viewResultsBtn.textContent = '📊 View Game Results';
   
-  shareSection.appendChild(shareBtn);
-  container.appendChild(shareSection);
+  resultsSection.appendChild(viewResultsBtn);
+  container.appendChild(resultsSection);
 
-  // Setup share functionality
-  setupGameSharing();
+  // Setup view results functionality
+  setupViewResultsButton();
 
   // Handle rematch button visibility
   if (data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
