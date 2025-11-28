@@ -3461,108 +3461,6 @@ See the full game: ${shareUrl}`;
   }
 }
 
-
-function showError(message) {
-  // Remove any existing error notifications
-  const existingError = document.querySelector('.error-notification');
-  if (existingError) {
-    existingError.remove();
-  }
-
-  // Create error notification
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'error-notification';
-  errorDiv.textContent = message;
-  errorDiv.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-    z-index: 10000;
-    font-weight: 500;
-    max-width: 300px;
-    animation: slideInRight 0.3s ease-out;
-  `;
-  document.body.appendChild(errorDiv);
-  
-  // Remove after 5 seconds
-  setTimeout(() => {
-    errorDiv.style.animation = 'slideOutRight 0.3s ease-in';
-    setTimeout(() => {
-      if (errorDiv.parentNode) {
-        errorDiv.remove();
-      }
-    }, 300);
-  }, 5000);
-}
-
-function showNotification(message) {
-  // Remove any existing success notifications
-  const existingNotif = document.querySelector('.success-notification');
-  if (existingNotif) {
-    existingNotif.remove();
-  }
-
-  // Create success notification
-  const notifDiv = document.createElement('div');
-  notifDiv.className = 'success-notification';
-  notifDiv.textContent = message;
-  notifDiv.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-    z-index: 10000;
-    font-weight: 500;
-    max-width: 300px;
-    animation: slideInRight 0.3s ease-out;
-  `;
-  document.body.appendChild(notifDiv);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    notifDiv.style.animation = 'slideOutRight 0.3s ease-in';
-    setTimeout(() => {
-      if (notifDiv.parentNode) {
-        notifDiv.remove();
-      }
-    }, 300);
-  }, 3000);
-}
-
-function updateWaitingRoomUI(playerCount) {
-  const waitingStatus = document.getElementById('waitingStatus');
-  const displayRoomCode = document.getElementById('displayRoomCode');
-  
-  if (waitingStatus) {
-    if (playerCount === 1) {
-      waitingStatus.textContent = 'Waiting for a friend to join...';
-      waitingStatus.className = 'waiting-status waiting';
-    } else if (playerCount === 2) {
-      waitingStatus.textContent = 'Starting game...';
-      waitingStatus.className = 'waiting-status starting';
-    }
-  }
-  
-  // Add visual feedback to room code
-  if (displayRoomCode && playerCount === 2) {
-    displayRoomCode.style.animation = 'pulse 0.5s ease-in-out';
-    setTimeout(() => {
-      if (displayRoomCode.style) {
-        displayRoomCode.style.animation = '';
-      }
-    }, 500);
-  }
-}
-
 function showShareToast(message, type = 'success') {
   // Remove any existing share toast
   const existingToast = document.querySelector('.share-toast');
@@ -3851,39 +3749,7 @@ function showResultsToast(message, type = 'success') {
   }, 3000);
 }
 
-// Handle room access errors
-socket.on('joinError', (data) => {
-  if (data.shouldRedirect) {
-    showError(data.message);
-    // Redirect to home page after a delay
-    setTimeout(() => {
-      if (myUsername && myUserId) {
-        navigateTo('/home');
-      } else {
-        navigateTo('/signup');
-      }
-    }, 3000);
-  }
-});
 
-// Handle room cleanup notifications
-socket.on('roomClosed', (data) => {
-  showError(`Game ended: ${data.reason}`);
-  // Redirect to home page
-  setTimeout(() => {
-    if (myUsername && myUserId) {
-      navigateTo('/home');
-    } else {
-      navigateTo('/signup');
-    }
-  }, 2000);
-});
-
-// Handle player join notifications
-socket.on('playerJoined', (data) => {
-  showNotification(`${data.username} joined the game! (${data.playersCount}/2 players)`);
-  updateWaitingRoomUI(data.playersCount);
-});
 
 
 
