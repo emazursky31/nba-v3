@@ -26,6 +26,8 @@ const activeTimers = new Map();
 const gameCreationLocks = new Set();
 const disconnectedPlayers = new Map(); // userId -> {roomId, disconnectTime, socketId, username}
 const RECONNECTION_GRACE_PERIOD = 45000; // 45 seconds
+const roomExpirationTimes = new Map(); // roomId -> timestamp
+const ROOM_EXPIRATION_DELAY = 5 * 60 * 1000; // 5 minutes
 
 const defaultPlayerImage = 
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
@@ -1727,6 +1729,18 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     return;
   }
 
+  // ✅ NEW: Validate room access before proceeding
+  const validation = validateRoomAccess(roomId, userId);
+  
+  if (!validation.valid) {
+    console.log(`[handleJoinGame] Room access denied for ${username}: ${validation.reason}`);
+    socket.emit('joinError', {
+      message: validation.reason,
+      shouldRedirect: true
+    });
+    return;
+  }
+
   // Check for existing active session with same userId in ANY room
   for (const [existingRoomId, game] of Object.entries(games)) {
     if (game.userIds) {
@@ -2016,6 +2030,9 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     
     const game = games[roomId];
     
+    // ✅ Cancel room expiration since someone joined
+    cancelRoomExpiration(roomId);
+    
     // ✅ Handle reconnection to ended games
     if (game.gameEnded) {
       console.log(`[handleJoinGame] Reconnecting ${username} to ended game ${roomId}`);
@@ -2108,6 +2125,19 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
       
       if (!game.ready) game.ready = new Set();
       game.ready.add(socket.id);
+      
+      // ✅ NEW: Notify existing players that someone joined
+      game.players.forEach(playerId => {
+        if (playerId !== socket.id) {
+          const playerSocket = io.sockets.sockets.get(playerId);
+          if (playerSocket && playerSocket.connected) {
+            playerSocket.emit('playerJoined', {
+              username: finalUsername,
+              playersCount: game.players.length
+            });
+          }
+        }
+      });
       
       io.to(roomId).emit('playersUpdate', game.players.length);
       
@@ -2215,6 +2245,7 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
 
 
 
+
 async function handlePlayerDisconnect(socket) {
   const username = socket.data?.username || 'Unknown';
   console.log(`🛑 handlePlayerDisconnect: ${socket.id} (${username})`);
@@ -2247,6 +2278,12 @@ async function handlePlayerDisconnect(socket) {
       if (game.timer) {
         clearInterval(game.timer);
         delete game.timer;
+      }
+
+      // ✅ NEW: Schedule room expiration if no players left
+      if (game.players.length === 0) {
+        console.log(`📅 Scheduling expiration for abandoned room ${room}`);
+        scheduleRoomExpiration(room);
       }
 
       if (wasActiveGame && game.userIds) {
@@ -2313,15 +2350,18 @@ async function handlePlayerDisconnect(socket) {
         console.log(`✅ Removed remaining player ${remainingSocketId} from playersInGame Set`);
       }
       
-      // Completely delete the game instead of resetting it
-      delete games[room];
-      gameCreationLocks.delete(room);
-      console.log(`🗑️ Completely deleted game for room ${room}`);
+      // ✅ MODIFIED: Only delete game if no players left, otherwise schedule expiration
+      if (game.players.length === 0) {
+        delete games[room];
+        gameCreationLocks.delete(room);
+        console.log(`🗑️ Completely deleted game for room ${room}`);
+      }
 
       break;
     }
   }
 }
+
 
 
 async function handlePlayerDisconnectFinal(socket, roomId, username) {
@@ -2410,6 +2450,23 @@ async function handlePlayerDisconnectFinal(socket, roomId, username) {
 
 
 
+// Modify your handlePlayerDisconnect function
+function handlePlayerDisconnect(socket) {
+  const roomId = socketRoomMap.get(socket.id);
+  if (!roomId) return;
+  
+  const game = games.get(roomId);
+  if (game) {
+    // Remove player from game
+    game.players = game.players.filter(p => p.socketId !== socket.id);
+    
+    if (game.players.length === 0) {
+      // Schedule room for expiration instead of immediate deletion
+      scheduleRoomExpiration(roomId);
+    }
+  }
+}
+
 
 
 function cleanupTimer(roomId) {
@@ -2436,9 +2493,16 @@ function cleanupGameCreationLocks() {
     if (!games[roomId] || games[roomId].players.length < 2) {
       console.log(`[CLEANUP] Removing stale creation lock for room ${roomId}`);
       gameCreationLocks.delete(roomId);
+      
+      // ✅ NEW: If the room is empty, schedule it for expiration
+      if (games[roomId] && games[roomId].players.length === 0) {
+        console.log(`[CLEANUP] Scheduling expiration for empty room after lock cleanup: ${roomId}`);
+        scheduleRoomExpiration(roomId);
+      }
     }
   }
 }
+
 
 // Run cleanup every 15 seconds
 setInterval(cleanupGameCreationLocks, 15000);
@@ -2488,6 +2552,107 @@ async function updateUserStats(userId, result, era = '2000-present', turnCount =
     throw err;
   }
 }
+
+
+// Add after updateUserStats function (around line 2490)
+
+function scheduleRoomExpiration(roomId) {
+  const expirationTime = Date.now() + ROOM_EXPIRATION_DELAY;
+  roomExpirationTimes.set(roomId, expirationTime);
+  
+  setTimeout(() => {
+    if (roomExpirationTimes.has(roomId)) {
+      const game = games[roomId];
+      if (game && game.players.length === 0) {
+        console.log(`🕒 Room ${roomId} expired - cleaning up`);
+        cleanupExpiredRoom(roomId);
+      }
+    }
+  }, ROOM_EXPIRATION_DELAY);
+}
+
+function cancelRoomExpiration(roomId) {
+  roomExpirationTimes.delete(roomId);
+  console.log(`⏰ Cancelled expiration for room ${roomId}`);
+}
+
+function validateRoomAccess(roomId, joiningUserId) {
+  const game = games[roomId];
+  
+  if (!game) {
+    return { valid: false, reason: 'Room does not exist' };
+  }
+  
+  // Check if room is expired
+  const expirationTime = roomExpirationTimes.get(roomId);
+  if (expirationTime && Date.now() > expirationTime) {
+    cleanupExpiredRoom(roomId);
+    return { valid: false, reason: 'Room has expired' };
+  }
+  
+  // Check if room is full
+  if (game.players.length >= 2) {
+    return { valid: false, reason: 'Room is full' };
+  }
+  
+  // Check if user is already in the room
+  const existingPlayer = Object.values(game.userIds || {}).find(id => id === joiningUserId);
+  if (existingPlayer) {
+    return { valid: true, reason: 'Rejoining existing room' };
+  }
+  
+  return { valid: true, reason: 'Valid join' };
+}
+
+function cleanupExpiredRoom(roomId) {
+  const game = games[roomId];
+  
+  if (game) {
+    // Notify any remaining players
+    game.players.forEach(socketId => {
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket && socket.connected) {
+        socket.emit('roomClosed', {
+          reason: 'Room was abandoned and has been cleaned up'
+        });
+      }
+    });
+    
+    // Clear all timers
+    if (game.timer) {
+      clearInterval(game.timer);
+    }
+    
+    if (activeTimers.has(roomId)) {
+      clearInterval(activeTimers.get(roomId));
+      activeTimers.delete(roomId);
+    }
+    
+    // Remove from all tracking maps
+    delete games[roomId];
+    roomExpirationTimes.delete(roomId);
+    gameCreationLocks.delete(roomId);
+    
+    // Remove socket mappings
+    game.players.forEach(socketId => {
+      delete socketRoomMap[socketId];
+      playersInGame.delete(socketId);
+    });
+    
+    console.log(`🗑️ Completely cleaned up expired room ${roomId}`);
+  }
+}
+
+// Periodic cleanup for very old rooms
+setInterval(() => {
+  const now = Date.now();
+  for (const [roomId, expirationTime] of roomExpirationTimes.entries()) {
+    if (now > expirationTime) {
+      cleanupExpiredRoom(roomId);
+    }
+  }
+}, 60000); // Check every minute
+
 
 
 
