@@ -3341,11 +3341,6 @@ section[data-route="/profile"] {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: none;
   -webkit-overscroll-behavior-x: none;
-  /* transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden; */
 }
 
 .player-card {
@@ -3358,7 +3353,7 @@ section[data-route="/profile"] {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   padding: 1rem;
   font-family: 'Georgia', serif;
@@ -3366,8 +3361,8 @@ section[data-route="/profile"] {
   min-width: 200px;
   margin-right: -1px;
   opacity: 1 !important;
-   /* transform: translateZ(0);
-  -webkit-transform: translateZ(0); */
+  visibility: visible !important;
+  transform: none !important;
 }
 
 
@@ -3564,11 +3559,13 @@ section[data-route="/profile"] {
 } */
 
 .card-deck-container .player-card {
-  position: relative;              /* Change from absolute */
+  position: relative;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: none;
-  transform: rotate(0deg);
+  transform: none !important;
   opacity: 1 !important;
+  display: flex !important;
+  visibility: visible !important;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   z-index: auto;
   
@@ -3579,7 +3576,7 @@ section[data-route="/profile"] {
   min-width: 200px;
   
   /* Cards touch each other */
-  margin-right: -1px;              /* Slight overlap to prevent gaps */
+  margin-right: -1px;
   border: 2px solid #333;
 }
 
