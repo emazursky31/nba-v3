@@ -552,25 +552,33 @@ window.supabase = supabase // Expose for later use
 
     <div class="enhanced-share-section">
       <h4>Share Your Results</h4>
-      <div class="share-options-grid">
-        <button id="shareResultsCopyBtn" class="share-option-btn">
-          <span class="share-icon">📋</span>
-          <span class="share-text">Copy Link</span>
+      <div class="unified-share-container">
+        <button id="unifiedShareBtn" class="unified-share-btn">
+          <span class="share-icon">📤</span>
+          <span class="share-text">Share Results</span>
         </button>
-        <button id="shareResultsNativeBtn" class="share-option-btn mobile-only">
-          <span class="share-icon">📱</span>
-          <span class="share-text">Share</span>
-        </button>
-        <button id="shareResultsTextBtn" class="share-option-btn">
-          <span class="share-icon">📝</span>
-          <span class="share-text">Copy Summary</span>
-        </button>
-        <button id="shareResultsImageBtn" class="share-option-btn">
-          <span class="share-icon">🖼️</span>
-          <span class="share-text">Save Image</span>
-        </button>
+        <!-- Share options dropdown (hidden by default) -->
+        <div id="shareOptionsDropdown" class="share-dropdown hidden">
+          <button class="share-dropdown-option" data-action="copy-link">
+            <span class="option-icon">📋</span>
+            <span class="option-text">Copy Link</span>
+          </button>
+          <button class="share-dropdown-option" data-action="copy-summary">
+            <span class="option-icon">📝</span>
+            <span class="option-text">Copy Summary</span>
+          </button>
+          <button class="share-dropdown-option mobile-only" data-action="native-share">
+            <span class="option-icon">📱</span>
+            <span class="option-text">Share</span>
+          </button>
+        </div>
       </div>
       <div id="shareResultsToast" class="share-toast hidden">Copied to clipboard!</div>
+    </div>
+    
+    <!-- Add rematch button to results page -->
+    <div class="results-actions" style="margin-top: 2rem; text-align: center;">
+      <button id="resultsRematchBtn" class="rematch-btn" style="display: none;">Request Rematch</button>
     </div>
   </div>
 </section>
@@ -1794,6 +1802,20 @@ function attachRouteListeners(route) {
             navigateTo('/results');
           }
         });
+      }
+
+      // Show rematch button if game allows it
+      const resultsRematchBtn = document.getElementById('resultsRematchBtn');
+      if (resultsRematchBtn && currentGameResults) {
+        const canRematch = myRoomId &&
+                          currentGameResults.reason !== 'opponent_left' &&
+                          currentGameResults.reason !== 'opponent_signed_out';
+        
+        if (canRematch) {
+          resultsRematchBtn.style.display = 'block';
+        } else {
+          resultsRematchBtn.style.display = 'none';
+        }
       }
       break;
 
@@ -3650,66 +3672,61 @@ function displayGameResults(gameData) {
   }
 }
 
-// Enhanced share functionality for results page
+// Enhanced unified share functionality for results page
 function setupResultsPageSharing() {
-  const copyBtn = document.getElementById('shareResultsCopyBtn');
-  const nativeBtn = document.getElementById('shareResultsNativeBtn');
-  const textBtn = document.getElementById('shareResultsTextBtn');
-  const imageBtn = document.getElementById('shareResultsImageBtn');
+  const unifiedBtn = document.getElementById('unifiedShareBtn');
+  const dropdown = document.getElementById('shareOptionsDropdown');
   const toast = document.getElementById('shareResultsToast');
 
-  // Copy link functionality
-  if (copyBtn) {
-    copyBtn.addEventListener('click', async () => {
-      try {
-        const shareUrl = await generateShareUrl();
-        await navigator.clipboard.writeText(shareUrl);
-        showResultsToast('Link copied to clipboard!');
-      } catch (error) {
-        console.error('Error copying link:', error);
-        showResultsToast('Failed to copy link', 'error');
-      }
-    });
-  }
+  if (!unifiedBtn || !dropdown) return;
 
-  // Native share functionality
-  if (nativeBtn && navigator.share) {
-    nativeBtn.addEventListener('click', async () => {
-      try {
-        const shareUrl = await generateShareUrl();
-        const gameData = currentGameResults;
-        
-        await navigator.share({
-          title: 'NBA Teammate Game Results',
-          text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
-          url: shareUrl
-        });
-        
-        showResultsToast('Shared successfully!');
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Error sharing:', error);
-          showResultsToast('Failed to share', 'error');
-        }
-      }
-    });
-  } else if (nativeBtn) {
-    nativeBtn.style.display = 'none';
-  }
+  // Show/hide mobile-only options based on device
+  const mobileOptions = dropdown.querySelectorAll('.mobile-only');
+  const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
+  
+  mobileOptions.forEach(option => {
+    option.style.display = isMobile && navigator.share ? 'flex' : 'none';
+  });
 
-  // Copy text summary functionality
-  if (textBtn) {
-    textBtn.addEventListener('click', async () => {
-      try {
-        const gameData = currentGameResults;
-        const eraNames = {
-          '2000-present': 'Modern Era',
-          '1980-1999': 'Golden Era',
-          '1960-1979': 'Classic Era',
-          'pre-1960': 'Pioneer Era'
-        };
-        
-        const summary = `🏀 NBA Teammate Game Results
+  // Toggle dropdown on unified button click
+  unifiedBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!unifiedBtn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  // Handle dropdown option clicks
+  dropdown.addEventListener('click', async (e) => {
+    const option = e.target.closest('.share-dropdown-option');
+    if (!option) return;
+
+    const action = option.dataset.action;
+    dropdown.classList.add('hidden');
+
+    try {
+      switch (action) {
+        case 'copy-link':
+          const shareUrl = await generateShareUrl();
+          await navigator.clipboard.writeText(shareUrl);
+          showResultsToast('Link copied to clipboard!');
+          break;
+
+        case 'copy-summary':
+          const gameData = currentGameResults;
+          const eraNames = {
+            '2000-present': 'Modern Era',
+            '1980-1999': 'Golden Era',
+            '1960-1979': 'Classic Era',
+            'pre-1960': 'Pioneer Era'
+          };
+          
+          const summary = `🏀 NBA Teammate Game Results
 
 Winner: ${gameData.winner}
 Opponent: ${gameData.loser}
@@ -3719,21 +3736,152 @@ Chain: ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
 
 Play your own game at nameateammate.com`;
 
-        await navigator.clipboard.writeText(summary);
-        showResultsToast('Summary copied to clipboard!');
-      } catch (error) {
-        console.error('Error copying summary:', error);
-        showResultsToast('Failed to copy summary', 'error');
+          await navigator.clipboard.writeText(summary);
+          showResultsToast('Summary copied to clipboard!');
+          break;
+
+        case 'native-share':
+          if (navigator.share) {
+            const shareUrl = await generateShareUrl();
+            const gameData = currentGameResults;
+            
+            await navigator.share({
+              title: 'NBA Teammate Game Results',
+              text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
+              url: shareUrl
+            });
+            
+            showResultsToast('Shared successfully!');
+          }
+          break;
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error with share action:', error);
+        showResultsToast('Share failed. Please try again.', 'error');
+      }
+    }
+  });
+
+  // Setup rematch button on results page
+  const resultsRematchBtn = document.getElementById('resultsRematchBtn');
+  if (resultsRematchBtn) {
+    resultsRematchBtn.addEventListener('click', () => {
+      if (myRoomId) {
+        resultsRematchBtn.disabled = true;
+        resultsRematchBtn.textContent = 'Waiting for opponent...';
+        socket.emit('requestRematch', { roomId: myRoomId });
+      } else {
+        showResultsToast('Cannot request rematch - no active room', 'error');
       }
     });
   }
+}
 
-  // Save image functionality (placeholder)
-  if (imageBtn) {
-    imageBtn.addEventListener('click', () => {
-      showResultsToast('Image save feature coming soon!', 'info');
-    });
-  }
+// Setup sharing functionality for game over screen
+function setupGameOverSharing() {
+  const unifiedBtn = document.getElementById('gameOverUnifiedShareBtn');
+  const dropdown = document.getElementById('gameOverShareDropdown');
+  const toast = document.getElementById('gameOverShareToast');
+
+  if (!unifiedBtn || !dropdown) return;
+
+  // Show/hide mobile-only options based on device
+  const mobileOptions = dropdown.querySelectorAll('.mobile-only');
+  const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
+  
+  mobileOptions.forEach(option => {
+    option.style.display = isMobile && navigator.share ? 'flex' : 'none';
+  });
+
+  // Toggle dropdown on unified button click
+  unifiedBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!unifiedBtn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  // Handle dropdown option clicks
+  dropdown.addEventListener('click', async (e) => {
+    const option = e.target.closest('.share-dropdown-option');
+    if (!option) return;
+
+    const action = option.dataset.action;
+    dropdown.classList.add('hidden');
+
+    try {
+      switch (action) {
+        case 'copy-link':
+          const shareUrl = await generateShareUrl();
+          await navigator.clipboard.writeText(shareUrl);
+          showGameOverToast('Link copied to clipboard!');
+          break;
+
+        case 'copy-summary':
+          const gameData = currentGameResults;
+          const eraNames = {
+            '2000-present': 'Modern Era',
+            '1980-1999': 'Golden Era',
+            '1960-1979': 'Classic Era',
+            'pre-1960': 'Pioneer Era'
+          };
+          
+          const summary = `🏀 NBA Teammate Game Results
+
+Winner: ${gameData.winner}
+Opponent: ${gameData.loser}
+Turns: ${gameData.turnCount}
+Era: ${eraNames[gameData.era] || 'Modern Era'}
+Chain: ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
+
+Play your own game at nameateammate.com`;
+
+          await navigator.clipboard.writeText(summary);
+          showGameOverToast('Summary copied to clipboard!');
+          break;
+
+        case 'native-share':
+          if (navigator.share) {
+            const shareUrl = await generateShareUrl();
+            const gameData = currentGameResults;
+            
+            await navigator.share({
+              title: 'NBA Teammate Game Results',
+              text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
+              url: shareUrl
+            });
+            
+            showGameOverToast('Shared successfully!');
+          }
+          break;
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error with share action:', error);
+        showGameOverToast('Share failed. Please try again.', 'error');
+      }
+    }
+  });
+}
+
+// Show toast notification on game over screen
+function showGameOverToast(message, type = 'success') {
+  const toast = document.getElementById('gameOverShareToast');
+  if (!toast) return;
+  
+  toast.textContent = message;
+  toast.className = `share-toast ${type}`;
+  toast.classList.remove('hidden');
+  
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
 }
 
 // Show toast notification on results page
@@ -4067,9 +4215,9 @@ socket.on('gameOver', (data) => {
 
   // Store game results for the results page
   const leadoffPlayer = successfulGuesses.find(g => g.isLeadoff)?.name || 'Unknown';
-  const finalPlayer = successfulGuesses.length > 1 ? 
+  const finalPlayer = successfulGuesses.length > 1 ?
     successfulGuesses[successfulGuesses.length - 1]?.name || 'Unknown' : leadoffPlayer;
-  
+
   currentGameResults = {
     winner: data.winnerName,
     loser: data.loserName,
@@ -4154,30 +4302,106 @@ socket.on('gameOver', (data) => {
     container.appendChild(turnDisplay);
   }
 
-  // 4. NEW: View Results button instead of direct share
-  const resultsSection = document.createElement('div');
-  resultsSection.className = 'game-results-section';
-  resultsSection.style.marginTop = '1.5rem';
+  // 4. NEW: Show detailed results directly instead of button
+  const detailedResultsSection = document.createElement('div');
+  detailedResultsSection.className = 'game-detailed-results';
+  detailedResultsSection.style.marginTop = '1.5rem';
+  detailedResultsSection.style.padding = '1.5rem';
+  detailedResultsSection.style.background = 'var(--bg-secondary)';
+  detailedResultsSection.style.borderRadius = 'var(--radius-lg)';
+  detailedResultsSection.style.border = '1px solid var(--border-color)';
   
-  const viewResultsBtn = document.createElement('button');
-  viewResultsBtn.id = 'viewResultsBtn';
-  viewResultsBtn.className = 'results-btn';
-  viewResultsBtn.textContent = '📊 View Game Results';
+  // Add game summary
+  const gameSummary = document.createElement('div');
+  gameSummary.style.marginBottom = '1rem';
+  gameSummary.style.textAlign = 'center';
   
-  resultsSection.appendChild(viewResultsBtn);
-  container.appendChild(resultsSection);
+  const gameLeadoffPlayer = successfulGuesses.find(g => g.isLeadoff)?.name || 'Unknown';
+  const gameFinalPlayer = successfulGuesses.length > 1 ?
+    successfulGuesses[successfulGuesses.length - 1]?.name || 'Unknown' : gameLeadoffPlayer;
+  
+  const eraNames = {
+    '2000-present': 'Modern Era',
+    '1980-1999': 'Golden Era',
+    '1960-1979': 'Classic Era',
+    'pre-1960': 'Pioneer Era'
+  };
+  
+  gameSummary.innerHTML = `
+    <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+      ${data.winnerName} defeated ${data.loserName} in ${data.turnCount} turns
+    </div>
+    <div style="font-size: 0.9rem; color: var(--text-secondary);">
+      ${eraNames[selectedEra] || 'Modern Era'} • ${gameLeadoffPlayer} ➜ ${gameFinalPlayer}
+    </div>
+  `;
+  
+  detailedResultsSection.appendChild(gameSummary);
+  
+  // Add unified share section
+  const shareSection = document.createElement('div');
+  shareSection.style.marginTop = '1rem';
+  shareSection.innerHTML = `
+    <div class="unified-share-container">
+      <button id="gameOverUnifiedShareBtn" class="unified-share-btn">
+        <span class="share-icon">📤</span>
+        <span class="share-text">Share Results</span>
+      </button>
+      <div id="gameOverShareDropdown" class="share-dropdown hidden">
+        <button class="share-dropdown-option" data-action="copy-link">
+          <span class="option-icon">📋</span>
+          <span class="option-text">Copy Link</span>
+        </button>
+        <button class="share-dropdown-option" data-action="copy-summary">
+          <span class="option-icon">📝</span>
+          <span class="option-text">Copy Summary</span>
+        </button>
+        <button class="share-dropdown-option mobile-only" data-action="native-share">
+          <span class="option-icon">📱</span>
+          <span class="option-text">Share</span>
+        </button>
+      </div>
+    </div>
+    <div id="gameOverShareToast" class="share-toast hidden">Copied to clipboard!</div>
+  `;
+  
+  detailedResultsSection.appendChild(shareSection);
+  container.appendChild(detailedResultsSection);
 
-  // Setup view results functionality
-  setupViewResultsButton();
+  // Setup share functionality for game over screen
+  setupGameOverSharing();
 
-  // Handle rematch button visibility
+  // Add rematch button directly to the detailed results section
+  const rematchSection = document.createElement('div');
+  rematchSection.style.marginTop = '1.5rem';
+  rematchSection.style.textAlign = 'center';
+  
+  const gameOverRematchBtn = document.createElement('button');
+  gameOverRematchBtn.id = 'gameOverRematchBtn';
+  gameOverRematchBtn.className = 'rematch-btn';
+  gameOverRematchBtn.textContent = 'Request Rematch';
+  
+  // Handle rematch button visibility and state
   if (data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
-    rematchBtn.style.display = 'none';
+    gameOverRematchBtn.disabled = true;
+    gameOverRematchBtn.textContent = 'Rematch Unavailable';
+    gameOverRematchBtn.style.backgroundColor = '#6b7280';
   } else {
-    rematchBtn.style.display = 'block';
-    rematchBtn.disabled = false;
-    rematchBtn.textContent = 'Rematch';
+    gameOverRematchBtn.disabled = false;
+    gameOverRematchBtn.addEventListener('click', () => {
+      if (myRoomId) {
+        gameOverRematchBtn.disabled = true;
+        gameOverRematchBtn.textContent = 'Waiting for opponent...';
+        socket.emit('requestRematch', { roomId: myRoomId });
+      }
+    });
   }
+  
+  rematchSection.appendChild(gameOverRematchBtn);
+  detailedResultsSection.appendChild(rematchSection);
+
+  // Hide the old rematch button since we have it integrated now
+  rematchBtn.style.display = 'none';
 
   // Navigate and trigger card spread
   navigateTo('/gameover');
@@ -4828,23 +5052,31 @@ socket.on('rematchRequested', ({ username }) => {
     document.head.appendChild(style);
   }
 
-  // Insert notification in the game over container
+  // Insert notification in the game over container OR results page
   const gameOverContainer = document.getElementById('gameOverContainer');
-  if (gameOverContainer) {
+  const resultsContainer = document.querySelector('.results-container');
+  
+  if (currentRoute === '/results' && resultsContainer) {
+    resultsContainer.appendChild(rematchNotification);
+    console.log('[DEBUG] Rematch notification added to results page');
+  } else if (gameOverContainer) {
     gameOverContainer.appendChild(rematchNotification);
     console.log('[DEBUG] Rematch notification added to game over container');
-  } else {
-    console.warn('[DEBUG] Game over container not found');
   }
 
-  // Update rematch button style to indicate pending request
+  // Update both rematch buttons to indicate pending request
   const rematchBtn = document.getElementById('rematchBtn');
-  if (rematchBtn) {
-    rematchBtn.style.backgroundColor = '#4caf50';
-    rematchBtn.style.transform = 'scale(1.05)';
-    rematchBtn.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
-    console.log('[DEBUG] Rematch button style updated');
-  }
+  const resultsRematchBtn = document.getElementById('resultsRematchBtn');
+  
+  [rematchBtn, resultsRematchBtn].forEach(btn => {
+    if (btn && btn.style.display !== 'none') {
+      btn.style.backgroundColor = '#4caf50';
+      btn.style.transform = 'scale(1.05)';
+      btn.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
+      btn.textContent = 'Rematch Requested';
+      btn.disabled = true;
+    }
+  });
 });
 
 
@@ -4858,12 +5090,19 @@ socket.on('rematchStarted', () => {
   const notifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
   notifications.forEach(el => el.remove());
 
-  // Reset rematch button styles
-  rematchBtn.disabled = false;
-  rematchBtn.style.backgroundColor = '';
-  rematchBtn.style.transform = '';
-  rematchBtn.style.boxShadow = '';
-  rematchBtn.textContent = 'Rematch';
+  // Reset both rematch button styles
+  const rematchBtn = document.getElementById('rematchBtn');
+  const resultsRematchBtn = document.getElementById('resultsRematchBtn');
+  
+  [rematchBtn, resultsRematchBtn].forEach(btn => {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.backgroundColor = '';
+      btn.style.transform = '';
+      btn.style.boxShadow = '';
+      btn.textContent = 'Request Rematch';
+    }
+  });
 
   // Re-join the same room to trigger new game start
   if (myRoomId && myUsername) {
@@ -4940,12 +5179,20 @@ socket.on('opponentLeft', ({ message }) => {
   document.body.appendChild(leftNotification);
   console.log('[DEBUG] Opponent left notification added to body (visible on all screens)');
 
-  // Hide and disable rematch button if it exists
+  // Disable all rematch buttons if they exist
   const rematchBtn = document.getElementById('rematchBtn');
-  if (rematchBtn) {
-    rematchBtn.style.display = 'none';
-    console.log('[DEBUG] Rematch button hidden due to opponent leaving');
-  }
+  const resultsRematchBtn = document.getElementById('resultsRematchBtn');
+  const gameOverRematchBtn = document.getElementById('gameOverRematchBtn');
+  
+  [rematchBtn, resultsRematchBtn, gameOverRematchBtn].forEach(btn => {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Opponent Left';
+      btn.style.backgroundColor = '#6b7280';
+      btn.style.cursor = 'not-allowed';
+      console.log('[DEBUG] Rematch button disabled due to opponent leaving');
+    }
+  });
 
   // Auto-remove notification after 5 seconds
   setTimeout(() => {

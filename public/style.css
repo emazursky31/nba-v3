@@ -2531,43 +2531,151 @@ button:disabled {
   text-align: center;
 }
 
-.share-options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.share-option-btn {
+/* Unified Share Button Container */
+.unified-share-container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem 1rem;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.unified-share-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  border: none;
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-decoration: none;
-  color: var(--text-primary);
-}
-
-.share-option-btn:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-hover);
-  transform: translateY(-2px);
+  font-size: 1.125rem;
+  font-weight: 600;
+  min-width: 200px;
+  justify-content: center;
   box-shadow: var(--shadow-md);
 }
 
-.share-icon {
-  font-size: 1.5rem;
+.unified-share-btn:hover {
+  background: linear-gradient(135deg, var(--primary-hover) 0%, #1e3a8a 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
-.share-text {
+.unified-share-btn .share-icon {
+  font-size: 1.25rem;
+}
+
+/* Share Dropdown */
+.share-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: 1000;
+  min-width: 220px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.share-dropdown.hidden {
+  display: none;
+}
+
+.share-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.share-dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.share-dropdown-option:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.share-dropdown-option .option-icon {
+  font-size: 1.1rem;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.share-dropdown-option .option-text {
   font-weight: 600;
-  font-size: 0.9rem;
+}
+
+/* Mobile-only options */
+.mobile-only {
+  display: none;
+}
+
+/* Show mobile-only elements on mobile devices */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: flex;
+  }
+  
+  .share-dropdown {
+    min-width: 280px;
+    max-width: 90vw;
+  }
+  
+  .share-dropdown-option {
+    padding: 1.25rem 1.5rem;
+    font-size: 1.1rem;
+    min-height: 60px;
+  }
+  
+  .share-dropdown-option .option-icon {
+    font-size: 1.3rem;
+  }
+}
+
+/* Rematch Button Styling */
+.rematch-btn {
+  background: linear-gradient(135deg, var(--accent-color) 0%, #047857 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 180px;
+}
+
+.rematch-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.rematch-btn:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .results-btn {
