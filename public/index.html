@@ -18,13 +18,14 @@
  <!-- Socket.IO --> 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script> 
 
-<!-- Supabase (ES Module) --> 
-<script type="module"> import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm' 
+<!-- Supabase (UMD Bundle) --> 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co' 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk' 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
 window.supabase = supabase // Expose for later use 
-</script> 
+</script>
 </head>
 
 
