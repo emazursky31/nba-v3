@@ -2903,6 +2903,7 @@ button:disabled {
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
   padding: 1rem 2rem;
   border-radius: var(--radius-lg);
@@ -2914,6 +2915,20 @@ button:disabled {
   animation: shareToastSlide 0.4s ease-out;
   min-width: 280px;
   max-width: 90vw;
+  display: block;
+  opacity: 1;
+}
+
+.share-toast.hidden {
+  display: none !important;
+}
+
+.share-toast.error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.share-toast.success {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
 }
 
 @keyframes shareToastSlide {

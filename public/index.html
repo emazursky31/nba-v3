@@ -3873,11 +3873,25 @@ Play your own game at nameateammate.com`;
 // Show toast notification on game over screen
 function showGameOverToast(message, type = 'success') {
   const toast = document.getElementById('gameOverShareToast');
-  if (!toast) return;
+  if (!toast) {
+    // Create toast if it doesn't exist
+    const newToast = document.createElement('div');
+    newToast.id = 'gameOverShareToast';
+    newToast.className = `share-toast ${type}`;
+    newToast.textContent = message;
+    document.body.appendChild(newToast);
+    
+    setTimeout(() => {
+      newToast.classList.add('hidden');
+      setTimeout(() => newToast.remove(), 500);
+    }, 3000);
+    return;
+  }
   
   toast.textContent = message;
   toast.className = `share-toast ${type}`;
   toast.classList.remove('hidden');
+  toast.style.display = 'block';
   
   setTimeout(() => {
     toast.classList.add('hidden');
@@ -3887,11 +3901,25 @@ function showGameOverToast(message, type = 'success') {
 // Show toast notification on results page
 function showResultsToast(message, type = 'success') {
   const toast = document.getElementById('shareResultsToast');
-  if (!toast) return;
+  if (!toast) {
+    // Create toast if it doesn't exist
+    const newToast = document.createElement('div');
+    newToast.id = 'shareResultsToast';
+    newToast.className = `share-toast ${type}`;
+    newToast.textContent = message;
+    document.body.appendChild(newToast);
+    
+    setTimeout(() => {
+      newToast.classList.add('hidden');
+      setTimeout(() => newToast.remove(), 500);
+    }, 3000);
+    return;
+  }
   
   toast.textContent = message;
   toast.className = `share-toast ${type}`;
   toast.classList.remove('hidden');
+  toast.style.display = 'block';
   
   setTimeout(() => {
     toast.classList.add('hidden');
@@ -4327,12 +4355,19 @@ socket.on('gameOver', (data) => {
     'pre-1960': 'Pioneer Era'
   };
   
+  // Create complete player chain display
+  const playerChain = successfulGuesses.map(g => g.name).join(' ➜ ');
+  
   gameSummary.innerHTML = `
     <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
       ${data.winnerName} defeated ${data.loserName} in ${data.turnCount} turns
     </div>
-    <div style="font-size: 0.9rem; color: var(--text-secondary);">
-      ${eraNames[selectedEra] || 'Modern Era'} • ${gameLeadoffPlayer} ➜ ${gameFinalPlayer}
+    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+      ${eraNames[selectedEra] || 'Modern Era'}
+    </div>
+    <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.4; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <strong>Complete Player Chain:</strong><br>
+      ${playerChain}
     </div>
   `;
   
