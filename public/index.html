@@ -23,8 +23,8 @@
 <script>
 const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co' 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk' 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-window.supabase = supabase // Expose for later use 
+// Initialize Supabase client and expose globally
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 </head>
 
@@ -2916,10 +2916,10 @@ async function updateNavUserState(session) {
 
   // If no session provided, get current session
   if (!session) {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await window.supabase.auth.getSession(); // ✅ Use window.supabase
     session = data.session;
   }
-
+  
   const hasValidSession = session?.user && myUsername && myUserId;
 
   if (!hasValidSession) {
