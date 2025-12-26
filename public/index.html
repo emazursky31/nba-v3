@@ -1,32 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> 
-<meta charset="UTF-8" /> 
-<meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
-<meta name="application-name" content="Name a Teammate"> 
-<meta name="og:site_name" content="Name a Teammate Game" />
-<title>Name a Teammate Game</title> 
 
-<!-- Description -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Site Name / App -->
+  <meta name="application-name" content="Name a Teammate" />
+
+  <!-- Title -->
+  <title>Name a Teammate – NBA Teammate Guessing Game</title>
+
+  <!-- Description -->
   <meta name="description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="Name a Teammate" />
+  <meta property="og:title" content="Name a Teammate – NBA Teammate Guessing Game" />
   <meta property="og:description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://nameateammate.com/" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
   <meta name="twitter:description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
 
-<!-- External CSS --> 
-<link rel="stylesheet" href="style.css" /> 
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.png" sizes="48x48" type="image/png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
- <!-- Socket.IO --> 
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script> 
+  <!-- Structured Data: Site Name -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Name a Teammate",
+    "alternateName": "NBA Teammate Guessing Game",
+    "url": "https://nameateammate.com/"
+  }
+  </script>
 
-<!-- Supabase (UMD Bundle) --> 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co' 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk' 
-// Initialize Supabase client and expose globally
-window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-</script>
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://rbjdlzgptvpfsnkakasj.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk'
+    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 </head>
+
 
 
 <body>
