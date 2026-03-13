@@ -1865,12 +1865,34 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
               console.log(`[RECONNECTION] Successfully reconnected ${username} to room ${roomId}`);
               return;
             }
-          } else {
+                  } else {
             // User is trying to join a different room while in another game
-            console.log(`[RECONNECTION] ${username} trying to join different room while in game`);
-            socket.emit('message', 'You are already in another game. Please finish or leave that game first.');
-            return;
+            // ✅ FIXED: Check if the existing game has ended before blocking
+            const existingGame = games[existingRoomId];
+            if (existingGame && existingGame.gameEnded) {
+              console.log(`[RECONNECTION] ${username} was in ended game ${existingRoomId}, allowing join to new room ${roomId}`);
+              
+              // Clean up old game session
+              delete existingGame.userIds[socketId];
+              delete existingGame.usernames[socketId];
+              delete socketRoomMap[socketId];
+              
+              // Remove from old room
+              const oldSocket = io.sockets.sockets.get(socketId);
+              if (oldSocket) {
+                oldSocket.leave(existingRoomId);
+              }
+              
+              // Continue with normal join process by breaking out of the loop
+              break;
+            } else {
+              // Game is still active, block the join
+              console.log(`[RECONNECTION] ${username} trying to join different room while in active game`);
+              socket.emit('message', 'You are already in another game. Please finish or leave that game first.');
+              return;
+            }
           }
+
         }
       }
     }
