@@ -1532,10 +1532,27 @@ button:disabled {
   min-height: 600px;
   width: 100%;
   margin: 0 auto;
-  border: 1px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--radius-lg);
   background: rgba(30, 41, 59, 0.1);
   backdrop-filter: blur(10px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Flickering border when it's your turn */
+#gameArea.your-turn {
+  animation: borderFlicker 2s ease-in-out infinite;
+}
+
+@keyframes borderFlicker {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 20px 0 rgba(255, 255, 255, 0.3);
+  }
 }
 
 .game-content,
@@ -1868,15 +1885,15 @@ button:disabled {
 
 /* Compact Turn Section - All Devices */
 #turnSection {
-  margin-bottom: 1rem;
-  padding: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
   border: none;
   background: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
-  min-height: 200px;
+  min-height: 120px;
 }
 
 /* Compact Turn Prompt */
@@ -2080,20 +2097,27 @@ button:disabled {
 
 /* Autocomplete */
 #autocomplete-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 140px;
-  z-index: 10000; /* Higher z-index to appear above player cards */
+  position: fixed;
+  z-index: 99999; /* Extremely high z-index */
   background: rgba(30, 41, 59, 0.95);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: visible;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
   margin-top: 0.25rem;
   backdrop-filter: blur(20px);
   /* Ensure it's not clipped by parent containers */
   clip-path: none !important;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Mobile optimization for autocomplete */
+@media (max-width: 768px) {
+  #autocomplete-list {
+    max-height: 40vh; /* Use viewport height for better mobile experience */
+    min-height: 120px;
+  }
 }
 
 .autocomplete-item {
@@ -3403,6 +3427,7 @@ section[data-route="/profile"] {
   visibility: visible !important;
   transform: none !important;
   backdrop-filter: blur(10px);
+  z-index: 1; /* Low z-index to stay behind dropdown */
 }
 
 
@@ -4203,8 +4228,8 @@ html {
   }
   
     #currentPlayerHeadshot {
-      width: 60px !important;
-      height: 60px !important;
+      width: 50px !important;
+      height: 50px !important;
       flex-shrink: 0;
     }
   
@@ -4221,11 +4246,12 @@ html {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    gap: 0.5rem !important;
+    gap: 0.25rem !important;
     text-align: center !important;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
     overflow: visible !important;
+    min-height: 80px;
   }
 
   #timer-container {
@@ -4340,7 +4366,7 @@ html {
     max-height: none !important;
     overflow-y: visible !important; /* Allow natural scrolling */
     overflow-x: hidden;
-    padding-bottom: 1rem !important;
+    padding: 1rem 1rem 0.5rem 1rem !important; /* Reduce padding significantly */
   }
 
   #gameArea * {
