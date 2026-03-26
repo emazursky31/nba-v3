@@ -1532,7 +1532,7 @@ button:disabled {
   min-height: 600px;
   width: 100%;
   margin: 0 auto;
-  border: 1px solid var(--border-color);
+  border: 1px solid white;
   border-radius: var(--radius-lg);
   background: rgba(30, 41, 59, 0.1);
   backdrop-filter: blur(10px);
@@ -2045,6 +2045,7 @@ button:disabled {
   margin-bottom: 0.75rem;
   align-items: stretch;
   position: relative;
+  z-index: 1000; /* Ensure dropdown container is above other elements */
   /* Remove any height constraints */
   min-height: auto !important;
   height: auto !important;
@@ -2083,13 +2084,14 @@ button:disabled {
   top: 100%;
   left: 0;
   right: 140px;
-  z-index: 9999; /* High z-index to appear above everything */
-  background: var(--bg-card);
+  z-index: 10000; /* Higher z-index to appear above player cards */
+  background: rgba(30, 41, 59, 0.95);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: visible;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   margin-top: 0.25rem;
+  backdrop-filter: blur(20px);
   /* Ensure it's not clipped by parent containers */
   clip-path: none !important;
 }
