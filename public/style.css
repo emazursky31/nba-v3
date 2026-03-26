@@ -1,5 +1,5 @@
 /* Modern NBA Teammate Game Styling */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 
 :root {
@@ -79,7 +79,7 @@ html, body {
 }
 
 body {
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
   min-height: 100vh;
@@ -1527,13 +1527,15 @@ button:disabled {
   display: block;
   overflow: visible;
   overflow-x: hidden;
-  padding-bottom: 1rem;
+  padding: 2rem 1.5rem 1rem 1.5rem;
   max-width: 800px;
   min-height: 600px;
   width: 100%;
   margin: 0 auto;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: rgba(30, 41, 59, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .game-content,
@@ -3382,21 +3384,23 @@ section[data-route="/profile"] {
   position: relative;
   width: 200px;
   height: 280px;
-   background: rgba(30, 41, 59, 0.3);  /* Very subtle background */
-  border: 1px solid rgba(71, 85, 105, 0.2);
-  box-shadow: none;
+  background: rgba(30, 41, 59, 0.8);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   display: flex !important;
   flex-direction: column;
   padding: 1rem;
-  font-family: 'Georgia', serif;
+  font-family: 'DM Sans', sans-serif;
   flex-shrink: 0;
   min-width: 200px;
   margin-right: -1px;
   opacity: 1 !important;
   visibility: visible !important;
   transform: none !important;
+  backdrop-filter: blur(10px);
 }
 
 
@@ -3470,25 +3474,21 @@ section[data-route="/profile"] {
 
 /* Card types with different suits */
 .player-card.leadoff {
-  background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+  background: rgba(16, 185, 129, 0.15);
   border-color: var(--accent-color);
-  color: var(--accent-color);
+  color: var(--text-primary);
 }
-
-
 
 .player-card.your-guess {
-  background: linear-gradient(135deg, #fff 0%, #f0fff0 100%);
+  background: rgba(34, 197, 94, 0.15);
   border-color: var(--success-color);
-  color: #2d5a2d;
+  color: var(--text-primary);
 }
 
-
-
 .player-card.opponent-guess {
-  background: linear-gradient(135deg, #fff 0%, #f0f0ff 100%);
+  background: rgba(99, 102, 241, 0.15);
   border-color: var(--primary-color);
-  color: #2d2d5a;
+  color: var(--text-primary);
 }
 
 
@@ -3500,7 +3500,8 @@ section[data-route="/profile"] {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
+  padding: 0 20px;
+  color: var(--text-primary);
 }
 
 .card-player-name {
@@ -3509,7 +3510,8 @@ section[data-route="/profile"] {
   text-align: center;
   margin: 0.5rem 0;
   line-height: 1.2;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
+  padding: 0 20px;
+  color: var(--text-primary);
 }
 
 .card-connection {
@@ -3520,15 +3522,17 @@ section[data-route="/profile"] {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 20px;  /* Increased padding to avoid headshots */
+  padding: 0 20px;
+  color: var(--text-secondary);
 }
 
 .card-footer {
   text-align: center;
   font-size: 0.7rem;
   margin-top: auto;
-  padding: 0.5rem 20px;  /* Increased padding */
-  border-top: 1px solid rgba(0,0,0,0.1);
+  padding: 0.5rem 20px;
+  border-top: 1px solid rgba(241, 245, 249, 0.1);
+  color: var(--text-muted);
 }
 
 
