@@ -2115,8 +2115,15 @@ button:disabled {
 /* Mobile optimization for autocomplete */
 @media (max-width: 768px) {
   #autocomplete-list {
-    max-height: 40vh; /* Use viewport height for better mobile experience */
-    min-height: 120px;
+    max-height: 45vh; /* Use viewport height for better mobile experience */
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  #autocomplete-list {
+    max-height: 50vh; /* Even more space on small screens */
+    min-height: 180px;
   }
 }
 
@@ -3024,64 +3031,59 @@ button:disabled {
   width: 100%;
   max-width: 800px;
   margin: 2rem auto;
+  border: none;
+  background: transparent;
 }
 
 .auth-tabs {
   display: flex;
-  background: var(--bg-secondary); 
+  background: transparent;
   color: var(--text-muted);
-  /* border-radius: var(--radius-lg); */
-  /* padding: 0.5rem; */
-  /* box-shadow: var(--shadow-md); */
-  /* border: 2px solid var(--border-color);   */
   gap: 0.25rem;
-  /* border-bottom: 2px solid var(--border-color); */
+  border: none;
 }
 
 .auth-tab {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: var(--bg-secondary); 
-  /* border-bottom: 3px solid transparent; */
-  color: var(--text-secondary);  /* Dark gray text for inactive tabs */
+  background: rgba(30, 41, 59, 0.3);
+  color: var(--text-secondary);
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
   position: relative;
-  opacity: 0.7;  /* Slightly transparent when inactive */
+  opacity: 0.7;
+  border: 1px solid rgba(71, 85, 105, 0.2);
 }
 
 .auth-tab.active {
-  background: #D2E4F6;
+  background: rgba(37, 99, 235, 0.15);
   color: var(--text-primary);
-  box-shadow: none; 
-  border-color: var(--primary-hover);
-  /* border-bottom: 3px solid var(--primary-color); */
-  border-radius: 0;
+  box-shadow: none;
+  border-color: var(--primary-color);
+  border-radius: var(--radius-md);
   transform: none;
   z-index: 2;
-  opacity: 1;  /* Full opacity when active */
+  opacity: 1;
 }
 
 .auth-tab:hover:not(.active) {
-  background: var(--bg-secondary);  /* White on hover */
-  border-bottom: 3px solid var(--border-hover);
-  color: var(--text-primary);     /* Darker text on hover */
+  background: rgba(30, 41, 59, 0.5);
+  color: var(--text-primary);
   border-color: var(--border-hover);
   transform: none;
-  opacity: 1;  /* Full visibility on hover */
+  opacity: 1;
   box-shadow: none;
 }
 
 .auth-tab:not(.active) {
-  background: #f1f5f9 !important; /* Light gray background */
-  color: var(--text-muted) !important; /* Muted text color */
-  box-shadow: none !important; /* Remove any shadows */
-  border: 1px solid var(--border-color); /* Light border */
-  border-bottom: 3px solid transparent; /* Space for active indicator */
+  background: rgba(30, 41, 59, 0.3);
+  color: var(--text-secondary);
+  box-shadow: none;
+  border: 1px solid rgba(71, 85, 105, 0.2);
 }
 
 
@@ -3106,7 +3108,7 @@ button:disabled {
 
 .auth-form {
   background: transparent;
-  border: 1px solid rgba(71, 85, 105, 0.1);  /* Very subtle border only */
+  border: none;
   box-shadow: none;
   backdrop-filter: none;
   padding: 1.5rem 0;
@@ -3119,7 +3121,6 @@ button:disabled {
 
 .auth-form.active {
   display: flex;
-  border-color: var(--primary-color);
 }
 
 .auth-form h2 {
@@ -4669,7 +4670,7 @@ html, body {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    padding-bottom: 1rem !important;
+    padding: 0.5rem 0.75rem 0.25rem 0.75rem !important;
   }
 
   #successful-guesses-container {
@@ -4724,10 +4725,12 @@ html, body {
 
 
   #turnSection {
-    padding: 0.5rem !important;
-    margin-bottom: 0.75rem !important;
+    padding: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
     position: relative;
     z-index: 10;
+    min-height: 60px !important;
+    gap: 0.125rem !important;
   }
 
   .timer-skip-row {
