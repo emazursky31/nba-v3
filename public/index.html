@@ -655,6 +655,14 @@
 
 
 <script>
+// DISABLE NATIVE SHARE API TO PREVENT iOS NOTES APP POPUP
+if (typeof navigator !== 'undefined' && navigator.share) {
+  navigator.share = function() {
+    console.log('[DISABLED] navigator.share() called but disabled to prevent iOS Notes popup');
+    return Promise.resolve();
+  };
+}
+
 // 1. Global variables and state (outside DOMContentLoaded)
 // Core state
   let roomId = null;
@@ -2775,7 +2783,8 @@ if (shareInviteBtn) {
 
   // Re-check on window resize (for device rotation)
   window.addEventListener('resize', () => {
-    if (shareInviteBtn && navigator.share) {
+    // DISABLED: Native share check removed to prevent iOS Notes app popup
+    if (shareInviteBtn && false) { // Always false to disable native share
       if (isMobileOrTablet()) {
         shareInviteBtn.style.display = 'inline-block';
       } else {
