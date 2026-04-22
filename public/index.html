@@ -28,6 +28,11 @@
   <!-- Favicon -->
   <link rel="icon" href="/favicon.png" sizes="48x48" type="image/png" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  
+  <!-- iOS-specific meta tags to prevent automatic sharing -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="format-detection" content="telephone=no" />
 
   <!-- Structured Data: Site Name -->
   <script type="application/ld+json">
@@ -655,12 +660,67 @@
 
 
 <script>
-// DISABLE NATIVE SHARE API TO PREVENT iOS NOTES APP POPUP
-if (typeof navigator !== 'undefined' && navigator.share) {
-  navigator.share = function() {
-    console.log('[DISABLED] navigator.share() called but disabled to prevent iOS Notes popup');
-    return Promise.resolve();
+// AGGRESSIVELY DISABLE NATIVE SHARE API TO PREVENT iOS NOTES APP POPUP
+if (typeof navigator !== 'undefined') {
+  // Override navigator.share completely
+  Object.defineProperty(navigator, 'share', {
+    value: function() {
+      console.log('[DISABLED] navigator.share() called but disabled to prevent iOS Notes popup');
+      return Promise.resolve();
+    },
+    writable: false,
+    configurable: false
+  });
+  
+  // Also disable canShare if it exists
+  if (navigator.canShare) {
+    Object.defineProperty(navigator, 'canShare', {
+      value: function() {
+        console.log('[DISABLED] navigator.canShare() called but disabled');
+        return false;
+      },
+      writable: false,
+      configurable: false
+    });
+  }
+}
+
+// Disable any automatic sharing on page events
+document.addEventListener('DOMContentLoaded', function() {
+  // Prevent any automatic share triggers
+  window.addEventListener('gameend', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[DISABLED] gameend event prevented');
+  });
+  
+  window.addEventListener('share', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[DISABLED] share event prevented');
+  });
+  
+  // Override any potential third-party sharing libraries
+  window.share = function() {
+    console.log('[DISABLED] window.share() called but disabled');
+    return false;
   };
+  
+  // Disable iOS-specific sharing events
+  document.addEventListener('touchend', function(e) {
+    // Prevent any touch events that might trigger sharing
+    if (e.target && e.target.closest && e.target.closest('[data-share]')) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[DISABLED] Share touch event prevented');
+    }
+  });
+});
+
+// Additional iOS-specific overrides
+if (window.webkit && window.webkit.messageHandlers) {
+  // Disable any webkit message handlers that might trigger sharing
+  console.log('[DISABLED] WebKit message handlers detected and disabled');
 }
 
 // 1. Global variables and state (outside DOMContentLoaded)
