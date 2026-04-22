@@ -2655,16 +2655,12 @@ function setupCopyInviteListeners() {
   }
 
 
-  // Show share button only on mobile/tablet with Web Share API support
-  if (shareInviteBtn && navigator.share && isMobileOrTablet()) {
-    shareInviteBtn.style.display = 'inline-block';
-    console.log('[Share] Share button enabled for mobile/tablet device');
-  } else {
-    if (shareInviteBtn) {
-      shareInviteBtn.style.display = 'none';
-    }
-    console.log('[Share] Share button hidden - desktop or no Web Share API');
+  // DISABLED: Native share functionality removed to prevent iOS Notes app popup
+  // Native sharing has been disabled to prevent iOS Notes app from opening
+  if (shareInviteBtn) {
+    shareInviteBtn.style.display = 'none';
   }
+  console.log('[Share] Native share button disabled to prevent iOS Notes popup');
 
  // Copy functionality with enhanced message
 copyInviteBtn.addEventListener('click', () => {
@@ -2757,12 +2753,14 @@ if (shareInviteBtn) {
     };
 
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        copyToast.textContent = 'Shared successfully!';
-        copyToast.style.display = 'block';
-        setTimeout(() => copyToast.style.display = 'none', 2000);
-      }
+      // DISABLED: Native share removed to prevent iOS Notes app popup
+      // if (navigator.share) {
+      //   await navigator.share(shareData);
+      //   copyToast.textContent = 'Shared successfully!';
+      //   copyToast.style.display = 'block';
+      //   setTimeout(() => copyToast.style.display = 'none', 2000);
+      // }
+      console.log('[Share] Native share disabled to prevent iOS Notes popup');
     } catch (err) {
       // User cancelled or error occurred
       if (err.name !== 'AbortError') {
@@ -3408,35 +3406,8 @@ ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
 
 See the full game: ${shareUrl}`;
 
-        // Try native share first on mobile, fallback to copy
-        if (navigator.share && isMobileOrTablet()) {
-          try {
-            await navigator.share({
-              title: 'NBA Teammate Game Results',
-              text: shareText
-            });
-            
-            // Show success feedback
-            shareBtn.textContent = '✅ Shared!';
-            shareBtn.style.backgroundColor = '#22c55e';
-            setTimeout(() => {
-              shareBtn.textContent = originalText;
-              shareBtn.style.backgroundColor = '';
-              shareBtn.style.opacity = '';
-              shareBtn.disabled = false;
-            }, 2000);
-            return;
-          } catch (err) {
-            if (err.name === 'AbortError') {
-              // User cancelled - reset button
-              shareBtn.textContent = originalText;
-              shareBtn.style.opacity = '';
-              shareBtn.disabled = false;
-              return;
-            }
-            // Fall through to copy
-          }
-        }
+        // DISABLED: Native share removed to prevent iOS Notes app popup
+        console.log('[Share] Native share disabled to prevent iOS Notes popup');
         
         // Copy to clipboard (desktop and mobile fallback)
         try {
@@ -3712,8 +3683,13 @@ function setupResultsPageSharing() {
   const mobileOptions = dropdown.querySelectorAll('.mobile-only');
   const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
   
+  // Modified: Hide only native share options, keep copy options
   mobileOptions.forEach(option => {
-    option.style.display = isMobile && navigator.share ? 'flex' : 'none';
+    if (option.dataset.action === 'native-share') {
+      option.style.display = 'none'; // Hide native share to prevent Notes app
+    } else {
+      option.style.display = isMobile ? 'flex' : 'none'; // Keep other mobile options
+    }
   });
 
   // Toggle dropdown on unified button click
@@ -3769,18 +3745,9 @@ Play your own game at nameateammate.com`;
           break;
 
         case 'native-share':
-          if (navigator.share) {
-            const shareUrl = await generateShareUrl();
-            const gameData = currentGameResults;
-            
-            await navigator.share({
-              title: 'NBA Teammate Game Results',
-              text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
-              url: shareUrl
-            });
-            
-            showResultsToast('Shared successfully!');
-          }
+          // DISABLED: Native share removed to prevent iOS Notes app popup
+          console.log('[Share] Native share disabled to prevent iOS Notes popup');
+          showResultsToast('Native sharing disabled', 'error');
           break;
       }
     } catch (error) {
@@ -3818,8 +3785,13 @@ function setupGameOverSharing() {
   const mobileOptions = dropdown.querySelectorAll('.mobile-only');
   const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
   
+  // Modified: Hide only native share options, keep copy options
   mobileOptions.forEach(option => {
-    option.style.display = isMobile && navigator.share ? 'flex' : 'none';
+    if (option.dataset.action === 'native-share') {
+      option.style.display = 'none'; // Hide native share to prevent Notes app
+    } else {
+      option.style.display = isMobile ? 'flex' : 'none'; // Keep other mobile options
+    }
   });
 
   // Toggle dropdown on unified button click
@@ -3875,18 +3847,9 @@ Play your own game at nameateammate.com`;
           break;
 
         case 'native-share':
-          if (navigator.share) {
-            const shareUrl = await generateShareUrl();
-            const gameData = currentGameResults;
-            
-            await navigator.share({
-              title: 'NBA Teammate Game Results',
-              text: `🏀 ${gameData.winner} beat ${gameData.loser} in ${gameData.turnCount} turns! ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}`,
-              url: shareUrl
-            });
-            
-            showGameOverToast('Shared successfully!');
-          }
+          // DISABLED: Native share removed to prevent iOS Notes app popup
+          console.log('[Share] Native share disabled to prevent iOS Notes popup');
+          showGameOverToast('Native sharing disabled', 'error');
           break;
       }
     } catch (error) {
