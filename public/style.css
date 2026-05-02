@@ -4226,6 +4226,8 @@ html {
   
     .turn-player-name {
       font-size: 1.1rem !important;
+      color: #e2e8f0 !important;  /* Light gray-white for better contrast on dark background */
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;  /* Subtle shadow for depth */
     }
   
     .player-info {
@@ -4326,7 +4328,7 @@ html {
   .turn-player-name {
     font-size: 1.1rem !important;
     margin: 0 !important;
-    color: #3b82f6;
+    color: #e2e8f0 !important;  /* Light gray-white for better contrast */
     font-weight: 600;
     text-align: center;
     flex-shrink: 0;
@@ -4334,6 +4336,7 @@ html {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;  /* Keep on one line, truncate if too long */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;  /* Subtle shadow for depth */
   }
 
 
@@ -4730,10 +4733,17 @@ html, body {
 
 .turn-player-name {
   font-size: 1rem !important;
+  color: #e2e8f0 !important;  /* Light gray-white for better contrast */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;  /* Subtle shadow for depth */
 }
 
 .career-link {
   font-size: 0.8rem;
+  color: #94a3b8 !important;  /* Muted gray that's still readable */
+}
+
+.career-link:hover {
+  color: #cbd5e1 !important;  /* Lighter gray on hover */
 }
 
  .resign-btn {
@@ -4771,6 +4781,8 @@ html, body {
     font-weight: bold;   /* Make it bolder */
     white-space: nowrap;
     flex-shrink: 0;
+    color: #e2e8f0 !important;  /* Light gray-white for better contrast */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;  /* Subtle shadow for depth */
   }
 
   #playersDisplay {
