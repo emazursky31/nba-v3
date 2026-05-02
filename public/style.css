@@ -1797,19 +1797,20 @@ button:disabled {
 .career-summary {
   margin-bottom: 20px;
   padding: 15px;
-  background: white;
+  background: rgba(30, 41, 59, 0.5);  /* Dark semi-transparent background */
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--primary-color);  /* Use primary color for accent */
+  backdrop-filter: blur(10px);  /* Glass effect */
 }
 
 .total-years {
   font-size: 15px;
-  color: #495057;
+  color: #cbd5e1;  /* Light gray text for dark background */
 }
 
 .team-stints-section h4 {
   margin: 0 0 15px 0;
-  color: #343a40;
+  color: #e2e8f0;  /* Light text for dark background */
   font-size: 15px;
   font-weight: 600;
 }
@@ -1827,46 +1828,48 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.6);  /* Dark semi-transparent background */
+  border-radius: 8px;
+  border: 1px solid rgba(71, 85, 105, 0.3);  /* Subtle dark border */
   transition: all 0.2s ease;
-  min-height: 24px;
-  margin-bottom: 3px;
+  min-height: 28px;
+  margin-bottom: 4px;
   min-width: 200px;
+  backdrop-filter: blur(10px);  /* Glass effect */
 }
 
-
 .team-stint:hover {
-  background: #f1f3f4;
-  transform: translateX(2px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  border-color: #dee2e6;
+  background: rgba(30, 41, 59, 0.8);  /* Darker on hover */
+  transform: translateX(3px);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);  /* Stronger shadow */
+  border-color: rgba(99, 102, 241, 0.5);  /* Primary color border on hover */
 }
 
 .team-name {
   font-weight: 600;
-  color: #2c3e50;
+  color: #e2e8f0;  /* Light text for dark background */
   font-size: 14px;
   flex: 0 0 auto; /* Don't shrink */
   margin-right: 16px; /* Add space between team and years */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);  /* Subtle text shadow */
 }
 
 .years {
   font-size: 12px;
-  color: #495057;
-  font-family: 'Courier New', monospace;
-  background: #e9ecef;
-  padding: 4px 8px;
-  border-radius: 4px;
+  color: #cbd5e1;  /* Light gray text */
+  font-family: 'JetBrains Mono', 'Courier New', monospace;  /* Match design system font */
+  background: rgba(71, 85, 105, 0.4);  /* Dark semi-transparent background */
+  padding: 4px 10px;
+  border-radius: 6px;
   flex: 0 0 auto;
   text-align: right;
+  border: 1px solid rgba(71, 85, 105, 0.2);  /* Subtle border */
 }
 
 .career-loading {
   text-align: center;
-  color: #6c757d;
+  color: #94a3b8;  /* Muted gray for dark background */
   font-style: italic;
   padding: 30px 20px;
   font-size: 14px;
@@ -1874,12 +1877,12 @@ button:disabled {
 
 .career-error {
   text-align: center;
-  color: #dc3545;
+  color: #fca5a5;  /* Light red for dark background */
   padding: 30px 20px;
   font-size: 14px;
-  background: #f8d7da;
+  background: rgba(239, 68, 68, 0.1);  /* Semi-transparent red background */
   border-radius: 6px;
-  border: 1px solid #f5c6cb;
+  border: 1px solid rgba(239, 68, 68, 0.3);  /* Semi-transparent red border */
 }
 
 
@@ -1937,24 +1940,26 @@ button:disabled {
 .turn-player-name {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--primary-color);
+  color: #e2e8f0;  /* Light gray-white for better contrast on dark background */
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);  /* Subtle shadow for depth */
 }
 
 /* Career Link Styling */
 .career-link {
   font-size: 0.875rem;
-  color: var(--primary-color);
+  color: #94a3b8;  /* Muted gray that's still readable */
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 .career-link:hover {
   opacity: 1;
+  color: #cbd5e1;  /* Lighter gray on hover */
   text-decoration: underline;
 }
 
