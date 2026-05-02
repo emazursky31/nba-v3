@@ -1596,6 +1596,7 @@ button:disabled {
   border-radius: var(--radius-sm);
   font-weight: 500;
   border: 1px solid transparent;
+  color: #e2e8f0;  /* Light gray-white for better contrast */
 }
 
 
@@ -2107,28 +2108,33 @@ button:disabled {
   background: rgba(30, 41, 59, 0.95);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: visible;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
   margin-top: 0.25rem;
   backdrop-filter: blur(20px);
   /* Ensure it's not clipped by parent containers */
   clip-path: none !important;
-  max-height: 250px;
-  overflow-y: auto;
+  max-height: 300px; /* Increased from 250px for more results */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
 }
 
 /* Mobile optimization for autocomplete */
 @media (max-width: 768px) {
   #autocomplete-list {
-    max-height: 45vh; /* Use viewport height for better mobile experience */
-    min-height: 150px;
+    max-height: 60vh; /* Increased from 45vh to show more results */
+    min-height: 200px; /* Increased minimum height */
+    overflow-y: auto; /* Ensure scrolling is enabled */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 }
 
 @media (max-width: 480px) {
   #autocomplete-list {
-    max-height: 50vh; /* Even more space on small screens */
-    min-height: 180px;
+    max-height: 65vh; /* Increased from 50vh to show even more results */
+    min-height: 240px; /* Increased minimum height */
+    overflow-y: auto; /* Ensure scrolling is enabled */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
 }
 
@@ -2136,7 +2142,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem 1.25rem;  /* Match input padding for better alignment */
   cursor: pointer;
   transition: background-color 0.15s ease;
   border-bottom: 1px solid var(--border-color);  /* Light border */
@@ -4408,7 +4414,7 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem 1.25rem;  /* Match input padding for better alignment */
   font-size: 1rem;
   min-height: 60px;
   text-align: left !important;
@@ -4487,6 +4493,7 @@ html {
     margin: 0;  /* Remove horizontal margins */
     transition: all 0.2s ease;
     font-size: 0.9rem;  /* Smaller text */
+    color: #e2e8f0 !important;  /* Light gray-white for better contrast */
   }
 
  
@@ -4822,6 +4829,7 @@ html, body {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
     max-width: 100%;
+    color: #e2e8f0 !important;  /* Light gray-white for better contrast */
   }
 
 
@@ -4829,7 +4837,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem 1.25rem;  /* Match input padding for better alignment */
   font-size: 0.9rem;
   min-height: 55px;
   text-align: left !important;
