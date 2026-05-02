@@ -2115,15 +2115,15 @@ button:disabled {
   backdrop-filter: blur(20px);
   /* Ensure it's not clipped by parent containers */
   clip-path: none !important;
-  max-height: 300px; /* Increased from 250px for more results */
+  max-height: 400px; /* Further increased from 300px for more results */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
 }
 
 /* Mobile optimization for autocomplete */
 @media (max-width: 768px) {
   #autocomplete-list {
-    max-height: 60vh; /* Increased from 45vh to show more results */
-    min-height: 200px; /* Increased minimum height */
+    max-height: 70vh; /* Further increased to show more results */
+    min-height: 300px; /* Increased minimum height to guarantee more items */
     overflow-y: auto; /* Ensure scrolling is enabled */
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
@@ -2131,8 +2131,8 @@ button:disabled {
 
 @media (max-width: 480px) {
   #autocomplete-list {
-    max-height: 65vh; /* Increased from 50vh to show even more results */
-    min-height: 240px; /* Increased minimum height */
+    max-height: 75vh; /* Further increased to show more results */
+    min-height: 350px; /* Increased minimum height to guarantee more items */
     overflow-y: auto; /* Ensure scrolling is enabled */
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   }
