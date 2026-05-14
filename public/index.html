@@ -3997,8 +3997,13 @@ function setupSocketHandlers() {
 
 socket.on('connect', () => {
   console.log('[safeEmit] Socket connected — flushing emitQueue');
+  socketConnected = true;
 
+  // Enhanced user identification for mobile networks
   if (myUserId && myUsername) {
+    // Emit userIdentified first for session cleanup
+    socket.emit('userIdentified', { userId: myUserId, username: myUsername });
+    // Then emit userSignedIn for game logic
     socket.emit('userSignedIn', { userId: myUserId, username: myUsername });
   }
 
@@ -4030,12 +4035,23 @@ socket.on('connect', () => {
 
 socket.on('disconnect', (reason) => {
   console.log('[DEBUG] Socket disconnected:', reason);
+  socketConnected = false;
+  
+  // Enhanced mobile network disconnect handling
+  const isMobileDisconnect = reason === 'transport close' || reason === 'transport error' || reason === 'ping timeout';
+  if (isMobileDisconnect) {
+    console.log('[MOBILE] Detected mobile network disconnect, will attempt reconnection');
+    // Show user-friendly message for mobile disconnects
+    if (gameStarted && !gameOver) {
+      showToast('Connection lost. Reconnecting...', 'info');
+    }
+  }
   
   // If this was an intentional sign-out, handle it immediately
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
     resetAllGameState();
     if (gameStarted && !gameOver && myRoomId && myUsername) {
-      socket.emit('playerSignedOut', { 
+      socket.emit('playerSignedOut', {
         roomId: myRoomId,
         username: myUsername,
         reason: 'signed_out'
@@ -4055,6 +4071,38 @@ socket.on('disconnect', (reason) => {
         }
       }
     }, 30000); // 30 second grace period
+  }
+});
+
+// Enhanced mobile network reconnection handlers
+socket.on('reconnect', (attemptNumber) => {
+  console.log(`[RECONNECT] Successfully reconnected after ${attemptNumber} attempts`);
+  socketConnected = true;
+  
+  // Show success message for mobile users
+  if (gameStarted && !gameOver) {
+    showToast('Reconnected successfully!', 'success');
+  }
+  
+  // Re-identify user for session cleanup
+  if (myUserId && myUsername) {
+    socket.emit('userIdentified', { userId: myUserId, username: myUsername });
+  }
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+  console.log(`[RECONNECT] Attempt ${attemptNumber} to reconnect`);
+  if (attemptNumber > 3 && gameStarted && !gameOver) {
+    showToast(`Reconnecting... (attempt ${attemptNumber})`, 'info');
+  }
+});
+
+socket.on('connect_error', (error) => {
+  console.log('[CONNECT_ERROR] Connection error:', error);
+  socketConnected = false;
+  
+  if (gameStarted && !gameOver) {
+    showToast('Connection error. Retrying...', 'error');
   }
 });
 
@@ -5435,13 +5483,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ✅ INITIALIZE SOCKET FIRST - Before any routing logic
   console.log('[DOMContentLoaded] Initializing socket connection...');
+  
+  // Enhanced mobile-friendly socket configuration
   socket = io('wss://nameateammate.com', {
     reconnection: true,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    reconnectionAttempts: 5,
-    timeout: 20000,
-    forceNew: false
+    reconnectionDelayMax: 8000, // Increased for mobile networks
+    reconnectionAttempts: 10, // More attempts for mobile users
+    timeout: 30000, // Longer timeout for mobile networks
+    forceNew: false,
+    // Mobile network optimizations
+    upgrade: true,
+    rememberUpgrade: true,
+    transports: ['websocket', 'polling'], // Fallback to polling if WebSocket fails
+    // Connection state recovery (matches server config)
+    recovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes
+      skipMiddlewares: true
+    }
 });
   setupSocketHandlers();
 

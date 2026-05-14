@@ -16,7 +16,15 @@ const io = new Server(server, {
     origin: ["https://nameateammate.com"], // Add "https://www.nameateammate.com" too if you enable www
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  // Connection State Recovery for mobile network stability
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // 2 minute buffer for mobile reconnections
+    skipMiddlewares: true,
+  },
+  // Mobile-optimized heartbeat settings
+  pingTimeout: 60000, // Wait 60s before considering the connection dead (mobile-friendly)
+  pingInterval: 25000, // Send heartbeats every 25s (less aggressive than default)
 });
 
 
@@ -25,7 +33,8 @@ const playersInGame = new Set(); // socket.id values
 const activeTimers = new Map();
 const gameCreationLocks = new Set();
 const disconnectedPlayers = new Map(); // userId -> {roomId, disconnectTime, socketId, username}
-const RECONNECTION_GRACE_PERIOD = 45000; // 45 seconds
+const RECONNECTION_GRACE_PERIOD = 60000; // 60 seconds (increased for mobile networks)
+const MOBILE_RECONNECTION_BUFFER = 15000; // Additional 15s buffer for mobile users
 
 const defaultPlayerImage = 
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
@@ -664,6 +673,32 @@ async function getPlayerCareerDetails(playerName) {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
   
+  // Enhanced session cleanup for mobile networks
+  // Check for existing sessions from the same user that might be stale
+  socket.on('userIdentified', ({ userId, username }) => {
+    if (userId) {
+      // Check if this user has any existing disconnected sessions
+      if (disconnectedPlayers.has(userId)) {
+        const existingSession = disconnectedPlayers.get(userId);
+        console.log(`[SESSION_CLEANUP] Found existing session for ${username}, cleaning up old connection`);
+        
+        // Clean up the old session immediately since user is reconnecting with new socket
+        const oldRoomId = existingSession.roomId;
+        if (games[oldRoomId]) {
+          const game = games[oldRoomId];
+          if (game.disconnectedPlayers) {
+            game.disconnectedPlayers.delete(existingSession.socketId);
+          }
+        }
+        disconnectedPlayers.delete(userId);
+      }
+      
+      // Store user info on socket for better tracking
+      socket.data.userId = userId;
+      socket.data.username = username;
+    }
+  });
+  
 
 
 socket.on('findMatch', ({ username, userId, era = '2000-present' }) => {
@@ -1132,13 +1167,27 @@ socket.on('disconnect', async () => {
       if (isActiveGame && userId) {
         console.log(`[DISCONNECT] Starting grace period for ${username} in active game`);
         
+        // Check if this user has had recent disconnections (mobile network pattern)
+        const existingDisconnect = disconnectedPlayers.get(userId);
+        const isMobilePattern = existingDisconnect &&
+          (Date.now() - existingDisconnect.disconnectTime) < 120000; // Within 2 minutes
+        
+        // Use longer grace period for suspected mobile users
+        const graceTimeout = isMobilePattern ?
+          RECONNECTION_GRACE_PERIOD + MOBILE_RECONNECTION_BUFFER :
+          RECONNECTION_GRACE_PERIOD;
+        
+        console.log(`[DISCONNECT] Using ${graceTimeout/1000}s grace period ${isMobilePattern ? '(mobile pattern detected)' : ''}`);
+        
         // Store disconnection info for potential reconnection
         disconnectedPlayers.set(userId, {
           roomId,
           disconnectTime: Date.now(),
           socketId: socket.id,
           username,
-          playerIndex
+          playerIndex,
+          disconnectCount: (existingDisconnect?.disconnectCount || 0) + 1,
+          isMobilePattern
         });
         
         // Mark player as disconnected but keep in game
@@ -1151,21 +1200,24 @@ socket.on('disconnect', async () => {
           const remainingSocket = io.sockets.sockets.get(remainingSocketId);
           if (remainingSocket && remainingSocket.connected) {
             remainingSocket.emit('opponentDisconnected', {
-              message: `${username} lost connection. Game continues...`,
-              graceTimeLeft: RECONNECTION_GRACE_PERIOD
+              message: isMobilePattern ?
+                `${username} lost connection (mobile network). Game continues...` :
+                `${username} lost connection. Game continues...`,
+              graceTimeLeft: graceTimeout,
+              isMobileReconnection: isMobilePattern
             });
           }
         }
         
-        // Set grace period timer
+        // Set grace period timer with dynamic timeout
         setTimeout(() => {
           const disconnectInfo = disconnectedPlayers.get(userId);
           if (disconnectInfo && disconnectInfo.roomId === roomId) {
-            console.log(`[GRACE_EXPIRED] ${username} did not reconnect in time`);
+            console.log(`[GRACE_EXPIRED] ${username} did not reconnect in time (${graceTimeout/1000}s)`);
             disconnectedPlayers.delete(userId);
             handlePlayerDisconnectFinal(socket, roomId, username);
           }
-        }, RECONNECTION_GRACE_PERIOD);
+        }, graceTimeout);
         
         // Clean up socket mapping but don't remove from game yet
         delete socketRoomMap[socket.id];
@@ -1904,6 +1956,12 @@ async function handleJoinGame(socket, roomId, username, userId, era = '2000-pres
     
     if (disconnectInfo.roomId === roomId && games[roomId]) {
       const game = games[roomId];
+      
+      // Calculate reconnection time for mobile network analysis
+      const reconnectionTime = Date.now() - disconnectInfo.disconnectTime;
+      const isFastReconnection = reconnectionTime < 10000; // Less than 10 seconds
+      
+      console.log(`[RECONNECTION] ${username} reconnecting after ${reconnectionTime/1000}s ${isFastReconnection ? '(fast mobile reconnection)' : ''}`);
       
       // ✅ Check if game has already ended
       if (game.gameEnded) {
