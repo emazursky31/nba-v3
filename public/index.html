@@ -4463,10 +4463,6 @@ socket.on('gameOver', (data) => {
       <p class="over-meta">${esc(meta)}</p>
     </div>
     <ol class="over-chain" aria-label="The chain">${chain}</ol>
-    <div id="overSave" class="over-save" hidden>
-      <p>Sign up to keep your wins and stats.</p>
-      <button id="overSaveBtn" class="btn-play over-save-btn" type="button">Save my stats</button>
-    </div>
     <div class="over-actions">
       <button id="gameOverRematchBtn" class="over-rematch" type="button" ${rematchOff ? 'disabled' : ''}>${rematchOff ? 'Rematch unavailable' : 'Rematch'}</button>
       <div class="unified-share-container">
@@ -4479,6 +4475,7 @@ socket.on('gameOver', (data) => {
       </div>
     </div>
     <div id="gameOverShareToast" class="share-toast hidden">Copied to clipboard!</div>
+    <p id="overSave" class="over-save" hidden>Want to keep your record? <button id="overSaveBtn" class="link-btn over-save-link" type="button">Sign up</button></p>
     <button id="overHomeBtn" class="link-btn over-home" type="button">Back to home</button>
   `;
 
