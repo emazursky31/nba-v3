@@ -657,8 +657,8 @@
 
 
 <!-- Game Over UI -->
-<section data-route="/gameover" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <div id="gameOverContainer" style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem;">
+<section data-route="/gameover" class="hidden over-page">
+  <div id="gameOverContainer">
     <!-- Game over message will be dynamically added here -->
     <div id="gameOverResults" style="font-size: 1.2rem; margin-top: 1rem;"></div>
     
@@ -4423,157 +4423,89 @@ socket.on('gameOver', (data) => {
   container.style.display = 'flex';
   container.innerHTML = '';
 
-  // 1. "Game Over" header
-  const gameOverHeader = document.createElement('div');
-  gameOverHeader.style.fontSize = '2rem';
-  gameOverHeader.style.fontWeight = 'bold';
-  gameOverHeader.style.textAlign = 'center';
-  gameOverHeader.style.marginBottom = '1rem';
-  gameOverHeader.textContent = 'Game Over';
-  container.appendChild(gameOverHeader);
-
-  // 2. Winner/Loser message
-  const resultMessage = document.createElement('div');
-  resultMessage.style.fontSize = '1.5rem';
-  resultMessage.style.textAlign = 'center';
-  resultMessage.style.marginBottom = '1rem';
-  resultMessage.style.fontWeight = 'bold';
-
-  if (data.role === 'winner') {
-    resultMessage.textContent = 'You won!';
-    resultMessage.style.color = 'green';
-  } else if (data.role === 'loser') {
-    if (data.reason === 'timer_expired') {
-      resultMessage.textContent = 'You ran out of time.';
-    } else {
-      resultMessage.textContent = 'You lost.';
-    }
-    resultMessage.style.color = 'darkred';
-  } else if (data.reason === 'opponent_left') {
-    resultMessage.textContent = 'Your opponent left the game.';
-    resultMessage.style.color = 'gray';
-  } else {
-    resultMessage.textContent = 'Game ended.';
-    resultMessage.style.color = 'gray';
-  }
-
-  container.appendChild(resultMessage);
-
-  // 3. Turn count display
-  if (data.turnCount !== undefined && data.turnCount > 0) {
-    const turnDisplay = document.createElement('div');
-    turnDisplay.style.fontSize = '1.2rem';
-    turnDisplay.style.textAlign = 'center';
-    turnDisplay.style.marginBottom = '1.5rem';
-    turnDisplay.style.fontWeight = 'bold';
-    turnDisplay.textContent = `Turns: ${data.turnCount}`;
-    container.appendChild(turnDisplay);
-  }
-
-  // 4. NEW: Show detailed results directly instead of button
-  const detailedResultsSection = document.createElement('div');
-  detailedResultsSection.className = 'game-detailed-results';
-  detailedResultsSection.style.marginTop = '1.5rem';
-  detailedResultsSection.style.padding = '1.5rem';
-  detailedResultsSection.style.background = 'var(--bg-secondary)';
-  detailedResultsSection.style.borderRadius = 'var(--radius-lg)';
-  detailedResultsSection.style.border = '1px solid var(--border-color)';
-  
-  // Add game summary
-  const gameSummary = document.createElement('div');
-  gameSummary.style.marginBottom = '1rem';
-  gameSummary.style.textAlign = 'center';
-  
-  const gameLeadoffPlayer = successfulGuesses.find(g => g.isLeadoff)?.name || 'Unknown';
-  const gameFinalPlayer = successfulGuesses.length > 1 ?
-    successfulGuesses[successfulGuesses.length - 1]?.name || 'Unknown' : gameLeadoffPlayer;
-  
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const eraNames = {
-    '2000-present': 'Modern Era',
-    '1980-1999': 'Golden Era',
-    '1960-1979': 'Classic Era',
-    'pre-1960': 'Pioneer Era'
+    '2000-present': 'Modern era',
+    '1980-1999': 'Golden era',
+    '1960-1979': 'Classic era',
+    'pre-1960': 'Pioneer era'
   };
-  
-  // Create complete player chain display
-  const playerChain = successfulGuesses.map(g => g.name).join(' ➜ ');
-  
-  gameSummary.innerHTML = `
-    <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
-      ${data.winnerName} defeated ${data.loserName} in ${data.turnCount} turns
+
+  let outcome = 'neutral', headline = 'Game over', sub = '';
+  if (data.role === 'winner') {
+    outcome = 'win';
+    headline = 'You win';
+    sub = data.reason === 'timer_expired' ? `${data.loserName} ran out of time` : `${data.loserName} is out`;
+  } else if (data.role === 'loser') {
+    outcome = 'loss';
+    headline = data.reason === 'timer_expired' ? "Time's up" : 'You lose';
+    sub = `${data.winnerName} takes it`;
+  } else if (data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
+    headline = 'They left';
+    sub = 'Your opponent left the game';
+  }
+
+  const chain = successfulGuesses.map((g, i) => `
+    <li class="over-link${g.isLeadoff ? ' is-start' : ''}">
+      <span class="over-n">${g.isLeadoff ? 'Start' : i}</span>
+      <span class="over-name">${esc(g.name)}</span>
+      ${g.isLeadoff ? '' : `<span class="over-by">${esc(g.guesser)}</span>`}
+    </li>`).join('');
+  const turns = data.turnCount > 0 ? `${data.turnCount} ${data.turnCount === 1 ? 'turn' : 'turns'}` : '';
+  const meta = [turns, eraNames[selectedEra] || 'Modern era'].filter(Boolean).join(' · ');
+  const rematchOff = data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out';
+
+  container.className = `over over-${outcome}`;
+  container.innerHTML = `
+    <div class="over-head">
+      <h2 class="over-title">${esc(headline)}</h2>
+      <p class="over-sub">${esc(sub)}</p>
+      <p class="over-meta">${esc(meta)}</p>
     </div>
-    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
-      ${eraNames[selectedEra] || 'Modern Era'}
+    <ol class="over-chain" aria-label="The chain">${chain}</ol>
+    <div id="overSave" class="over-save" hidden>
+      <p>Sign up to keep your wins and stats.</p>
+      <button id="overSaveBtn" class="btn-play over-save-btn" type="button">Save my stats</button>
     </div>
-    <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.4; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-      <strong>Complete Player Chain:</strong><br>
-      ${playerChain}
-    </div>
-  `;
-  
-  detailedResultsSection.appendChild(gameSummary);
-  
-  // Add unified share section
-  const shareSection = document.createElement('div');
-  shareSection.style.marginTop = '1rem';
-  shareSection.innerHTML = `
-    <div class="unified-share-container">
-      <button id="gameOverUnifiedShareBtn" class="unified-share-btn">
-        <span class="share-icon">📤</span>
-        <span class="share-text">Share Results</span>
-      </button>
-      <div id="gameOverShareDropdown" class="share-dropdown hidden">
-        <button class="share-dropdown-option" data-action="copy-link">
-          <span class="option-icon">📋</span>
-          <span class="option-text">Copy Link</span>
-        </button>
-        <button class="share-dropdown-option" data-action="copy-summary">
-          <span class="option-icon">📝</span>
-          <span class="option-text">Copy Summary</span>
-        </button>
-        <button class="share-dropdown-option mobile-only" data-action="native-share">
-          <span class="option-icon">📱</span>
-          <span class="option-text">Share</span>
-        </button>
+    <div class="over-actions">
+      <button id="gameOverRematchBtn" class="over-rematch" type="button" ${rematchOff ? 'disabled' : ''}>${rematchOff ? 'Rematch unavailable' : 'Rematch'}</button>
+      <div class="unified-share-container">
+        <button id="gameOverUnifiedShareBtn" class="unified-share-btn" type="button">Share</button>
+        <div id="gameOverShareDropdown" class="share-dropdown hidden">
+          <button class="share-dropdown-option" data-action="copy-link"><span class="option-text">Copy link</span></button>
+          <button class="share-dropdown-option" data-action="copy-summary"><span class="option-text">Copy summary</span></button>
+          <button class="share-dropdown-option mobile-only" data-action="native-share"><span class="option-text">Share</span></button>
+        </div>
       </div>
     </div>
     <div id="gameOverShareToast" class="share-toast hidden">Copied to clipboard!</div>
+    <button id="overHomeBtn" class="link-btn over-home" type="button">Back to home</button>
   `;
-  
-  detailedResultsSection.appendChild(shareSection);
-  container.appendChild(detailedResultsSection);
 
-  // Setup share functionality for game over screen
   setupGameOverSharing();
 
-  // Add rematch button directly to the detailed results section
-  const rematchSection = document.createElement('div');
-  rematchSection.style.marginTop = '1.5rem';
-  rematchSection.style.textAlign = 'center';
-  
-  const gameOverRematchBtn = document.createElement('button');
-  gameOverRematchBtn.id = 'gameOverRematchBtn';
-  gameOverRematchBtn.className = 'rematch-btn';
-  gameOverRematchBtn.textContent = 'Request Rematch';
-  
-  // Handle rematch button visibility and state
-  if (data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out') {
-    gameOverRematchBtn.disabled = true;
-    gameOverRematchBtn.textContent = 'Rematch Unavailable';
-    gameOverRematchBtn.style.backgroundColor = '#6b7280';
-  } else {
-    gameOverRematchBtn.disabled = false;
+  const gameOverRematchBtn = document.getElementById('gameOverRematchBtn');
+  if (!rematchOff) {
     gameOverRematchBtn.addEventListener('click', () => {
       if (myRoomId) {
         gameOverRematchBtn.disabled = true;
-        gameOverRematchBtn.textContent = 'Waiting for opponent...';
+        gameOverRematchBtn.textContent = 'Waiting for opponent…';
         socket.emit('requestRematch', { roomId: myRoomId });
       }
     });
   }
-  
-  rematchSection.appendChild(gameOverRematchBtn);
-  detailedResultsSection.appendChild(rematchSection);
+  document.getElementById('overHomeBtn').addEventListener('click', () => {
+    window.location.href = '/';
+  });
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user?.is_anonymous) {
+      document.getElementById('overSave').hidden = false;
+      document.getElementById('overSaveBtn').addEventListener('click', () => {
+        document.body.classList.add('auth-open');
+        document.getElementById('tab-signup')?.click();
+      });
+    }
+  });
 
   // Hide the old rematch button since we have it integrated now
   rematchBtn.style.display = 'none';

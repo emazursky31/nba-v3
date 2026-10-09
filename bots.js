@@ -36,8 +36,6 @@ function createBots({ port, waitingPlayers }) {
     let botTurns = 0;
     let answering = false;
 
-    const leave = () => setTimeout(() => sock.disconnect(), 1500);
-
     sock.on('connect', () => {
       sock.emit('userIdentified', { userId, username: name });
       sock.emit('findMatch', { username: name, userId, era });
@@ -80,8 +78,20 @@ function createBots({ port, waitingPlayers }) {
       }
     });
 
-    sock.on('gameOver', leave);
-    sock.on('gameEnded', leave);
+    // Stay a while after the game so a rematch can happen, then go.
+    let leaveTimer = null;
+    const leaveSoon = () => { clearTimeout(leaveTimer); leaveTimer = setTimeout(() => sock.disconnect(), 45000); };
+    sock.on('gameOver', leaveSoon);
+    sock.on('gameEnded', leaveSoon);
+    sock.on('rematchRequested', () => {
+      setTimeout(() => sock.emit('requestRematch', { roomId }), between(800, 2500));
+    });
+    sock.on('rematchStarted', () => {
+      clearTimeout(leaveTimer);
+      used = new Set();
+      botTurns = 0;
+      answering = false;
+    });
     sock.on('disconnect', () => { used = new Set(); });
   }
 
