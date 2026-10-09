@@ -46,7 +46,11 @@
   </script>
 
   <!-- External CSS -->
+  <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/barlow-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="theme.css" />
+  <meta name="theme-color" content="#0c0d0f" />
 
   <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" crossorigin="anonymous"></script>
@@ -65,7 +69,7 @@
 <body>
 <nav>
   <a href="#" id="nav-title-link" style="text-decoration: none; color: inherit;">
-    <span id="nav-title">🏀 Name a Teammate</span>
+    <span id="nav-title"><svg class="nav-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 3v26M3 16h26" stroke="currentColor" stroke-width="2.4"/></svg><span class="nav-word">Name a Teammate</span></span>
   </a>
   
   <div class="nav-dropdown" id="nav-dropdown" style="display: none;">
@@ -85,93 +89,115 @@
 
 <div class="main-content-wrapper">
 <!-- 🔑 Sign Up / Sign In -->
-<section data-route="/signup">
-  <!-- Game Title and Subtitle -->
-  <div class="game-intro">
-    <h1>The Name a Teammate Game</h1>
-    <p class="game-subtitle">Test your ball knowledge by connecting players through their teammates</p>
-    <a href="/daily" class="daily-link">Play today's Daily Teammate Blitz, no account needed →</a>
+<section data-route="/signup" class="home">
+  <div class="home-hero">
+    <svg class="court-lines" viewBox="0 0 400 520" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="3">
+        <circle cx="330" cy="180" r="170"/>
+        <circle cx="330" cy="180" r="62"/>
+        <path d="M330 -10V370"/>
+        <rect x="168" y="372" width="324" height="190"/>
+      </g>
+    </svg>
+
+    <p class="eyebrow">NBA · Head to head</p>
+    <h1 class="home-title">Name a<br><span>teammate.</span></h1>
+    <p class="home-sub">We drop a random NBA player. You and a rival take turns naming teammates until someone runs out of time.</p>
+
+    <button id="playGuestBtn" class="btn-play" type="button">
+      <span class="btn-play-label">Play now</span>
+      <span class="btn-play-hint">Jump in as a guest. No signup.</span>
+    </button>
+    <p id="guestError" class="form-error" role="alert" hidden></p>
+
+    <div class="home-links">
+      <button id="openAuthBtn" class="link-btn" type="button">Log in or sign up</button>
+      <a class="link-btn" href="/daily">Daily Blitz, solo</a>
+    </div>
   </div>
 
-  <!-- NEW: Main container for side-by-side layout -->
-  <div class="signup-main-container">
-
-     <!-- LEFT COLUMN: Auth Forms -->
-    <div class="auth-column">
-      <div class="auth-tabs-container">
-        <div class="auth-tabs">
-          <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
-          <button id="tab-signin" class="auth-tab" type="button">Log In</button>
-        </div>
-        <div class="auth-forms-row">
-          <form id="signupForm" class="auth-form active" autocomplete="off">
-            <!-- <h2>Create a free account</h2> -->
-            <input type="email" id="signup-email" placeholder="Email" required>
-            <input type="password" id="signup-password" placeholder="Password" required>
-            <input id="signup-username" placeholder="Username" required>
-            <button id="signupBtn" type="submit">Sign Up</button>
-          </form>
-          <form id="signinForm" class="auth-form" autocomplete="off">
-            <!-- <h2>Log in to your account</h2> -->
-            <input type="email" id="signin-email" placeholder="Email" required>
-            <input type="password" id="signin-password" placeholder="Password" required>
-            <button id="signinBtn" type="submit">Log In</button>
-            <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
-          </form>
-        </div>
-        
-    
-      </div>
-    </div>
-    
-    <!-- RIGHT COLUMN: Simplified How to Play -->
-    <div class="how-to-play-column">
-      <div class="how-to-play">
-        <h3>How to Play</h3>
-        <div class="rules-simplified">
-          <div class="core-rule">
-            <div class="rule-content">
-              <p>Name a teammate of the current NBA player before the time runs out. Any regular season teammate will qualify. Keep naming valid teammates until your opponent can't think of any!</p>
-            </div>
-          </div>
-        </div>
-        
-        <details class="full-rules-toggle">
-          <summary>View game rules</summary>
-          <div class="full-rules-content">
-            <div class="detailed-rule">
-              <span class="rule-number">1</span>
-              <p>A random NBA player is chosen as the starting point</p>
-            </div>
-            <div class="detailed-rule">
-              <span class="rule-number">2</span>
-              <p>Take turns naming a <strong>regular season teammate</strong> of the current player</p>
-            </div>
-            <div class="detailed-rule">
-              <span class="rule-number">3</span>
-              <p>Players must have been active on the same team for at least one regular season game at any point in their career (they don't need to have played together on court)</p>
-            </div>
-            <div class="detailed-rule">
-              <span class="rule-number">4</span>
-              <p>Each correct guess becomes the new current player</p>
-            </div>
-            <div class="detailed-rule">
-              <span class="rule-number">5</span>
-              <p>You can guess as many times as you want within the time limit</p>
-            </div>
-            <div class="detailed-rule">
-              <span class="rule-number">6</span>
-              <p>Once a successful link has been made, that player is off the board for the remainder of the game</p>
-            </div>
-          </div>
-        </details>
-      </div>
-    </div>
-
-   
-
+  <div class="home-example">
+    <p class="eyebrow">How a round goes</p>
+    <ol class="chain">
+      <li class="chain-node chain-start">
+        <span class="chain-name">Kevin Durant</span>
+        <span class="chain-tag">Starting player</span>
+      </li>
+      <li class="chain-link"><span>GSW · 2016–19</span></li>
+      <li class="chain-node">
+        <span class="chain-name">Stephen Curry</span>
+        <span class="chain-tag">Your answer</span>
+      </li>
+      <li class="chain-link"><span>GSW · 2023–24</span></li>
+      <li class="chain-node">
+        <span class="chain-name">Chris Paul</span>
+        <span class="chain-tag">Their answer</span>
+      </li>
+      <li class="chain-end">Can't answer before the clock hits zero? You lose.</li>
+    </ol>
   </div>
+
+  <details class="home-rules full-rules-toggle">
+    <summary>Full rules</summary>
+    <div class="full-rules-content">
+      <div class="detailed-rule">
+        <span class="rule-number">1</span>
+        <p>A random NBA player is chosen as the starting point.</p>
+      </div>
+      <div class="detailed-rule">
+        <span class="rule-number">2</span>
+        <p>Take turns naming a <strong>regular season teammate</strong> of the current player.</p>
+      </div>
+      <div class="detailed-rule">
+        <span class="rule-number">3</span>
+        <p>Teammates only need to have been on the same roster for one regular season game. They don't have to have shared the court.</p>
+      </div>
+      <div class="detailed-rule">
+        <span class="rule-number">4</span>
+        <p>Each correct answer becomes the new current player.</p>
+      </div>
+      <div class="detailed-rule">
+        <span class="rule-number">5</span>
+        <p>Guess as many times as you like before the clock runs out.</p>
+      </div>
+      <div class="detailed-rule">
+        <span class="rule-number">6</span>
+        <p>Once a link is made, that player is off the board for the rest of the game.</p>
+      </div>
+    </div>
+  </details>
 </section>
+
+<div id="authPanel" class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="authPanelTitle">
+  <div class="auth-sheet">
+    <div class="auth-sheet-head">
+      <h2 id="authPanelTitle">Log in or sign up</h2>
+      <button id="closeAuthBtn" class="icon-btn" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="auth-tabs-container">
+      <div class="auth-tabs">
+        <button id="tab-signup" class="auth-tab active" type="button">Sign Up</button>
+        <button id="tab-signin" class="auth-tab" type="button">Log In</button>
+      </div>
+      <div class="auth-forms-row">
+        <form id="signupForm" class="auth-form active" autocomplete="off">
+          <input type="email" id="signup-email" placeholder="Email" required>
+          <input type="password" id="signup-password" placeholder="Password" required>
+          <input id="signup-username" placeholder="Username" required>
+          <button id="signupBtn" type="submit">Sign Up</button>
+        </form>
+        <form id="signinForm" class="auth-form" autocomplete="off">
+          <input type="email" id="signin-email" placeholder="Email" required>
+          <input type="password" id="signin-password" placeholder="Password" required>
+          <button id="signinBtn" type="submit">Log In</button>
+          <p><a href="#" id="forgotPasswordLink">Forgot password?</a></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -424,14 +450,10 @@
 <section id="status" data-route="/status" style="text-align: center; margin-top: 1rem;"></section>
 
 <!-- Waiting Room View -->
-<section id="waitingRoom" data-route="/waiting" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <h2>Waiting Room</h2>
+<section id="waitingRoom" data-route="/waiting" class="hidden">
+  <h2>Lining up a rival</h2>
   <p id="waitingStatus">Waiting for another player to join...</p>
- <div class="nba-loader" aria-hidden="true">
-  <svg class="basketball-icon" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f78f1e" stroke="#000" stroke-width="2"/><path d="M2 32h60M32 2v60M12 12c11 11 29 11 40 0M12 52c11-11 29-11 40 0" stroke="#000" stroke-width="2" fill="none"/></svg>
-  <svg class="basketball-icon" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f78f1e" stroke="#000" stroke-width="2"/><path d="M2 32h60M32 2v60M12 12c11 11 29 11 40 0M12 52c11-11 29-11 40 0" stroke="#000" stroke-width="2" fill="none"/></svg>
-  <svg class="basketball-icon" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f78f1e" stroke="#000" stroke-width="2"/><path d="M2 32h60M32 2v60M12 12c11 11 29 11 40 0M12 52c11-11 29-11 40 0" stroke="#000" stroke-width="2" fill="none"/></svg>
-</div>
+  <div class="nba-loader" aria-hidden="true"><span class="pulse-ring"></span><span class="pulse-ring"></span></div>
 
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
@@ -447,14 +469,14 @@
 
 
 <!-- Matched Screen with Countdown -->
-<section id="matchedScreen" data-route="/matched" class="hidden" style="text-align: center; margin-top: 2rem;">
-  <h3>Match Found!</h3>
-  <div id="matchedMessage" style="font-size: 1.25rem; margin: 1.5rem 0; color: var(--success-color);">
-    Matched with: <span id="matchedOpponentName">Opponent</span>
+<section id="matchedScreen" data-route="/matched" class="hidden">
+  <h3>Match found</h3>
+  <div id="matchedMessage">
+    vs <span id="matchedOpponentName">Opponent</span>
   </div>
-  <div id="countdownContainer" style="margin: 2rem 0;">
-    <p style="font-size: 1.1rem; color: var(--text-secondary);">Game starting in...</p>
-    <div id="countdownTimer" style="font-size: 3rem; font-weight: bold; color: var(--primary-color);">5</div>
+  <div id="countdownContainer">
+    <p>Game starting in</p>
+    <div id="countdownTimer">5</div>
   </div>
 </section>
 
@@ -476,72 +498,79 @@
 
 <!-- In-Game UI -->
 
-<section id="gameArea" data-route="/play" class="hidden" style="position: relative;">
- <div id="playersDisplay">
-  <span class="opponent-label">Opponent:</span>
-  <span class="player-name opponent" id="playerOpponent">OpponentName</span>
-  
-  <!-- Era display integrated with opponent info (private games only) -->
-  <span class="game-info private-only" id="gameInfoDisplay" style="display: none;">
-    <span class="era-value" id="displayEra">Modern Era</span>
-  </span>
-</div>
+<section id="gameArea" data-route="/play" class="hidden">
+  <div class="match">
 
-  <div id="turnSection">
-    <div class="turn-prompt" id="turnPromptText">
-      <div class="prompt-header">Name any teammate of:</div>
-      <div class="player-info">
-        <img id="currentPlayerHeadshot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==" alt="Current Player Headshot" width="60" height="60" style="border-radius: 50%; object-fit: cover;"/>
-        <div class="player-details">
-          <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
-          <a href="#" class="career-link" onclick="toggleLeadoffCareer()" style="display: flex;">
-            <span class="toggle-text">Career Details</span> <span class="toggle-icon career-arrow">▼</span>
-          </a>
+    <header class="scorebar">
+      <div class="side side-you" id="playerYou">You</div>
+
+      <div class="clock">
+        <div id="timer-container">
+          <svg class="progress-ring" viewBox="0 0 80 80" aria-hidden="true">
+            <circle class="progress-ring-track" cx="40" cy="40" r="35"/>
+            <circle class="progress-ring-circle" cx="40" cy="40" r="35"
+                    stroke-dasharray="219.91"
+                    stroke-dashoffset="0"/>
+          </svg>
+          <div id="timer" role="timer" aria-live="off">30</div>
+        </div>
+      </div>
+
+      <div class="side side-opp player-name opponent" id="playerOpponent">Opponent</div>
+    </header>
+
+    <div id="turnSection">
+      <div class="turn-prompt" id="turnPromptText">
+        <div class="prompt-header">Name any teammate of:</div>
+        <div class="player-info">
+          <img id="currentPlayerHeadshot" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Crect width='72' height='72' fill='%2314151a'/%3E%3Ccircle cx='36' cy='28' r='12' fill='%2336383f'/%3E%3Cpath d='M14 66c4-14 14-20 22-20s18 6 22 20' fill='%2336383f'/%3E%3C/svg%3E">
+          <div class="player-details">
+            <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
+            <a href="#" class="career-link" onclick="toggleLeadoffCareer()" style="display: flex;">
+              <span class="toggle-text">Career Details</span> <span class="toggle-icon career-arrow">▼</span>
+            </a>
+            <span class="game-info private-only" id="gameInfoDisplay" style="display: none;">
+              <span class="era-value" id="displayEra">Modern Era</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
+        <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
+          <div class="career-loading">Loading career details...</div>
+        </div>
+      </div>
+
+      <div class="dock">
+        <div id="messageContainer" aria-live="polite"></div>
+
+        <div id="guessControls" style="position: relative;">
+          <input
+            type="text"
+            id="guessInput"
+            placeholder="Type a teammate's name..."
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            enterkeyhint="send"
+            aria-label="Teammate's name"
+          />
+          <button id="submitGuessBtn" type="button" aria-label="Submit guess" disabled>
+            <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div id="autocomplete-list"></div>
+        </div>
+
+        <div class="game-actions">
+          <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip Turn</a>
+          <button class="resign-btn" id="resignGameBtn" type="button" style="display: none;">Resign Game</button>
         </div>
       </div>
     </div>
 
-    <div id="leadoff-career-section" class="leadoff-career-section" style="display: none;">
-      <div id="leadoff-career-content" class="leadoff-career-content" style="display: none;">
-        <div class="career-loading">Loading career details...</div>
-      </div>
-    </div>
-
- <div class="timer-skip-row">
-  <div id="timer-container">
-    <svg class="progress-ring" viewBox="0 0 80 80">
-      <circle class="progress-ring-track" cx="40" cy="40" r="35"/>
-      <circle class="progress-ring-circle" cx="40" cy="40" r="35"
-              stroke-dasharray="219.91"
-              stroke-dashoffset="0"/>
-    </svg>
-    <div id="timer">30</div>
   </div>
-  <div class="game-actions">
-    <a href="#" class="skip-link hidden" id="skipTurnBtn">Skip</a>
-    <button class="resign-btn" id="resignGameBtn" style="display: none;">Resign Game</button>
-  </div>
-</div>
-
-
-
-    <div id="guessControls" style="position: relative;">
-      <input
-        type="text"
-        id="guessInput"
-        placeholder="Type a teammate's name..."
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-      />
-      <button id="submitGuessBtn" disabled>Submit Guess</button>
-      
-      <div id="autocomplete-list"></div>
-    </div>
-  </div>
-
-  <div id="messageContainer"></div>
 </section>
 
 
@@ -767,7 +796,7 @@ let gameArea = null;
 let inviteLinkContainer = null;
 let myUserId = null;
 let storedHeadshots = new Map();
-const DEFAULT_PLAYER_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7JbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
+const DEFAULT_PLAYER_IMAGE = 'data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2072%2072%27%3E%3Crect%20width%3D%2772%27%20height%3D%2772%27%20fill%3D%27%2314151a%27%2F%3E%3Ccircle%20cx%3D%2736%27%20cy%3D%2728%27%20r%3D%2712%27%20fill%3D%27%2336383f%27%2F%3E%3Cpath%20d%3D%27M14%2066c4-14%2014-20%2022-20s18%206%2022%2020%27%20fill%3D%27%2336383f%27%2F%3E%3C%2Fsvg%3E';
 
 
 
@@ -1687,7 +1716,7 @@ function updateTimerStyle(timeLeft, totalTime = selectedTimeLimit || 30) {
   }
   
   // Update the number display
-  timerEl.textContent = `:${timeLeft}`;
+  timerEl.textContent = `${timeLeft}`;
 }
 
 
@@ -1935,6 +1964,7 @@ function navigateTo(path, options = {}) {
     }
 
     currentRoute = path;
+    document.body.classList.remove('auth-open');
 
     if (!options.skipPush) {
       history.pushState({}, '', path);
@@ -4316,7 +4346,7 @@ if (resignBtn) {
     playerOpponentEl.classList.toggle('active-turn', !isYourTurn);
   }
 
-  timerEl.textContent = `:${data.timeLeft || 30}`;
+  timerEl.textContent = `${data.timeLeft || 30}`;
   updateTimerStyle(data.timeLeft || 30);
   console.log('[CLIENT] Timer initialized at:', data.timeLeft || 15);
 
@@ -4592,7 +4622,7 @@ socket.on('yourTurn', (data) => {
   }
 
   // Timer
-  timerEl.textContent = `:${data.timeLeft || 30}`;
+  timerEl.textContent = `${data.timeLeft || 30}`;
   updateTimerStyle(data.timeLeft || 30);
 
   // Messages
@@ -4662,7 +4692,7 @@ socket.on('opponentTurn', (data) => {
     startClientTimer(data.turnStartTime, data.turnDuration);
   } else {
     // Fallback to old method
-    timerEl.textContent = `:${data.timeLeft || 30}`;
+    timerEl.textContent = `${data.timeLeft || 30}`;
     if (data.timeLeft) updateTimerStyle(data.timeLeft);
   }
 
@@ -4806,7 +4836,7 @@ function renderPlayScreen() {
     currentPlayerHeadshotEl.alt = `${currentPlayerName} Headshot`;
   }
   if (timerEl) {
-  timerEl.textContent = `:${timeLeft}`;
+  timerEl.textContent = `${timeLeft}`;
   updateTimerStyle(timeLeft);
 }
 }
@@ -4818,7 +4848,7 @@ function renderPlayScreen() {
 // Replace the existing socket.on('timerTick') handler
 socket.on('timerTick', (data) => {
   if (timerEl) {
-    timerEl.textContent = `:${data.timeLeft}`;
+    timerEl.textContent = `${data.timeLeft}`;
     updateTimerStyle(data.timeLeft);
   }
 });
@@ -4845,7 +4875,7 @@ function startClientTimer(startTime, duration) {
     const timeLeftSeconds = Math.ceil(remaining / 1000);
     
     if (timerEl) {
-      timerEl.textContent = `:${timeLeftSeconds}`;
+      timerEl.textContent = `${timeLeftSeconds}`;
       updateTimerStyle(timeLeftSeconds);
     }
     
@@ -4899,7 +4929,7 @@ socket.on('yourTurn', (data) => {
   } else {
     // Fallback to old method
     if (timerEl) {
-      timerEl.textContent = `:${data.timeLeft || 30}`;
+      timerEl.textContent = `${data.timeLeft || 30}`;
       updateTimerStyle(data.timeLeft || 30);
     }
   }
@@ -5486,7 +5516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[DOMContentLoaded] Initializing socket connection...');
   
   // Enhanced mobile-friendly socket configuration
-  socket = io('wss://nameateammate.com', {
+  socket = io(window.location.origin, {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 8000, // Increased for mobile networks
@@ -5920,5 +5950,6 @@ window.addEventListener('unhandledrejection', function(event) {
 
 
 
+<script src="/ui.js"></script>
 </body>
 </html>

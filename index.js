@@ -37,8 +37,7 @@ const disconnectedPlayers = new Map(); // userId -> {roomId, disconnectTime, soc
 const RECONNECTION_GRACE_PERIOD = 60000; // 60 seconds (increased for mobile networks)
 const MOBILE_RECONNECTION_BUFFER = 15000; // Additional 15s buffer for mobile users
 
-const defaultPlayerImage = 
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAYAAAA6/NlyAAAAvklEQVRoge3XsQ2AIBBF0ZLpDoBuwHFHqK8cQvMrIo3FLPHom/b2mX9rcNqZmZmZmZmZmZmdFz5ec3m6F3+v4PYs3PmR7DbiDD1N9g5IuT16CWYExozP7G9Czzxq/cE8ksYbFxExk2RcMUfYHNk0RMYPhk0QcMbJHUYyNsi9h5YDyYFSNqLD6c+5h3tGn+MO9ZftHJz5nz/rq3ZTzRzqkIxuYwAAAABJRU5ErkJggg==';
+const defaultPlayerImage = 'data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2072%2072%27%3E%3Crect%20width%3D%2772%27%20height%3D%2772%27%20fill%3D%27%2314151a%27%2F%3E%3Ccircle%20cx%3D%2736%27%20cy%3D%2728%27%20r%3D%2712%27%20fill%3D%27%2336383f%27%2F%3E%3Cpath%20d%3D%27M14%2066c4-14%2014-20%2022-20s18%206%2022%2020%27%20fill%3D%27%2336383f%27%2F%3E%3C%2Fsvg%3E';
 
 
 const PORT = process.env.PORT || 3000;
