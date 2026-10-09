@@ -345,7 +345,9 @@ nav {
   height: auto;
   color: #17191d;
   pointer-events: none;
+  z-index: 0;
 }
+.home-hero > :not(.court-lines) { position: relative; z-index: 1; }
 
 .home-hero,
 .home-example,
