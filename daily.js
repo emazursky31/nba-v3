@@ -2,7 +2,7 @@
 // Everyone gets the same player for a given date (US Eastern), no account needed.
 
 const DAILY_TIME_ZONE = 'America/New_York';
-const LAUNCH_DATE = '2026-10-08'; // puzzle #1
+const LAUNCH_DATE = '2026-10-09'; // puzzle #1
 const MIN_SEASONS = 10;
 const MIN_TEAMMATES = 40;
 
