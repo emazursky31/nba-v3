@@ -81,7 +81,8 @@
       await joinPublicGame();
     } catch (err) {
       console.error('[guest] Could not start a guest game:', err);
-      setGuestError("Guest play isn't available right now. Log in or sign up to play.");
+      const why = err && err.message ? ` (${err.message})` : '';
+      setGuestError("Guest play isn't available right now. Log in or sign up to play." + why);
     } finally {
       btn.disabled = false;
       btn.classList.remove('is-busy');
