@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Teammate Blitz – Name a Teammate</title>
+  <meta name="description" content="One NBA player a day. Name as many of their teammates as you can in 60 seconds.">
+  <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/barlow-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/theme.css">
+  <meta name="theme-color" content="#0c0d0f">
+  <style>
+    :root {
+      --primary: #ff6a13;
+      --primary-hover: #ff8238;
+      --success: #4cd08a;
+      --danger: #ff5143;
+      --warning: #ffc233;
+      --text: #f4f0e8;
+      --text-2: #b9b5ac;
+      --muted: #85857f;
+      --bg: #0c0d0f;
+      --bg-2: #141518;
+      --border: #25272c;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      min-height: 100vh;
+      display: block;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    header a { color: var(--muted); text-decoration: none; font-size: 0.9rem; white-space: nowrap; margin-left: 12px; }
+    header a:hover { color: var(--text); }
+    .kicker { color: var(--primary); font: 600 12px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; }
+    h1 { font: 800 34px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 4px 0 0; text-align: left; color: var(--text) !important; }
+    .card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .player { display: flex; align-items: center; gap: 16px; }
+    .player img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+    .player-name { font: 800 clamp(30px, 9vw, 40px)/0.95 var(--display); text-transform: uppercase; letter-spacing: 0.01em; }
+    .player-sub { color: var(--muted); margin-top: 2px; }
+    p.lead { color: var(--text-2); line-height: 1.5; }
+    button.primary {
+      width: 100%; padding: 14px; border: 0; border-radius: var(--radius);
+      background: var(--primary); color: var(--accent-ink); font: 800 24px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+    }
+    button.primary:hover { background: var(--primary-hover); }
+    button.secondary {
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: transparent; color: var(--text); font: inherit; cursor: pointer;
+    }
+    .hud { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 12px; }
+    .timer { font: 800 56px/1 var(--display); font-variant-numeric: tabular-nums; }
+    .timer.low { color: var(--danger); }
+    .score { font: 700 24px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text-2); }
+    .input-wrap { position: relative; }
+    input#guess {
+      width: 100%; height: 56px; padding: 0 16px; font: 500 18px/1 var(--body); box-sizing: border-box;
+      background: var(--bg-sunk); color: var(--text); border: 2px solid var(--line-strong); border-radius: var(--radius);
+    }
+    input#guess:focus { outline: none; border-color: var(--primary); }
+    .suggestions {
+      position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 5;
+      background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+      list-style: none; padding: 4px; max-height: 240px; overflow-y: auto;
+    }
+    .suggestions li { padding: 10px; border-radius: 0.5rem; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+    .suggestions li.active, .suggestions li:hover { background: rgba(255, 106, 19, 0.2); }
+    .suggestions .years { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+    .feedback { min-height: 1.5em; margin: 8px 0; font-weight: 500; }
+    .feedback.good { color: var(--success); }
+    .feedback.bad { color: var(--danger); }
+    .feedback.meh { color: var(--warning); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip { padding: 6px 10px; border-radius: 999px; background: rgba(76, 208, 138, 0.16); color: var(--text); font-size: 0.9rem; }
+    .chip.missed { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
+    .big { font: 800 96px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--primary); }
+    .stats { display: flex; gap: 12px; margin: 16px 0; }
+    .stat { flex: 1; text-align: center; padding: 12px 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .stat .n { font-size: 1.4rem; font-weight: 700; }
+    .stat .l { color: var(--muted); font-size: 0.8rem; }
+    .row { display: flex; gap: 8px; margin-top: 12px; }
+    .row > * { flex: 1; }
+    h3 { margin: 24px 0 8px; font-size: 1rem; color: var(--text-2); }
+    .note { color: var(--muted); font-size: 0.9rem; text-align: center; margin-top: 16px; }
+    .hidden { display: none !important; }
+    @media (max-width: 400px) { .big { font-size: 2.4rem; } .player-name { font-size: 1.2rem; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="kicker" id="puzzle-label">Daily Teammate Blitz</div>
+        <h1>Name a Teammate</h1>
+      </div>
+      <a href="/">Play head-to-head →</a>
+    </header>
+
+    <div id="loading" class="card"><p class="lead">Loading today's player…</p></div>
+
+    <div id="error" class="card hidden"><p class="lead" id="error-text"></p></div>
+
+    <!-- Intro -->
+    <section id="intro" class="hidden">
+      <div class="card">
+        <div class="player">
+          <img id="intro-img" alt="">
+          <div>
+            <div class="player-sub">Today's player</div>
+            <div class="player-name" id="intro-name"></div>
+          </div>
+        </div>
+        <p class="lead">Name as many of their regular season teammates as you can in <strong>60 seconds</strong>. They had <strong id="intro-total"></strong> teammates. How many do you know?</p>
+        <button class="primary" id="start-btn">Start</button>
+      </div>
+      <p class="note">Same player for everyone. New one every day at midnight Eastern.</p>
+    </section>
+
+    <!-- Playing -->
+    <section id="play" class="hidden">
+      <div class="card">
+        <div class="player">
+          <img id="play-img" alt="">
+          <div>
+            <div class="player-sub">Teammates of</div>
+            <div class="player-name" id="play-name"></div>
+          </div>
+        </div>
+        <div class="hud">
+          <div class="timer" id="clock">60</div>
+          <div class="score" id="score">0 / 0</div>
+        </div>
+        <div class="input-wrap">
+          <input id="guess" type="text" placeholder="Type a player's name" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="send">
+          <ul class="suggestions hidden" id="suggestions"></ul>
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <div class="chips" id="found-chips"></div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="hidden">
+      <div class="card">
+        <div class="player">
+          <img id="res-img" alt="">
+          <div>
+            <div class="player-sub">Teammates of</div>
+            <div class="player-name" id="res-name"></div>
+          </div>
+        </div>
+        <div style="text-align:center; margin-top:16px;">
+          <div class="big" id="res-score"></div>
+          <div class="player-sub" id="res-sub"></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n" id="st-played">0</div><div class="l">Played</div></div>
+          <div class="stat"><div class="n" id="st-streak">0</div><div class="l">Streak</div></div>
+          <div class="stat"><div class="n" id="st-best">0</div><div class="l">Best</div></div>
+        </div>
+        <button class="primary" id="share-btn">Share result</button>
+        <div class="feedback good" id="share-feedback" style="text-align:center"></div>
+        <p class="note">Next player in <span id="countdown"></span></p>
+
+        <h3>You named</h3>
+        <div class="chips" id="res-found"></div>
+        <h3 id="missed-title">You missed</h3>
+        <div class="chips" id="res-missed"></div>
+      </div>
+      <div class="row">
+        <a href="/" class="secondary" style="text-align:center; text-decoration:none; color:var(--text); padding:12px; border:1px solid var(--border); border-radius:var(--radius);">Play head-to-head</a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  (function () {
+    const GAME_SECONDS = 60;
+    const DEFAULT_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect width="72" height="72" fill="#14151a"/><circle cx="36" cy="28" r="12" fill="#36383f"/><path d="M14 64c4-14 14-20 22-20s18 6 22 20" fill="#36383f"/></svg>');
+
+    const $ = id => document.getElementById(id);
+    const store = {
+      get(key, fallback) {
+        try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+      },
+      set(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
+      }
+    };
+
+    let puzzle = null;
+    let state = null; // { startedAt, found: [], done }
+    let tick = null;
+
+    function show(id) {
+      ['loading', 'error', 'intro', 'play', 'results'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+    }
+
+    function stateKey() { return `daily:${puzzle.date}`; }
+    function saveState() { store.set(stateKey(), state); }
+
+    function setPlayer(prefix) {
+      $(prefix + '-name').textContent = puzzle.playerName;
+      const img = $(prefix + '-img');
+      img.src = puzzle.headshotUrl || DEFAULT_IMG;
+      img.onerror = () => { img.onerror = null; img.src = DEFAULT_IMG; };
+    }
+
+    async function load() {
+      try {
+        const res = await fetch('/api/daily');
+        if (!res.ok) throw new Error();
+        puzzle = await res.json();
+      } catch {
+        $('error-text').textContent = "Couldn't load today's player. Please refresh to try again.";
+        show('error');
+        return;
+      }
+      $('puzzle-label').textContent = `Daily Teammate Blitz #${puzzle.number}`;
+      state = store.get(stateKey(), null);
+
+      if (state && state.done) return showResults();
+      if (state && state.startedAt) {
+        if (secondsLeft() <= 0) return finish();
+        return startPlaying();
+      }
+      setPlayer('intro');
+      $('intro-total').textContent = puzzle.totalTeammates;
+      show('intro');
+    }
+
+    function secondsLeft() {
+      return Math.max(0, GAME_SECONDS - Math.floor((Date.now() - state.startedAt) / 1000));
+    }
+
+    function startPlaying() {
+      setPlayer('play');
+      show('play');
+      renderFound();
+      updateTimer();
+      tick = setInterval(updateTimer, 250);
+      $('guess').focus();
+    }
+
+    function updateTimer() {
+      const left = secondsLeft();
+      $('clock').textContent = left;
+      $('clock').classList.toggle('low', left <= 10);
+      if (left <= 0) finish();
+    }
+
+    function renderFound() {
+      $('score').textContent = `${state.found.length} / ${puzzle.totalTeammates}`;
+      const chips = $('found-chips');
+      chips.innerHTML = '';
+      state.found.slice().reverse().forEach(name => {
+        const el = document.createElement('span');
+        el.className = 'chip';
+        el.textContent = name;
+        chips.appendChild(el);
+      });
+    }
+
+    function setFeedback(text, kind) {
+      const el = $('feedback');
+      el.textContent = text;
+      el.className = 'feedback ' + (kind || '');
+    }
+
+    // ---- Autocomplete ----
+    let suggestTimer = null;
+    let suggestions = [];
+    let activeIndex = -1;
+    let suggestSeq = 0;
+
+    function hideSuggestions() {
+      $('suggestions').classList.add('hidden');
+      suggestions = [];
+      activeIndex = -1;
+    }
+
+    function renderSuggestions() {
+      const list = $('suggestions');
+      list.innerHTML = '';
+      if (!suggestions.length) return hideSuggestions();
+      suggestions.forEach((p, i) => {
+        const li = document.createElement('li');
+        li.className = i === activeIndex ? 'active' : '';
+        const name = document.createElement('span');
+        name.textContent = p.player_name;
+        const years = document.createElement('span');
+        years.className = 'years';
+        years.textContent = p.first_year && p.last_year ? `${p.first_year}–${p.last_year}` : '';
+        li.append(name, years);
+        li.addEventListener('mousedown', e => { e.preventDefault(); submitGuess(p.player_name); });
+        list.appendChild(li);
+      });
+      list.classList.remove('hidden');
+    }
+
+    $('guess').addEventListener('input', () => {
+      clearTimeout(suggestTimer);
+      const q = $('guess').value.trim();
+      if (q.length < 2) return hideSuggestions();
+      suggestTimer = setTimeout(async () => {
+        const seq = ++suggestSeq;
+        try {
+          const res = await fetch('/players?q=' + encodeURIComponent(q));
+          const rows = await res.json();
+          if (seq !== suggestSeq) return;
+          suggestions = Array.isArray(rows) ? rows.slice(0, 8) : [];
+          activeIndex = suggestions.length ? 0 : -1;
+          renderSuggestions();
+        } catch { /* typing still works without suggestions */ }
+      }, 150);
+    });
+
+    $('guess').addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' && suggestions.length) {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % suggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'ArrowUp' && suggestions.length) {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+        renderSuggestions();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const pick = activeIndex >= 0 ? suggestions[activeIndex].player_name : $('guess').value;
+        submitGuess(pick);
+      } else if (e.key === 'Escape') {
+        hideSuggestions();
+      }
+    });
+
+    $('guess').addEventListener('blur', () => setTimeout(hideSuggestions, 100));
+
+    async function submitGuess(raw) {
+      const guess = (raw || '').trim();
+      if (!guess || state.done) return;
+      $('guess').value = '';
+      hideSuggestions();
+      clearTimeout(suggestTimer);
+      suggestSeq++;
+
+      try {
+        const res = await fetch('/api/daily/guess', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: puzzle.date, guess })
+        });
+        const data = await res.json();
+        if (state.done) return;
+        if (res.status === 409) return setFeedback(data.message, 'meh');
+        switch (data.result) {
+          case 'correct':
+            if (state.found.includes(data.name)) {
+              setFeedback(`You already named ${data.name}.`, 'meh');
+            } else {
+              state.found.push(data.name);
+              saveState();
+              renderFound();
+              setFeedback(`✓ ${data.name}`, 'good');
+            }
+            break;
+          case 'self':
+            setFeedback("That's today's player. Name a teammate.", 'meh');
+            break;
+          case 'not_teammate':
+            setFeedback(`${guess} never played with ${puzzle.playerName}.`, 'bad');
+            break;
+          case 'unknown':
+            setFeedback(`Couldn't find a player named "${guess}".`, 'bad');
+            break;
+          default:
+            setFeedback('Something went wrong checking that guess.', 'bad');
+        }
+      } catch {
+        setFeedback('Connection problem. Try that one again.', 'bad');
+      }
+      $('guess').focus();
+    }
+
+    $('start-btn').addEventListener('click', () => {
+      state = { startedAt: Date.now(), found: [], done: false };
+      saveState();
+      startPlaying();
+    });
+
+    // ---- Results ----
+    function recordStats() {
+      const stats = store.get('daily:stats', { played: 0, streak: 0, best: 0, lastNumber: null });
+      if (stats.lastNumber === puzzle.number) return stats;
+      stats.played += 1;
+      stats.streak = stats.lastNumber === puzzle.number - 1 ? stats.streak + 1 : 1;
+      stats.best = Math.max(stats.best, state.found.length);
+      stats.lastNumber = puzzle.number;
+      store.set('daily:stats', stats);
+      return stats;
+    }
+
+    function finish() {
+      clearInterval(tick);
+      state.done = true;
+      saveState();
+      recordStats();
+      showResults();
+    }
+
+    async function showResults() {
+      setPlayer('res');
+      const n = state.found.length;
+      $('res-score').textContent = `${n}`;
+      $('res-sub').textContent = `of ${puzzle.totalTeammates} teammates in 60 seconds`;
+      const stats = store.get('daily:stats', { played: 1, streak: 1, best: n });
+      $('st-played').textContent = stats.played;
+      $('st-streak').textContent = stats.streak;
+      $('st-best').textContent = stats.best;
+
+      const foundEl = $('res-found');
+      foundEl.innerHTML = '';
+      if (!n) foundEl.textContent = 'Nobody this time.';
+      state.found.forEach(name => {
+        const el = document.createElement('span');
+        el.className = 'chip';
+        el.textContent = name;
+        foundEl.appendChild(el);
+      });
+
+      show('results');
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+
+      try {
+        const res = await fetch('/api/daily/answers?date=' + encodeURIComponent(puzzle.date));
+        const { teammates } = await res.json();
+        const foundSet = new Set(state.found);
+        const missed = teammates.filter(t => !foundSet.has(t));
+        const missedEl = $('res-missed');
+        missedEl.innerHTML = '';
+        $('missed-title').textContent = `You missed (${missed.length})`;
+        missed.forEach(name => {
+          const el = document.createElement('span');
+          el.className = 'chip missed';
+          el.textContent = name;
+          missedEl.appendChild(el);
+        });
+      } catch {
+        $('missed-title').classList.add('hidden');
+      }
+    }
+
+    function updateCountdown() {
+      // Midnight US Eastern, computed from the current Eastern wall clock
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+      }).formatToParts(now).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+      const elapsed = (parseInt(parts.hour, 10) % 24) * 3600 + parseInt(parts.minute, 10) * 60 + parseInt(parts.second, 10);
+      const left = 86400 - elapsed;
+      const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), s = left % 60;
+      $('countdown').textContent = `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+    }
+
+    function shareText() {
+      const n = state.found.length;
+      const pct = puzzle.totalTeammates ? n / puzzle.totalTeammates : 0;
+      const filled = Math.min(10, Math.round(pct * 10));
+      const bar = '🟩'.repeat(filled) + '⬛'.repeat(10 - filled);
+      return `Daily Teammate Blitz #${puzzle.number} 🏀\n` +
+        `${puzzle.playerName}: ${n}/${puzzle.totalTeammates} teammates in 60s\n` +
+        `${bar}\n` +
+        `${location.origin}/daily`;
+    }
+
+    $('share-btn').addEventListener('click', async () => {
+      const text = shareText();
+      try {
+        if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+          await navigator.share({ text });
+          return;
+        }
+        await navigator.clipboard.writeText(text);
+        $('share-feedback').textContent = 'Copied to clipboard';
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+        $('share-feedback').textContent = text;
+      }
+    });
+
+    load();
+  })();
+  </script>
+</body>
+</html>
