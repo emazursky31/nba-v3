@@ -4980,3 +4980,18 @@ Adjust stacking for smaller cards
 
 
 }
+/* Daily Teammate Blitz link on the landing page */
+.daily-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.daily-link:hover {
+  background: rgba(99, 102, 241, 0.3);
+}

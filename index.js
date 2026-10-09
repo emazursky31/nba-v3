@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const { Client } = require('pg');
+const { createDaily } = require('./daily');
 
 const rooms = {};
 const waitingPlayers = [];
@@ -542,6 +543,12 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
 
 
 
+
+// Daily Teammate Blitz (solo, no account needed)
+createDaily(client).register(app);
+app.get('/daily', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'daily.html'));
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
