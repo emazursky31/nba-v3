@@ -5,46 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daily Teammate Blitz – Name a Teammate</title>
   <meta name="description" content="One NBA player a day. Name as many of their teammates as you can in 60 seconds.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="preload" href="/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/barlow-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/theme.css">
+  <meta name="theme-color" content="#0c0d0f">
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --success: #22c55e;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --text: #f1f5f9;
-      --text-2: #cbd5e1;
-      --muted: #94a3b8;
-      --bg: #0f172a;
-      --bg-2: #1e293b;
-      --border: rgba(100, 116, 139, 0.3);
-      --radius: 0.75rem;
+      --primary: #ff6a13;
+      --primary-hover: #ff8238;
+      --success: #4cd08a;
+      --danger: #ff5143;
+      --warning: #ffc233;
+      --text: #f4f0e8;
+      --text-2: #b9b5ac;
+      --muted: #85857f;
+      --bg: #0c0d0f;
+      --bg-2: #141518;
+      --border: #25272c;
+      --radius: 12px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; }
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'DM Sans', system-ui, sans-serif;
+      font-family: var(--body);
       min-height: 100vh;
+      display: block;
     }
     .wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     header a { color: var(--muted); text-decoration: none; font-size: 0.9rem; white-space: nowrap; margin-left: 12px; }
     header a:hover { color: var(--text); }
-    .kicker { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; }
-    h1 { font-size: 1.6rem; margin: 4px 0 0; }
+    .kicker { color: var(--primary); font: 600 12px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; }
+    h1 { font: 800 34px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; margin: 4px 0 0; text-align: left; color: var(--text) !important; }
     .card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
     .player { display: flex; align-items: center; gap: 16px; }
     .player img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); flex-shrink: 0; }
-    .player-name { font-size: 1.4rem; font-weight: 700; }
+    .player-name { font: 800 clamp(30px, 9vw, 40px)/0.95 var(--display); text-transform: uppercase; letter-spacing: 0.01em; }
     .player-sub { color: var(--muted); margin-top: 2px; }
     p.lead { color: var(--text-2); line-height: 1.5; }
     button.primary {
       width: 100%; padding: 14px; border: 0; border-radius: var(--radius);
-      background: var(--primary); color: white; font: inherit; font-weight: 600; font-size: 1.05rem; cursor: pointer;
+      background: var(--primary); color: var(--accent-ink); font: 800 24px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
     }
     button.primary:hover { background: var(--primary-hover); }
     button.secondary {
@@ -52,31 +55,31 @@
       background: transparent; color: var(--text); font: inherit; cursor: pointer;
     }
     .hud { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 12px; }
-    .timer { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 600; }
+    .timer { font: 800 56px/1 var(--display); font-variant-numeric: tabular-nums; }
     .timer.low { color: var(--danger); }
-    .score { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--text-2); }
+    .score { font: 700 24px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text-2); }
     .input-wrap { position: relative; }
     input#guess {
-      width: 100%; padding: 14px; font: inherit; font-size: 1.05rem;
-      background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius);
+      width: 100%; height: 56px; padding: 0 16px; font: 500 18px/1 var(--body); box-sizing: border-box;
+      background: var(--bg-sunk); color: var(--text); border: 2px solid var(--line-strong); border-radius: var(--radius);
     }
-    input#guess:focus { outline: 2px solid var(--primary); outline-offset: 0; }
+    input#guess:focus { outline: none; border-color: var(--primary); }
     .suggestions {
       position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 5;
       background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
       list-style: none; padding: 4px; max-height: 240px; overflow-y: auto;
     }
     .suggestions li { padding: 10px; border-radius: 0.5rem; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
-    .suggestions li.active, .suggestions li:hover { background: rgba(99, 102, 241, 0.25); }
+    .suggestions li.active, .suggestions li:hover { background: rgba(255, 106, 19, 0.2); }
     .suggestions .years { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
     .feedback { min-height: 1.5em; margin: 8px 0; font-weight: 500; }
     .feedback.good { color: var(--success); }
     .feedback.bad { color: var(--danger); }
     .feedback.meh { color: var(--warning); }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .chip { padding: 6px 10px; border-radius: 999px; background: rgba(34, 197, 94, 0.15); color: var(--text); font-size: 0.9rem; }
+    .chip { padding: 6px 10px; border-radius: 999px; background: rgba(76, 208, 138, 0.16); color: var(--text); font-size: 0.9rem; }
     .chip.missed { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
-    .big { font-size: 3rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .big { font: 800 96px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--primary); }
     .stats { display: flex; gap: 12px; margin: 16px 0; }
     .stat { flex: 1; text-align: center; padding: 12px 8px; border: 1px solid var(--border); border-radius: var(--radius); }
     .stat .n { font-size: 1.4rem; font-weight: 700; }
@@ -96,7 +99,7 @@
         <div class="kicker" id="puzzle-label">Daily Teammate Blitz</div>
         <h1>Name a Teammate</h1>
       </div>
-      <a href="/">Head-to-head →</a>
+      <a href="/">Play head-to-head →</a>
     </header>
 
     <div id="loading" class="card"><p class="lead">Loading today's player…</p></div>
@@ -130,7 +133,7 @@
           </div>
         </div>
         <div class="hud">
-          <div class="timer" id="timer">60</div>
+          <div class="timer" id="clock">60</div>
           <div class="score" id="score">0 / 0</div>
         </div>
         <div class="input-wrap">
@@ -180,7 +183,7 @@
   (function () {
     const GAME_SECONDS = 60;
     const DEFAULT_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect width="72" height="72" fill="#1e293b"/><circle cx="36" cy="28" r="12" fill="#475569"/><path d="M14 64c4-14 14-20 22-20s18 6 22 20" fill="#475569"/></svg>');
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72"><rect width="72" height="72" fill="#14151a"/><circle cx="36" cy="28" r="12" fill="#36383f"/><path d="M14 64c4-14 14-20 22-20s18 6 22 20" fill="#36383f"/></svg>');
 
     const $ = id => document.getElementById(id);
     const store = {
@@ -248,8 +251,8 @@
 
     function updateTimer() {
       const left = secondsLeft();
-      $('timer').textContent = left;
-      $('timer').classList.toggle('low', left <= 10);
+      $('clock').textContent = left;
+      $('clock').classList.toggle('low', left <= 10);
       if (left <= 0) finish();
     }
 
