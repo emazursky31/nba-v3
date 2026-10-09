@@ -95,12 +95,24 @@
   // ---- Keep the game screen inside the visible area ----------------------
   // On phones the on-screen keyboard covers the bottom of the page. Track the
   // visible height so the guess box stays on screen and nothing needs scrolling.
+  // Some phone browsers shrink the whole page when the keyboard opens instead
+  // of only the visual viewport, so a focused guess box counts as keyboard-open.
+  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  let guessFocused = false;
+
   function syncViewport() {
     const vv = window.visualViewport;
     const height = vv ? vv.height : window.innerHeight;
     document.documentElement.style.setProperty('--app-h', height + 'px');
     document.documentElement.style.setProperty('--app-top', (vv ? vv.offsetTop : 0) + 'px');
-    document.body.classList.toggle('kb-open', !!vv && vv.height < window.innerHeight * 0.78);
+    const shrunk = !!vv && vv.height < window.innerHeight * 0.78;
+    document.body.classList.toggle('kb-open', shrunk || (touch && guessFocused));
+  }
+
+  const guessBox = $('guessInput');
+  if (guessBox) {
+    guessBox.addEventListener('focus', () => { guessFocused = true; syncViewport(); });
+    guessBox.addEventListener('blur', () => { guessFocused = false; setTimeout(syncViewport, 150); });
   }
 
   syncViewport();
