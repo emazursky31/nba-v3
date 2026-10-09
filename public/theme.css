@@ -854,8 +854,8 @@ body.auth-open { overflow: hidden; }
 
 #currentPlayerHeadshot {
   flex: 0 0 auto;
-  width: clamp(96px, 17vh, 168px);
-  height: clamp(96px, 17vh, 168px);
+  width: clamp(76px, 12vh, 104px);
+  height: clamp(76px, 12vh, 104px);
   border-radius: 50%;
   object-fit: cover;
   object-position: 50% 14%;
@@ -874,7 +874,7 @@ body.auth-open { overflow: hidden; }
 
 .turn-player-name {
   display: block;
-  font: 800 clamp(38px, min(12vw, 7.2vh), 72px)/0.92 var(--display);
+  font: 800 clamp(28px, min(9vw, 5vh), 42px)/0.98 var(--display);
   letter-spacing: 0.005em;
   text-transform: uppercase;
   text-wrap: balance;
@@ -1076,7 +1076,7 @@ body.kb-open .prompt-header { padding: 7px 12px; }
 body.kb-open .player-info { flex-direction: row; justify-content: flex-start; text-align: left; gap: 14px; padding: 10px 14px; }
 body.kb-open #currentPlayerHeadshot { width: 64px; height: 64px; }
 body.kb-open .player-details { align-items: flex-start; gap: 4px; }
-body.kb-open .turn-player-name { font-size: clamp(28px, 8.5vw, 40px); }
+body.kb-open .turn-player-name { font-size: clamp(26px, 8vw, 34px); }
 body.kb-open #timer-container,
 body.kb-open .progress-ring { width: 60px; height: 60px; }
 body.kb-open .scorebar { grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr); }
