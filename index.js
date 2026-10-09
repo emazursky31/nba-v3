@@ -5,6 +5,7 @@ const path = require('path');
 const { Server } = require('socket.io');
 const { Client } = require('pg');
 const { createDaily } = require('./daily');
+const { createBots, isBotUserId } = require('./bots');
 
 const rooms = {};
 const waitingPlayers = [];
@@ -48,6 +49,8 @@ server.listen(PORT, () => {
 const client = new Client({
   connectionString: process.env.SUPABASE_DB_URL,
 });
+
+const bots = createBots({ port: PORT, waitingPlayers });
 
 client.connect()
   .then(() => console.log('✅ Connected to Supabase PostgreSQL!'))
@@ -677,6 +680,7 @@ async function getPlayerCareerDetails(playerName) {
 
 
 io.on('connection', (socket) => {
+  bots.useTeammateLookup(getTeammates);
   console.log(`User connected: ${socket.id}`);
   
   // Enhanced session cleanup for mobile networks
@@ -707,7 +711,7 @@ io.on('connection', (socket) => {
   
 
 
-socket.on('findMatch', ({ username, userId, era = '2000-present' }) => {
+socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = false }) => {
   socket.data.username = username;
   socket.data.userId = userId;
 
@@ -820,6 +824,7 @@ socket.on('findMatch', ({ username, userId, era = '2000-present' }) => {
     }
 
     socket.emit('waitingForMatch');
+    if (allowBot) bots.scheduleFill(socket, era);
   }
 });
 
@@ -2532,7 +2537,7 @@ setInterval(cleanupGameCreationLocks, 15000);
 
 
 async function updateUserStats(userId, result, era = '2000-present', turnCount = 0) {
-  if (!userId || !['win', 'loss'].includes(result)) return;
+  if (!userId || isBotUserId(userId) || !['win', 'loss'].includes(result)) return;
 
   console.log('[DB] updateUserStats called with:', userId, result, era, turnCount);
   

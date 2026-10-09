@@ -77,6 +77,7 @@
       localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
       gameTypeSelected = 'public';
 
+      window.allowBotFill = true; // guests get a bot if no rival shows up
       await joinPublicGame();
     } catch (err) {
       console.error('[guest] Could not start a guest game:', err);

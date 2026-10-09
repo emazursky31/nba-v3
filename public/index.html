@@ -1651,7 +1651,8 @@ if (gameInfoDisplay) {
   }
 
   console.log('[DEBUG] Using safeEmit to find match:', myUsername, userId);
-  safeEmit('findMatch', { username: myUsername, userId, era: selectedEra });
+  safeEmit('findMatch', { username: myUsername, userId, era: selectedEra, allowBot: !!window.allowBotFill });
+  window.allowBotFill = false;
 }
 
 
