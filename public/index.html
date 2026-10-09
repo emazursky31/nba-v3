@@ -246,29 +246,29 @@
 
 
 <!-- Home Screen with Game Setup -->
-<section id="homeSelection" data-route="/home" class="hidden" style="text-align: center; margin-top: 2rem; position: relative;">
+<section id="homeSelection" data-route="/home" class="hidden">
   
   <h3 id="home-welcome"></h3>
 
   <div id="gameSetup" class="game-setup-container">
     <!-- Game type selection -->
     <div id="gameModeSelection" class="selection-grid">
+      <div class="selection-card" data-mode="public" id="publicCard">
+        <!-- <div class="selection-icon">🌐</div> -->
+        <h3>Public Game</h3>
+        <p class="selection-description">
+          Get paired with another player right now.
+        </p>
+        <button class="selection-btn" id="findGameBtn">Find a game</button>
+      </div>
+
       <div class="selection-card" data-mode="private">
         <!-- <div class="selection-icon">🔒</div> -->
         <h3>Private Game</h3>
         <p class="selection-description">
-          Create a private room with custom game settings. Share with a friend to get started.
+          Pick the era and clock, then send a friend the link.
         </p>
-        <button class="selection-btn" id="privateGameBtn">Start Private Game</button>
-      </div>
-      
-      <div class="selection-card" data-mode="public">
-        <!-- <div class="selection-icon">🌐</div> -->
-        <h3>Public Game</h3>
-        <p class="selection-description">
-          Join the matchmaking queue and get paired with another player looking for a game.
-        </p>
-        <button class="selection-btn" id="findGameBtn">Find Public Game</button>
+        <button class="selection-btn selection-btn-quiet" id="privateGameBtn">Set up a room</button>
       </div>
     </div>
 
@@ -358,7 +358,7 @@
 
 <!-- Profile Section -->
 <section id="profileSection" data-route="/profile">
-  <h1>Your Profile</h1>
+  <h1 class="page-title">Your profile</h1>
   
   <div class="profile-container">
     <!-- User Info Card -->
