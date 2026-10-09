@@ -115,7 +115,7 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--display);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.01em;
   line-height: 1;
 }
@@ -141,8 +141,8 @@ button, input { font-family: inherit; }
 .eyebrow {
   margin: 0 0 14px;
   font: 600 13px/1 var(--body);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--accent);
 }
 
@@ -175,7 +175,7 @@ nav {
 .nav-word {
   font: 800 22px/1 var(--display);
   letter-spacing: 0.03em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .nav-dropdown { position: relative; }
@@ -275,7 +275,7 @@ nav {
 .btn-play-label {
   font: 800 26px/1 var(--display);
   letter-spacing: 0.03em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .btn-play-hint { font: 500 13px/1.2 var(--body); opacity: 0.75; }
 
@@ -360,7 +360,7 @@ nav {
   text-align: left;
   font: 800 clamp(64px, 21vw, 148px)/0.84 var(--display);
   letter-spacing: -0.005em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--ink);
 }
 .home-title span { color: var(--accent); }
@@ -407,21 +407,21 @@ nav {
 .chain-start::before { border-color: var(--accent); background: var(--accent); }
 .chain-name {
   font: 800 30px/1.05 var(--display);
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.01em;
 }
 .chain-tag {
   font: 600 12px/1 var(--body);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--ink-3);
   white-space: nowrap;
 }
 .chain-link {
   padding: 10px 0 10px 2px;
   font: 600 13px/1 var(--body);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: var(--ink-3);
 }
 .chain-end {
@@ -454,7 +454,7 @@ nav {
   min-height: 56px;
   font: 700 20px/1 var(--display);
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
   list-style: none;
 }
@@ -570,7 +570,7 @@ body.auth-open { overflow: hidden; }
   border-radius: 12px;
   font: 800 22px/1 var(--display);
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
 }
 .auth-form button[type='submit']:hover { background: var(--accent-hover); }
@@ -638,7 +638,7 @@ body.auth-open { overflow: hidden; }
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   font-family: var(--display);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 #inviteLinkWrapper p { color: var(--ink-2); }
 #inviteLink {
@@ -668,13 +668,13 @@ body.auth-open { overflow: hidden; }
 #matchedScreen h3 {
   margin: 0;
   font: 600 14px/1 var(--body);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.02em;
   color: var(--accent);
 }
 #matchedMessage {
   margin: 14px 0 0 !important;
   font: 800 clamp(44px, 14vw, 64px)/0.95 var(--display) !important;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--ink) !important;
 }
 #countdownContainer { margin: 40px 0 0 !important; }
@@ -733,7 +733,7 @@ body.auth-open { overflow: hidden; }
   color: var(--ink-2);
   font: 700 clamp(18px, 5.4vw, 22px)/1.05 var(--display);
   letter-spacing: 0.02em;
-  text-transform: uppercase;
+  text-transform: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -743,7 +743,7 @@ body.auth-open { overflow: hidden; }
   display: block;
   margin-bottom: 4px;
   font: 600 11px/1 var(--body);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.02em;
   color: var(--ink-3);
 }
 .side-you::before { content: 'You'; }
@@ -828,8 +828,8 @@ body.auth-open { overflow: hidden; }
   background: var(--accent);
   color: var(--accent-ink);
   font: 700 12px/1.1 var(--body);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   text-align: center;
 }
 #turnSection.opponent-turn .prompt-header {
@@ -876,7 +876,7 @@ body.auth-open { overflow: hidden; }
   display: block;
   font: 800 clamp(28px, min(9vw, 5vh), 42px)/0.98 var(--display);
   letter-spacing: 0.005em;
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
   overflow-wrap: anywhere;
   color: var(--ink);
@@ -899,8 +899,8 @@ body.auth-open { overflow: hidden; }
   border-radius: 999px;
   color: var(--ink-2);
   font: 600 12px/1 var(--body);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .leadoff-career-section {
@@ -1102,7 +1102,7 @@ body.kb-open #submitGuessBtn { flex-basis: 52px; width: 52px; }
 /* ---------- Signed-in home (mode picker) ---------- */
 
 #homeSelection { max-width: 720px; margin-left: auto !important; margin-right: auto !important; padding: 0 20px 48px; box-sizing: border-box; }
-#home-welcome { color: var(--ink-2); font: 600 14px/1 var(--body); letter-spacing: 0.1em; text-transform: uppercase; }
+#home-welcome { color: var(--ink-2); font: 600 14px/1 var(--body); letter-spacing: 0.02em; text-transform: none; }
 .selection-card {
   background: var(--bg-raise) !important;
   border: 2px solid var(--line) !important;
@@ -1119,7 +1119,7 @@ body.kb-open #submitGuessBtn { flex-basis: 52px; width: 52px; }
   box-shadow: none !important;
   font: 700 17px/1 var(--display) !important;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .selection-btn:hover { background: var(--accent-hover) !important; }
 
@@ -1162,7 +1162,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   margin: 0;
   font: 800 clamp(60px, 20vw, 92px)/0.9 var(--display);
   letter-spacing: 0.005em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--ink);
 }
 .over-win .over-title { color: var(--ok); }
@@ -1189,7 +1189,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   border-bottom: 1px solid var(--line);
 }
 .over-link:last-child { border-bottom: 0; }
-.over-n { font: 700 13px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.over-n { font: 700 13px/1 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink-3); }
 .over-name { font: 700 22px/1.1 var(--display); letter-spacing: 0.01em; color: var(--ink); }
 .over-by { font: 500 13px/1 var(--body); color: var(--ink-3); }
 .over-link.is-start .over-n { color: var(--accent); }
@@ -1212,7 +1212,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   border-radius: 10px;
   font: 700 19px/1 var(--display);
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
 }
 .over-rematch:hover:not(:disabled) { background: var(--accent-hover); }
@@ -1228,7 +1228,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   box-shadow: none !important;
   font: 700 17px/1 var(--display) !important;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
   border-radius: 10px !important;
 }
 .over-home { align-self: center; }
@@ -1256,7 +1256,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   padding: 28px 16px 40px !important;
   text-align: left !important;
 }
-#homeSelection #home-welcome { margin: 0 0 14px; font: 700 15px/1.2 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
+#homeSelection #home-welcome { margin: 0 0 14px; font: 700 15px/1.2 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink-3); text-align: left; }
 #homeSelection #home-welcome:empty { display: none; }
 
 #homeSelection .selection-grid:not([style*="display: none"]) { display: flex !important; flex-direction: column; gap: 12px; }
@@ -1270,7 +1270,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   transform: none !important;
 }
 #homeSelection #publicCard { border-color: var(--accent) !important; }
-#homeSelection .selection-card h3 { margin: 0 0 6px; font: 800 28px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; text-align: left; }
+#homeSelection .selection-card h3 { margin: 0 0 6px; font: 800 28px/1 var(--display); letter-spacing: 0.02em; text-transform: none; text-align: left; }
 #homeSelection .selection-description { margin: 0 0 16px; font: 400 16px/1.35 var(--body); color: var(--ink-2); text-align: left; }
 #homeSelection .selection-btn { width: auto; min-width: 150px; padding: 0 22px; }
 #homeSelection .selection-btn-quiet {
@@ -1283,7 +1283,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
 /* Private settings */
 #gameSettings.settings-step { text-align: left; }
 #gameSettings .settings-header { display: flex; align-items: center; gap: 14px; margin: 0 0 4px; padding: 0; }
-#gameSettings .settings-title { margin: 0; font: 800 26px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
+#gameSettings .settings-title { margin: 0; font: 800 26px/1 var(--display); letter-spacing: 0.02em; text-transform: none; }
 #gameSettings .back-btn {
   min-height: 40px; padding: 0 14px;
   background: transparent !important; color: var(--ink-2) !important;
@@ -1296,7 +1296,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   padding: 0 !important; margin: 0 !important;
   background: none !important; border: 0 !important; box-shadow: none !important; transform: none !important;
 }
-#gameSettings .section-title { margin: 0 0 10px; font: 700 14px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
+#gameSettings .section-title { margin: 0 0 10px; font: 700 14px/1 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink-3); text-align: left; }
 #gameSettings .era-options { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; }
 #gameSettings .time-options { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 #gameSettings .era-card,
@@ -1310,7 +1310,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   text-align: left !important;
 }
 #gameSettings .era-card .era-name,
-#gameSettings .time-card .time-name { font: 700 18px/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink); }
+#gameSettings .time-card .time-name { font: 700 18px/1 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink); }
 #gameSettings .era-years,
 #gameSettings .time-duration { font: 500 13px/1 var(--body); color: var(--ink-3); }
 #gameSettings .era-option input:checked + .era-card,
@@ -1323,7 +1323,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
 #gameSettings .start-game-btn { width: 100%; }
 
 /* Profile */
-#profileSection .page-title { margin: 0 0 18px; font: 800 44px/1 var(--display); letter-spacing: 0.01em; text-transform: uppercase; text-align: left; }
+#profileSection .page-title { margin: 0 0 18px; font: 800 44px/1 var(--display); letter-spacing: 0.01em; text-transform: none; text-align: left; }
 #profileSection .profile-container { display: flex; flex-direction: column; gap: 14px; max-width: none; padding: 0; margin: 0; }
 #profileSection .profile-info-card,
 #profileSection .profile-stats-card {
@@ -1331,7 +1331,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   background: var(--bg-raise) !important; border: 1px solid var(--line) !important;
   border-radius: var(--radius) !important; box-shadow: none !important; transform: none !important;
 }
-#profileSection h2 { margin: 0 0 10px; font: 700 14px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
+#profileSection h2 { margin: 0 0 10px; font: 700 14px/1 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink-3); text-align: left; }
 #profileSection .profile-field {
   display: flex !important; flex-direction: row !important; justify-content: space-between; align-items: baseline;
   gap: 12px; padding: 10px 0 !important; border-bottom: 1px solid var(--line);
@@ -1348,7 +1348,7 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
 #profileSection .stat-number { font: 800 38px/1 var(--display) !important; color: var(--ink) !important; }
 #profileSection .stat-label { margin-top: 4px; font: 500 13px/1.2 var(--body) !important; color: var(--ink-3) !important; }
 #profileSection .era-breakdown { padding: 0; margin: 0; border: 0; }
-#profileSection .era-breakdown h3 { margin: 0 0 4px; font: 700 14px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); text-align: left; }
+#profileSection .era-breakdown h3 { margin: 0 0 4px; font: 700 14px/1 var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink-3); text-align: left; }
 #profileSection .era-stats-grid { display: block !important; }
 #profileSection .era-stat-card {
   display: flex !important; justify-content: space-between; align-items: baseline;
