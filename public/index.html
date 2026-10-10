@@ -526,6 +526,7 @@
           <img id="currentPlayerHeadshot" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Crect width='72' height='72' fill='%2314151a'/%3E%3Ccircle cx='36' cy='28' r='12' fill='%2336383f'/%3E%3Cpath d='M14 66c4-14 14-20 22-20s18 6 22 20' fill='%2336383f'/%3E%3C/svg%3E">
           <div class="player-details">
             <strong class="turn-player-name" id="currentPlayerName">Loading...</strong>
+            <div class="connected-via" id="connectedVia" hidden></div>
             <a href="#" class="career-link" onclick="toggleLeadoffCareer()" style="display: flex;">
               <span class="toggle-text">Career Details</span> <span class="toggle-icon career-arrow">▼</span>
             </a>
@@ -4205,6 +4206,7 @@ socket.on('matched', ({ roomId, opponent }) => {
 
 // 2. Game Lifecycle
 socket.on('gameStarted', async (data) => {
+  setConnectedVia([]);
   if (isLeavingGame) {
     console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
     return;
@@ -4698,6 +4700,36 @@ socket.on('message', (msg) => {
   showMessage(msg, 'error');
 });
 
+// ---- "Connected via" line under the current player's name ----
+const TEAM_NICKNAMES = {
+  ATL: 'Hawks', BKN: 'Nets', BRK: 'Nets', NJN: 'Nets', BOS: 'Celtics', CHA: 'Hornets', CHO: 'Hornets', CHH: 'Hornets',
+  CHI: 'Bulls', CLE: 'Cavaliers', DAL: 'Mavericks', DEN: 'Nuggets', DET: 'Pistons', GSW: 'Warriors', GS: 'Warriors',
+  HOU: 'Rockets', IND: 'Pacers', LAC: 'Clippers', SDC: 'Clippers', LAL: 'Lakers', MEM: 'Grizzlies', VAN: 'Grizzlies',
+  MIA: 'Heat', MIL: 'Bucks', MIN: 'Timberwolves', NOP: 'Pelicans', NOH: 'Hornets', NOK: 'Hornets', NYK: 'Knicks', NY: 'Knicks',
+  OKC: 'Thunder', SEA: 'SuperSonics', ORL: 'Magic', PHI: '76ers', PHX: 'Suns', PHO: 'Suns', POR: 'Trail Blazers',
+  SAC: 'Kings', KCK: 'Kings', SAS: 'Spurs', SA: 'Spurs', TOR: 'Raptors', UTA: 'Jazz', WAS: 'Wizards', WSB: 'Bullets'
+};
+
+function setConnectedVia(sharedTeams) {
+  const el = document.getElementById('connectedVia');
+  if (!el) return;
+  if (!Array.isArray(sharedTeams) || sharedTeams.length === 0) {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  const parts = sharedTeams.map(t => `${TEAM_NICKNAMES[t.team] || t.team}, ${t.years || ''}`.replace(/, $/, ''));
+  el.innerHTML = '';
+  const label = document.createElement('span');
+  label.className = 'connected-via-label';
+  label.textContent = 'Connected via:';
+  const value = document.createElement('span');
+  value.className = 'connected-via-value';
+  value.textContent = parts.join(' · ');
+  el.append(label, value);
+  el.hidden = false;
+}
+
 socket.on('turnEnded', (data) => {
   console.log('turnEnded currentPlayerHeadshotUrl:', data.currentPlayerHeadshotUrl);
   
@@ -4739,6 +4771,12 @@ socket.on('turnEnded', (data) => {
   }
 
    hideLeadoffCareer();
+
+  // Show how the new player links to the previous one
+  const lastLink = Array.isArray(data.successfulGuesses)
+    ? [...data.successfulGuesses].reverse().find(g => !g.isLeadoff)
+    : null;
+  setConnectedVia(lastLink ? lastLink.sharedTeams : []);
 
   // ✅ Save turn state for next turn rendering
   currentPlayerName = data.currentPlayerName || '???';
