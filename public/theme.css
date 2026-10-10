@@ -1374,3 +1374,101 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
 #gameSettings .settings-header { flex-wrap: nowrap; }
 #gameSettings .settings-header { flex-direction: row !important; justify-content: flex-start !important; align-items: center !important; gap: 12px !important; }
 #gameSettings .settings-header .settings-title { margin: 0 !important; font-size: 22px !important; }
+
+/* ---------- Career details (first player) ---------- */
+
+.career-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font: 600 14px/1 var(--body);
+}
+.career-link:hover { color: var(--ink); border-color: var(--ink-3); }
+.career-link .career-arrow { font-size: 10px; }
+
+#leadoff-career-content {
+  max-height: min(24vh, 190px);
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+#leadoff-career-content .team-stints-section {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+}
+#leadoff-career-content .team-stint {
+  display: inline-flex !important;
+  align-items: baseline;
+  gap: 8px;
+  width: auto;
+  margin: 0;
+  padding: 8px 12px !important;
+  background: var(--bg-raise) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+#leadoff-career-content .team-name {
+  font: 700 19px/1 var(--display) !important;
+  letter-spacing: 0.02em;
+  color: var(--ink) !important;
+}
+#leadoff-career-content .years {
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  font: 500 14px/1 var(--body) !important;
+  color: var(--ink-3) !important;
+}
+#leadoff-career-content .career-loading,
+#leadoff-career-content .career-error {
+  padding: 8px 0;
+  font: 500 15px/1.3 var(--body);
+  color: var(--ink-3);
+  text-align: left;
+}
+#leadoff-career-content .career-error { color: #ffb4ac; }
+
+.turn-prompt > .leadoff-career-section { flex: 0 0 auto; padding: 0 16px 16px; }
+body.kb-open .career-link, .turn-prompt .player-details .career-link { align-self: center; }
+body.kb-open .career-link { align-self: flex-start; }
+@media (max-height: 560px) { .career-link { align-self: flex-start; } }
+#leadoff-career-content .team-stints-section { width: auto !important; max-width: none !important; margin: 0 !important; display: flex !important; }
+#leadoff-career-content .team-stint { min-height: 0 !important; min-width: 0 !important; margin: 0 !important; justify-content: flex-start !important; }
+#leadoff-career-content .team-name { margin: 0 !important; min-width: 0 !important; }
+body.kb-open .turn-prompt .player-details .career-link { align-self: flex-start; }
+@media (max-height: 560px) { .turn-prompt .player-details .career-link { align-self: flex-start; } }
+
+/* Plain message screens */
+section[data-route="/verify"], section[data-route="/confirmed"], section[data-route="/reset"],
+section[data-route="/reset-confirmed"], section[data-route="/update-password"], section[data-route="/username"],
+section[data-route="/game-flow"] {
+  max-width: 520px;
+  margin: 0 auto !important;
+  padding: 32px 16px !important;
+  text-align: left !important;
+}
+section[data-route="/verify"] :is(h1, h2), section[data-route="/confirmed"] :is(h1, h2), section[data-route="/reset"] :is(h1, h2),
+section[data-route="/reset-confirmed"] :is(h1, h2), section[data-route="/update-password"] :is(h1, h2), section[data-route="/username"] :is(h1, h2),
+section[data-route="/game-flow"] :is(h1, h2) {
+  margin: 0 0 12px;
+  font: 800 36px/1.05 var(--display);
+  text-align: left;
+}
+section[data-route="/reset"], section[data-route="/update-password"], section[data-route="/username"] { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+section[data-route="/reset"].hidden, section[data-route="/update-password"].hidden, section[data-route="/username"].hidden { display: none; }
+section[data-route="/reset"] button, section[data-route="/update-password"] button, section[data-route="/username"] button { align-self: flex-start; }
