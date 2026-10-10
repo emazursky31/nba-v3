@@ -1472,3 +1472,20 @@ section[data-route="/game-flow"] :is(h1, h2) {
 section[data-route="/reset"], section[data-route="/update-password"], section[data-route="/username"] { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
 section[data-route="/reset"].hidden, section[data-route="/update-password"].hidden, section[data-route="/username"].hidden { display: none; }
 section[data-route="/reset"] button, section[data-route="/update-password"] button, section[data-route="/username"] button { align-self: flex-start; }
+
+/* ---------- Connected via ---------- */
+.connected-via {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 8px;
+  max-width: 100%;
+  font: 500 15px/1.3 var(--body);
+  text-align: center;
+}
+.connected-via[hidden] { display: none; }
+.connected-via-label { color: var(--ink-3); }
+.connected-via-value { color: var(--accent); font-weight: 600; }
+body.kb-open .connected-via, .match .player-details .connected-via { }
+body.kb-open .connected-via { justify-content: flex-start; text-align: left; font-size: 14px; }
+@media (max-height: 560px) { .connected-via { justify-content: flex-start; text-align: left; } }
