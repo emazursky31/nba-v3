@@ -772,6 +772,8 @@ socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = fal
     games[roomId].players.push(socket.id, opponentSocket.id);
     games[roomId].userIds[socket.id] = userId;
     games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
+    // Practice games against a bot never touch anyone's record.
+    games[roomId].vsBot = bots.isBotUserId(userId) || bots.isBotUserId(opponentSocket.data.userId);
 
     if (!userId || !opponentSocket.data.userId) {
       console.error('[MATCH] Missing userIds:', {
@@ -1344,7 +1346,7 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
       const disconnectedUserId = game.userIds[disconnectedSocketId] || 
                                 socket.data?.userId;
       
-      if (remainingUserId && disconnectedUserId) {
+      if (remainingUserId && disconnectedUserId && !game.vsBot) {
         try {
           await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
           await updateUserStats(disconnectedUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
@@ -1443,7 +1445,7 @@ socket.on('playerResign', ({ roomId }) => {
   const resigningUserId = game.userIds[resigningSocketId];
   const remainingUserId = game.userIds[remainingSocketId];
   
-  if (resigningUserId && remainingUserId && !game.statsUpdated) {
+  if (resigningUserId && remainingUserId && !game.statsUpdated && !game.vsBot) {
     updateUserStats(resigningUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
     updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
     game.statsUpdated = true;
@@ -2484,7 +2486,7 @@ async function handlePlayerDisconnectFinal(socket, roomId, username) {
       const remainingUserId = game.userIds[remainingSocketId];
       const leavingUserId = game.userIds[socket.id];
       
-      if (remainingUserId && leavingUserId && !game.statsUpdated) {
+      if (remainingUserId && leavingUserId && !game.statsUpdated && !game.vsBot) {
         await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
         await updateUserStats(leavingUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
         game.statsUpdated = true;
@@ -2693,7 +2695,7 @@ async function startTurnTimer(roomId) {
     currentGame.winnerName = winnerName;
     currentGame.loserName = loserName;
 
-    if (!currentGame.statsUpdated && loserUserId && winnerUserId) {
+    if (!currentGame.statsUpdated && !currentGame.vsBot && loserUserId && winnerUserId) {
       await updateUserStats(winnerUserId, 'win', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
       await updateUserStats(loserUserId, 'loss', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
       currentGame.statsUpdated = true;
