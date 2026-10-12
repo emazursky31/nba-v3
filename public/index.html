@@ -454,6 +454,8 @@
   <h2>Lining up a rival</h2>
   <p id="waitingStatus">Waiting for another player to join...</p>
   <div class="nba-loader" aria-hidden="true"><span class="pulse-ring"></span><span class="pulse-ring"></span></div>
+  <p class="wait-hint" id="waitHint">Usually just a few seconds. If nobody&rsquo;s around, a practice opponent joins you.</p>
+  <button type="button" class="wait-cancel" id="waitCancelBtn">Cancel</button>
 
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
@@ -540,6 +542,13 @@
           <div class="career-loading">Loading career details...</div>
         </div>
       </div>
+      </div>
+
+      <div class="played" id="chain" hidden>
+        <button type="button" class="played-toggle" id="chainToggle" aria-expanded="false" aria-controls="chainList">
+          <span id="chainSummary">Chain</span><span class="played-caret" aria-hidden="true">▾</span>
+        </button>
+        <ol class="played-list" id="chainList" hidden></ol>
       </div>
 
       <div class="dock">
@@ -4207,6 +4216,7 @@ socket.on('matched', ({ roomId, opponent }) => {
 // 2. Game Lifecycle
 socket.on('gameStarted', async (data) => {
   setConnectedVia([]);
+  renderChain([]);
   if (isLeavingGame) {
     console.log('[DEBUG] Ignoring gameStarted because isLeavingGame === true');
     return;
@@ -4710,6 +4720,41 @@ const TEAM_NICKNAMES = {
   SAC: 'Kings', KCK: 'Kings', SAS: 'Spurs', SA: 'Spurs', TOR: 'Raptors', UTA: 'Jazz', WAS: 'Wizards', WSB: 'Bullets'
 };
 
+// The chain so far: who has been named (and can't be named again).
+function renderChain(guesses) {
+  const box = document.getElementById('chain');
+  const list = document.getElementById('chainList');
+  const summary = document.getElementById('chainSummary');
+  if (!box || !list || !summary) return;
+  const names = Array.isArray(guesses) ? guesses.map(g => g.name).filter(Boolean) : [];
+  if (names.length === 0) {
+    box.hidden = true;
+    list.hidden = true;
+    list.textContent = '';
+    return;
+  }
+  box.hidden = false;
+  summary.textContent = `${names.length} named so far`;
+  list.textContent = '';
+  names.forEach((n) => {
+    const li = document.createElement('li');
+    li.textContent = n;
+    list.appendChild(li);
+  });
+}
+document.getElementById('chainToggle')?.addEventListener('click', () => {
+  const t = document.getElementById('chainToggle');
+  const list = document.getElementById('chainList');
+  const open = list.hidden;
+  list.hidden = !open;
+  t.setAttribute('aria-expanded', String(open));
+  document.getElementById('chain').classList.toggle('is-open', open);
+});
+document.getElementById('waitCancelBtn')?.addEventListener('click', () => {
+  if (socket && socket.connected) socket.emit('leaveGame');
+  handleGoHome();
+});
+
 function setConnectedVia(sharedTeams) {
   const el = document.getElementById('connectedVia');
   if (!el) return;
@@ -4764,6 +4809,7 @@ socket.on('turnEnded', (data) => {
     
     successfulGuesses = markLeadoffInGuesses(successfulGuesses, leadoffPlayerName);
     renderSuccessfulGuesses();
+    renderChain(successfulGuesses);
   }
 
   if (data.message) {
@@ -5226,6 +5272,7 @@ socket.on('rematchRequested', ({ username }) => {
 // When rematch actually starts
 socket.on('rematchStarted', () => {
   resetGameUI();
+  renderChain([]);
 
   // Clear ALL rematch-related notifications
   const notifications = document.querySelectorAll('#rematch-notification, #opponent-left-notification');
@@ -5533,9 +5580,7 @@ if (skipTurnLink) {
   skipTurnLink.addEventListener('click', (e) => {
     e.preventDefault();
     if (!skipTurnLink.classList.contains('disabled')) {
-      if (confirm('Are you sure you want to skip your turn? You can only skip once per game.')) {
-        socket.emit('playerSkip');
-      }
+      armConfirm(skipTurnLink, 'Tap again to skip', () => socket.emit('playerSkip'));
     }
   });
 }
@@ -5545,9 +5590,7 @@ const resignGameBtn = document.getElementById('resignGameBtn');
 if (resignGameBtn) {
   resignGameBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    if (confirm('Are you sure you want to resign? This will end the game and count as a loss.')) {
-      socket.emit('playerResign', { roomId: myRoomId || roomId });
-    }
+    armConfirm(resignGameBtn, 'Tap again to resign', () => socket.emit('playerResign', { roomId: myRoomId || roomId }));
   });
 }
 
@@ -5898,7 +5941,7 @@ window.addEventListener('unhandledrejection', function(event) {
       </div> -->
       
       <div class="footer-copyright">
-        <span>&copy; 2025 Name a Teammate. All rights reserved.</span>
+        <span>&copy; 2026 Name a Teammate. All rights reserved.</span>
       </div>
     </div>
     

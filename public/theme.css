@@ -1495,3 +1495,98 @@ body.kb-open .connected-via { justify-content: flex-start; text-align: left; fon
 .turn-prompt { overflow-y: auto; overscroll-behavior: contain; }
 .turn-prompt > .prompt-header { position: sticky; top: 0; z-index: 2; }
 .turn-prompt > .player-info { flex: 1 0 auto; }
+
+/* ======================================================================
+   UX pass: calmer type scale, chain history, in-page confirms, waiting
+   ====================================================================== */
+
+/* Type scale, roughly 15% smaller across the board */
+body { font-size: 15px; }
+.nav-word { font-size: 20px; }
+.home-title { font-size: clamp(52px, 17vw, 112px); }
+.home-sub { font-size: 17px; margin-bottom: 24px; }
+@media (min-width: 720px) { .home-title { font-size: clamp(72px, 8vw, 104px); } .home-sub { font-size: 19px; } }
+.btn-play-label { font-size: 22px; }
+.btn-play-hint { font-size: 12.5px; }
+.chain-name { font-size: 25px; }
+.home-rules summary { font-size: 18px; }
+.turn-player-name { font-size: clamp(24px, min(7.5vw, 4.4vh), 36px); }
+body.kb-open .turn-player-name { font-size: clamp(22px, 7vw, 30px); }
+#timer { font-size: 26px; }
+.side { font-size: clamp(16px, 4.6vw, 19px); }
+#messageContainer { font-size: 14px; }
+#waitingRoom h2 { font-size: clamp(36px, 11vw, 52px); }
+#waitingStatus { font-size: 16px; }
+.over-title { font-size: clamp(48px, 16vw, 76px); }
+.over-sub { font-size: 17px; }
+.over-name { font-size: 19px; }
+#profileSection .page-title { font-size: 36px; }
+#homeSelection .selection-card h3 { font-size: 24px; }
+.auth-sheet-head h2, .selection-card h3 { font-size: 26px; }
+
+/* Played-so-far list under the card */
+.played { flex: 0 0 auto; }
+.played[hidden], .played-list[hidden] { display: none; }
+.played-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-2);
+  font: 600 13px/1.2 var(--body);
+  cursor: pointer;
+}
+.played-caret { transition: transform 0.15s; }
+.played.is-open .played-caret { transform: rotate(180deg); }
+.played-list {
+  list-style: decimal inside;
+  margin: 6px 0 0;
+  padding: 8px 14px;
+  max-height: 22vh;
+  overflow-y: auto;
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-2);
+  font: 500 14px/1.7 var(--body);
+}
+body.kb-open .played { display: none; }
+
+/* Skip / resign: quiet, apart from the input, two taps to confirm */
+.game-actions { margin-top: 6px; }
+.skip-link:not(.hidden) { color: var(--ink-2) !important; font-size: 13px; }
+.resign-btn { color: var(--ink-2) !important; font-size: 13px; }
+.resign-btn:hover { color: var(--ink-2) !important; }
+.game-actions .is-armed, .game-actions .resign-btn.is-armed { color: var(--bad) !important; border-bottom-color: var(--bad) !important; font-weight: 700; }
+
+/* Waiting screen: centred, with a way out */
+#waitingRoom { text-align: center !important; display: flex; flex-direction: column; align-items: center; }
+#waitingRoom.hidden { display: none !important; }
+#waitingRoom h2 { text-align: center; }
+.nba-loader { margin: 8px auto 24px; }
+.wait-hint { max-width: 30ch; margin: 0 0 20px; color: var(--ink-3); font-size: 14px; line-height: 1.45; }
+.wait-cancel {
+  padding: 10px 22px;
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font: 600 14px/1 var(--body);
+  cursor: pointer;
+}
+body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
+
+/* Home: keep the decorative court line behind the main button */
+.court-lines { z-index: 0; pointer-events: none; }
+.btn-play { position: relative; z-index: 2; }
+
+/* Don't rely on colour alone for whose turn it is, and ease the small greys */
+:root { --ink-3: #9a9a93; }
+@media (prefers-reduced-motion: reduce) {
+  .played-caret { transition: none; }
+}

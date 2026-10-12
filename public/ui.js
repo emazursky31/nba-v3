@@ -122,3 +122,25 @@
     window.visualViewport.addEventListener('scroll', syncViewport);
   }
 })();
+
+// Two-tap confirm that stays on the page: first tap arms the button for a few
+// seconds, the second tap does the thing.
+window.armConfirm = function armConfirm(btn, armedText, action) {
+  if (btn.dataset.armed === '1') {
+    clearTimeout(btn._armTimer);
+    btn.dataset.armed = '';
+    btn.textContent = btn.dataset.label;
+    btn.classList.remove('is-armed');
+    action();
+    return;
+  }
+  btn.dataset.label = btn.textContent;
+  btn.dataset.armed = '1';
+  btn.textContent = armedText;
+  btn.classList.add('is-armed');
+  btn._armTimer = setTimeout(() => {
+    btn.dataset.armed = '';
+    btn.textContent = btn.dataset.label;
+    btn.classList.remove('is-armed');
+  }, 3500);
+};
