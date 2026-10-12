@@ -1627,3 +1627,53 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
   body:has(#gameArea:not(.hidden)) .played-list { flex: 0 1 auto; min-height: 0; max-height: none; margin-top: 0; overflow-y: auto; }
   body.kb-open:has(#gameArea:not(.hidden)) .played { display: none; }
 }
+
+/* ======================================================================
+   Pinned input (phones). The answer box sits right under the player card and
+   never moves: not when the keyboard opens or closes, not when a message
+   appears, not when suggestions show. Everything that can change size lives
+   below it, and the suggestion list floats over that area.
+   ====================================================================== */
+@media (max-width: 720px) {
+  body:has(#gameArea:not(.hidden)) .dock { order: 1; margin-top: 0; }
+  body:has(#gameArea:not(.hidden)) .played { order: 2; }
+  body:has(#gameArea:not(.hidden)) .game-actions { order: 3; margin-top: auto; flex: 0 0 auto; }
+  body:has(#gameArea:not(.hidden)) #messageContainer { min-height: 22px; max-height: 22px; overflow: hidden; display: block !important; }
+  body.kb-open:has(#gameArea:not(.hidden)) .dock:has(#autocomplete-list[style*="display: block"]) #messageContainer { display: block !important; }
+  body.kb-open:has(#gameArea:not(.hidden)) .played { display: flex; }
+  body.kb-open:has(#gameArea:not(.hidden)) .played[hidden] { display: none; }
+  body:has(#gameArea:not(.hidden)) #autocomplete-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    order: 0;
+    z-index: 20;
+    max-height: clamp(96px, calc(var(--app-h, 100dvh) - 310px), 320px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Career details open as a panel over the area below the card, so the card,
+   and the answer box beneath it, never change size. */
+@media (max-width: 720px) {
+  body:has(#gameArea:not(.hidden)) .turn-prompt { position: relative; overflow: visible; }
+  body:has(#gameArea:not(.hidden)) .turn-prompt > .prompt-header { border-radius: 12px 12px 0 0; position: static; }
+  body:has(#gameArea:not(.hidden)) .turn-prompt > .leadoff-career-section {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: -2px;
+    right: -2px;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    z-index: 15;
+    padding: 12px 14px 14px;
+    background: var(--bg-raise);
+    border: 2px solid var(--line-strong);
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  }
+  body:has(#gameArea:not(.hidden)) #leadoff-career-content { max-height: min(40vh, 280px); overflow-y: auto; }
+}
