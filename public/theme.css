@@ -1590,3 +1590,40 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .played-caret { transition: none; }
 }
+
+/* ======================================================================
+   One steady game layout on phones. The compact view used while typing is
+   the view for the whole game, so nothing rescales when the keyboard opens
+   or closes. Only the secondary rows (played list, skip/resign) step aside
+   while the keyboard is up.
+   ====================================================================== */
+@media (max-width: 720px) {
+  body:has(#gameArea:not(.hidden)) .match { gap: 8px; padding-top: 8px; }
+  body:has(#gameArea:not(.hidden)) #turnSection { gap: 8px; }
+  body:has(#gameArea:not(.hidden)) .dock { gap: 6px; margin-top: auto; }
+  body:has(#gameArea:not(.hidden)) .prompt-header { padding: 7px 12px; }
+  body:has(#gameArea:not(.hidden)) .turn-prompt { flex: 0 0 auto; min-height: 118px; }
+  body:has(#gameArea:not(.hidden)) .player-info { flex-direction: row; justify-content: flex-start; text-align: left; gap: 14px; padding: 10px 14px; }
+  body:has(#gameArea:not(.hidden)) #currentPlayerHeadshot { width: 64px; height: 64px; }
+  body:has(#gameArea:not(.hidden)) .player-details { align-items: flex-start; gap: 4px; }
+  body:has(#gameArea:not(.hidden)) .turn-player-name { font-size: clamp(22px, 7vw, 30px); }
+  body:has(#gameArea:not(.hidden)) #timer-container,
+  body:has(#gameArea:not(.hidden)) .progress-ring { width: 60px; height: 60px; }
+  body:has(#gameArea:not(.hidden)) .scorebar { grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr); }
+  body:has(#gameArea:not(.hidden)) .side { padding: 6px 10px 7px; font-size: 17px; }
+  body:has(#gameArea:not(.hidden)) #timer { font-size: 24px; }
+  body:has(#gameArea:not(.hidden)) #guessInput,
+  body:has(#gameArea:not(.hidden)) #submitGuessBtn { height: 52px; }
+  body:has(#gameArea:not(.hidden)) #submitGuessBtn { flex-basis: 52px; width: 52px; }
+  body:has(#gameArea:not(.hidden)) .turn-prompt .player-details .career-link { align-self: flex-start; }
+  body:has(#gameArea:not(.hidden)) .connected-via { justify-content: flex-start; text-align: left; font-size: 14px; }
+
+  /* The played list fills the space between the card and the input */
+  body:has(#gameArea:not(.hidden)) .played { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  body:has(#gameArea:not(.hidden)) .played[hidden] { display: none; }
+  body:has(#gameArea:not(.hidden)) .played-toggle { pointer-events: none; border: 0; padding: 4px 2px; }
+  body:has(#gameArea:not(.hidden)) .played-caret { display: none; }
+  body:has(#gameArea:not(.hidden)) .played-list[hidden] { display: block; }
+  body:has(#gameArea:not(.hidden)) .played-list { flex: 0 1 auto; min-height: 0; max-height: none; margin-top: 0; overflow-y: auto; }
+  body.kb-open:has(#gameArea:not(.hidden)) .played { display: none; }
+}
