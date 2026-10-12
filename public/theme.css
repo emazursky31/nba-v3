@@ -1489,3 +1489,9 @@ section[data-route="/reset"] button, section[data-route="/update-password"] butt
 body.kb-open .connected-via, .match .player-details .connected-via { }
 body.kb-open .connected-via { justify-content: flex-start; text-align: left; font-size: 14px; }
 @media (max-height: 560px) { .connected-via { justify-content: flex-start; text-align: left; } }
+
+/* Expanded career details: never push the player name out of view.
+   The card scrolls as a whole instead of clipping its centered content. */
+.turn-prompt { overflow-y: auto; overscroll-behavior: contain; }
+.turn-prompt > .prompt-header { position: sticky; top: 0; z-index: 2; }
+.turn-prompt > .player-info { flex: 1 0 auto; }
