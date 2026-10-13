@@ -1677,3 +1677,31 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
   }
   body:has(#gameArea:not(.hidden)) #leadoff-career-content { max-height: min(40vh, 280px); overflow-y: auto; }
 }
+
+/* Private room waiting screen: the invite link is the point of the screen */
+#waitingRoom.is-private .wait-hint,
+#waitingRoom.is-private #displayRoomCode { display: none !important; }
+#waitingRoom.is-private { padding-top: 56px !important; }
+#waitingRoom.is-private h2 { font-size: clamp(32px, 10vw, 46px); }
+#waitingRoom.is-private #waitingStatus { margin-bottom: 20px; }
+#waitingRoom.is-private #inviteLinkWrapper { order: 1; width: 100%; margin: 0 0 24px !important; padding: 16px; box-sizing: border-box; background: var(--bg-raise); border: 2px solid var(--line); border-radius: 14px; text-align: left; }
+#waitingRoom.is-private .invite-title { margin: 0 0 10px; color: var(--ink); font: 700 16px/1.2 var(--body); }
+#waitingRoom.is-private #inviteLinkWrapper > div[style] { margin-top: 10px !important; justify-content: stretch !important; }
+#waitingRoom.is-private #inviteLinkWrapper button { flex: 1; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+#waitingRoom.is-private #copyToast { color: var(--ok) !important; }
+#waitingRoom.is-private .nba-loader { order: 2; width: 64px; height: 64px; margin: 4px auto 18px; }
+#waitingRoom.is-private .wait-cancel { order: 3; }
+#waitingRoom.is-private #inviteLinkWrapper { align-self: stretch; }
+
+/* Invite landing */
+.invite-banner {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 7px 14px;
+  background: rgba(255, 106, 19, 0.12);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font: 600 14px/1.2 var(--body);
+}
+.invite-banner[hidden] { display: none; }

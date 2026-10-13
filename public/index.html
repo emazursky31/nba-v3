@@ -100,13 +100,14 @@
       </g>
     </svg>
 
+    <p class="invite-banner" id="inviteBanner" hidden>A friend invited you to a private game</p>
     <p class="eyebrow">NBA · Head to head</p>
     <h1 class="home-title">Name a<br><span>teammate.</span></h1>
     <p class="home-sub">We drop a random NBA player. You and a rival take turns naming teammates until someone runs out of time.</p>
 
     <button id="playGuestBtn" class="btn-play" type="button">
       <span class="btn-play-label">Play now</span>
-      <span class="btn-play-hint">Jump in as a guest. No signup.</span>
+      <span class="btn-play-hint" id="playGuestHint">Jump in as a guest. No signup.</span>
     </button>
     <p id="guestError" class="form-error" role="alert" hidden></p>
 
@@ -459,7 +460,7 @@
 
   <code id="displayRoomCode" style="font-size: 1.5rem; font-weight: bold;"></code>
   <div id="inviteLinkWrapper" style="margin-top: 1rem;">
-  <p>Invite a friend to join using this link:</p>
+  <p class="invite-title">Send this link to a friend</p>
   <input id="inviteLink" type="text" readonly style="width: 80%; max-width: 400px; padding: 0.5rem;" />
   <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; justify-content: center;">
     <button id="copyInviteBtn">Copy Link</button>
@@ -2565,8 +2566,17 @@ if (path === '/profile') {
   const waitingStatus = document.getElementById('waitingStatus');
   if (waitingStatus) {
     waitingStatus.textContent = isPrivateGame
-      ? 'Waiting for a friend to join...'
+      ? 'They\u2019ll join as soon as they open the link.'
       : 'Looking for an opponent...';
+  }
+
+  // Private rooms get their own look: invite link first, no practice-opponent note
+  const waitingEl = document.getElementById('waitingRoom');
+  const privateWait = !!(isPrivateGame && myRoomId);
+  if (waitingEl) {
+    waitingEl.classList.toggle('is-private', privateWait);
+    const waitHeading = waitingEl.querySelector('h2');
+    if (waitHeading) waitHeading.textContent = privateWait ? 'Waiting for your friend' : 'Lining up a rival';
   }
 
   // Fix: Ensure status div is updated
