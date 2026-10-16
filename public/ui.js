@@ -77,6 +77,40 @@
     el.hidden = !message;
   }
 
+  // Cloudflare Turnstile: an invisible check that stops scripts from mass-creating guests.
+  // Only active when the server has TURNSTILE_SITE_KEY set; otherwise guests skip it.
+  let turnstileKey; // undefined = not fetched yet, null = disabled
+  async function getCaptchaToken() {
+    if (turnstileKey === undefined) {
+      try {
+        const cfg = await (await fetch('/api/public-config')).json();
+        turnstileKey = cfg.turnstileSiteKey || null;
+      } catch (e) { turnstileKey = null; }
+    }
+    if (!turnstileKey) return undefined;
+    if (!window.turnstile) {
+      await new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        el.onload = resolve;
+        el.onerror = () => reject(new Error('Could not load the verification check'));
+        document.head.appendChild(el);
+      });
+    }
+    return new Promise((resolve, reject) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999';
+      document.body.appendChild(box);
+      const done = () => setTimeout(() => box.remove(), 0);
+      window.turnstile.render(box, {
+        sitekey: turnstileKey,
+        callback: (token) => { done(); resolve(token); },
+        'error-callback': () => { done(); reject(new Error('Verification failed, please try again')); },
+        'timeout-callback': () => { done(); reject(new Error('Verification timed out, please try again')); }
+      });
+    });
+  }
+
   async function playAsGuest() {
     const btn = $('playGuestBtn');
     if (!btn || btn.disabled) return;
@@ -92,8 +126,9 @@
 
       if (!session?.user) {
         const guestName = 'Guest' + Math.floor(1000 + Math.random() * 9000);
+        const captchaToken = await getCaptchaToken();
         const { data, error } = await supabase.auth.signInAnonymously({
-          options: { data: { username: guestName } }
+          options: { data: { username: guestName }, ...(captchaToken ? { captchaToken } : {}) }
         });
         if (error) throw error;
         session = data.session;

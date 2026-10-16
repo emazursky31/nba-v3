@@ -86,6 +86,12 @@ function logEvent(name, { anonId = null, userId = null, props = {} } = {}) {
   ).catch(err => console.error('[events] insert failed:', err.message));
 }
 
+// Public (non-secret) settings the browser needs. The Turnstile site key is optional:
+// without it, guest sign-in simply skips the CAPTCHA.
+app.get('/api/public-config', (req, res) => {
+  res.json({ turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null });
+});
+
 app.post('/api/event', (req, res) => {
   const now = Date.now();
   const ip = req.ip;
