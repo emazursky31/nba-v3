@@ -373,7 +373,9 @@ app.get('/share/:shareId', (req, res) => {
       <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! Connected ${gameData.s} to ${gameData.f} (${eraNames[gameData.e]}). View the full game flow!" />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="${req.protocol}://${req.get('host')}/share/${shareId}" />
-      <meta name="twitter:card" content="summary" />
+      <meta property="og:image" content="https://nameateammate.com/og-image.png" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:title" content="NBA Teammate Game Results" />
       <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns connecting ${gameData.s} to ${gameData.f}!" />
     `;
@@ -441,7 +443,9 @@ app.get('/s/:shareId', (req, res) => {
       <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! ${gameData.s} ➜ ${gameData.f} (${fullEraName})" />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="${req.protocol}://${req.get('host')}/s/${shareId}" />
-      <meta name="twitter:card" content="summary" />
+      <meta property="og:image" content="https://nameateammate.com/og-image.png" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:title" content="NBA Teammate Game Results" />
       <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns!" />
     `;
@@ -524,6 +528,9 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
       <meta property="og:description" content="${escapeHtml(gameData.winner)} beat ${escapeHtml(gameData.loser)} in ${gameData.turn_count} turns! ${escapeHtml(gameData.leadoff_player)} ➜ ${escapeHtml(gameData.final_player)} (${eraNames[gameData.era] || 'Modern Era'})" />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="${req.protocol}://${req.get('host')}/g/${shareId}" />
+      <meta property="og:image" content="https://nameateammate.com/og-image.png" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
     `;
     
     const hideAllCSS = `
