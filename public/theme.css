@@ -1705,3 +1705,8 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
   font: 600 14px/1.2 var(--body);
 }
 .invite-banner[hidden] { display: none; }
+
+/* Game over share: one tap copies the link, the button confirms in place. */
+.over-actions > .unified-share-btn { min-width: 118px; height: 100%; }
+.over-actions > .unified-share-btn.is-done { border-color: var(--ok); color: var(--ok); }
+.over-actions > .unified-share-btn.is-done:disabled { opacity: 1; border-color: var(--ok); color: var(--ok); }

@@ -3897,91 +3897,54 @@ Play your own game at nameateammate.com`;
   }
 }
 
-// Setup sharing functionality for game over screen
+// Copy text that may take a moment to produce (the share link is made on the server).
+// Safari only allows a clipboard write inside the tap, so hand it a promise instead of
+// awaiting the link first.
+async function copyLater(makeText) {
+  if (navigator.clipboard && window.ClipboardItem) {
+    const blob = makeText().then(t => new Blob([t], { type: 'text/plain' }));
+    await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blob })]);
+    return;
+  }
+  const text = await makeText();
+  await navigator.clipboard.writeText(text);
+}
+
+// Setup sharing functionality for game over screen: one tap copies the link.
 function setupGameOverSharing() {
-  const unifiedBtn = document.getElementById('gameOverUnifiedShareBtn');
-  const dropdown = document.getElementById('gameOverShareDropdown');
-  const toast = document.getElementById('gameOverShareToast');
+  const btn = document.getElementById('gameOverUnifiedShareBtn');
+  if (!btn) return;
+  const eraNames = {
+    '2000-present': 'Modern era', '1980-1999': 'Golden era',
+    '1960-1979': 'Classic era', 'pre-1960': 'Pioneer era'
+  };
 
-  if (!unifiedBtn || !dropdown) return;
-
-  // Show/hide mobile-only options based on device
-  const mobileOptions = dropdown.querySelectorAll('.mobile-only');
-  const isMobile = window.innerWidth <= 768 && 'ontouchstart' in window;
-  
-  // Modified: Hide only native share options, keep copy options
-  mobileOptions.forEach(option => {
-    if (option.dataset.action === 'native-share') {
-      option.style.display = 'none'; // Hide native share to prevent Notes app
-    } else {
-      option.style.display = isMobile ? 'flex' : 'none'; // Keep other mobile options
-    }
-  });
-
-  // Toggle dropdown on unified button click
-  unifiedBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('hidden');
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!unifiedBtn.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.add('hidden');
-    }
-  });
-
-  // Handle dropdown option clicks
-  dropdown.addEventListener('click', async (e) => {
-    const option = e.target.closest('.share-dropdown-option');
-    if (!option) return;
-
-    const action = option.dataset.action;
-    dropdown.classList.add('hidden');
-
+  btn.addEventListener('click', async () => {
+    if (btn.disabled) return;
+    const g = currentGameResults || window.lastGameData || {};
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Copying…';
+    if (window.track) window.track('share_click', { turns: g.turnCount, era: g.era });
+    let linkUrl = '';
     try {
-      switch (action) {
-        case 'copy-link':
-          const shareUrl = await generateShareUrl();
-          await navigator.clipboard.writeText(shareUrl);
-          showGameOverToast('Link copied to clipboard!');
-          break;
-
-        case 'copy-summary':
-          const gameData = currentGameResults;
-          const eraNames = {
-            '2000-present': 'Modern Era',
-            '1980-1999': 'Golden Era',
-            '1960-1979': 'Classic Era',
-            'pre-1960': 'Pioneer Era'
-          };
-          
-          const summary = `🏀 NBA Teammate Game Results
-
-Winner: ${gameData.winner}
-Opponent: ${gameData.loser}
-Turns: ${gameData.turnCount}
-Era: ${eraNames[gameData.era] || 'Modern Era'}
-Chain: ${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
-
-Play your own game at nameateammate.com`;
-
-          await navigator.clipboard.writeText(summary);
-          showGameOverToast('Summary copied to clipboard!');
-          break;
-
-        case 'native-share':
-          // DISABLED: Native share removed to prevent iOS Notes app popup
-          console.log('[Share] Native share disabled to prevent iOS Notes popup');
-          showGameOverToast('Native sharing disabled', 'error');
-          break;
-      }
-    } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Error with share action:', error);
-        showGameOverToast('Share failed. Please try again.', 'error');
-      }
+      await copyLater(async () => {
+        linkUrl = await generateShareUrl();
+        const era = eraNames[g.era] || 'Modern era';
+        const played = g.turnCount > 1 && g.leadoffPlayer !== g.finalPlayer
+          ? `${g.leadoffPlayer} to ${g.finalPlayer} in ${g.turnCount} turns on Name a Teammate (${era}).`
+          : `I played Name a Teammate (${era}).`;
+        return `${played} Think you can beat it?\n\n${linkUrl}`;
+      });
+      btn.textContent = 'Link copied';
+      btn.classList.add('is-done');
+    } catch (err) {
+      console.error('Share copy failed:', err);
+      // Last resort: show the link so it can be copied by hand
+      btn.textContent = linkUrl ? 'Copy failed' : 'Try again';
+      if (linkUrl) window.prompt('Copy this link', linkUrl);
     }
+    setTimeout(() => { btn.textContent = label; btn.disabled = false; btn.classList.remove('is-done'); }, 2200);
   });
 }
 
@@ -4490,14 +4453,7 @@ socket.on('gameOver', (data) => {
     <ol class="over-chain" aria-label="The chain">${chain}</ol>
     <div class="over-actions">
       <button id="gameOverRematchBtn" class="over-rematch" type="button" ${rematchOff ? 'disabled' : ''}>${rematchOff ? 'Rematch unavailable' : 'Rematch'}</button>
-      <div class="unified-share-container">
-        <button id="gameOverUnifiedShareBtn" class="unified-share-btn" type="button">Share</button>
-        <div id="gameOverShareDropdown" class="share-dropdown hidden">
-          <button class="share-dropdown-option" data-action="copy-link"><span class="option-text">Copy link</span></button>
-          <button class="share-dropdown-option" data-action="copy-summary"><span class="option-text">Copy summary</span></button>
-          <button class="share-dropdown-option mobile-only" data-action="native-share"><span class="option-text">Share</span></button>
-        </div>
-      </div>
+      <button id="gameOverUnifiedShareBtn" class="unified-share-btn" type="button">Share</button>
     </div>
     <div id="gameOverShareToast" class="share-toast hidden">Copied to clipboard!</div>
     <p id="overSave" class="over-save" hidden>Want to keep your record? <button id="overSaveBtn" class="link-btn over-save-link" type="button">Sign up</button></p>
