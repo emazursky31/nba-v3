@@ -61,6 +61,49 @@ client.connect()
 
 app.use(express.json());
 
+// ---- Lightweight analytics -------------------------------------------------
+// One append-only table; the site posts events here and the server logs a few itself.
+client.query(`
+  CREATE TABLE IF NOT EXISTS events (
+    id         BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    name       TEXT NOT NULL,
+    anon_id    TEXT,
+    user_id    TEXT,
+    props      JSONB NOT NULL DEFAULT '{}'::jsonb
+  );
+  CREATE INDEX IF NOT EXISTS events_name_created_idx ON events (name, created_at);
+  CREATE INDEX IF NOT EXISTS events_anon_idx ON events (anon_id);
+`).catch(err => console.error('[events] Could not create table:', err.message));
+
+const CLIENT_EVENTS = new Set(['page_view', 'guest_signin', 'find_public', 'invite_opened', 'share_click']);
+const eventHits = new Map(); // ip -> { count, resetAt }
+
+function logEvent(name, { anonId = null, userId = null, props = {} } = {}) {
+  client.query(
+    'INSERT INTO events (name, anon_id, user_id, props) VALUES ($1, $2, $3, $4)',
+    [name, anonId, userId, JSON.stringify(props)]
+  ).catch(err => console.error('[events] insert failed:', err.message));
+}
+
+app.post('/api/event', (req, res) => {
+  const now = Date.now();
+  const ip = req.ip;
+  const hit = eventHits.get(ip);
+  if (!hit || hit.resetAt < now) eventHits.set(ip, { count: 1, resetAt: now + 60000 });
+  else if (++hit.count > 60) return res.sendStatus(429);
+
+  const { name, anonId, userId, props } = req.body || {};
+  if (!CLIENT_EVENTS.has(name)) return res.sendStatus(400);
+  const cleanProps = props && typeof props === 'object' && JSON.stringify(props).length < 1000 ? props : {};
+  logEvent(name, {
+    anonId: typeof anonId === 'string' ? anonId.slice(0, 64) : null,
+    userId: typeof userId === 'string' ? userId.slice(0, 64) : null,
+    props: cleanProps
+  });
+  res.sendStatus(204);
+});
+
 
 // Redirect Render subdomain to custom domain
 app.use((req, res, next) => {
@@ -774,6 +817,7 @@ socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = fal
     games[roomId].userIds[opponentSocket.id] = opponentSocket.data.userId;
     // Practice games against a bot never touch anyone's record.
     games[roomId].vsBot = bots.isBotUserId(userId) || bots.isBotUserId(opponentSocket.data.userId);
+    logEvent('game_matched', { userId: bots.isBotUserId(userId) ? opponentSocket.data.userId : userId, props: { vsBot: games[roomId].vsBot, era: games[roomId].selectedEra || null } });
 
     if (!userId || !opponentSocket.data.userId) {
       console.error('[MATCH] Missing userIds:', {
@@ -1147,6 +1191,7 @@ socket.on('requestRematch', ({ roomId }) => {
     }
    startGame(roomId, game.selectedEra, game.timeLimit);
     io.to(roomId).emit('rematchStarted'); // Notify clients explicitly
+    logEvent('rematch', { props: { roomId } });
     console.log('Emitted rematchStarted to room:', roomId);
   }
 });

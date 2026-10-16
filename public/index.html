@@ -1559,6 +1559,7 @@ async function startPrivateGame() {
 
 
 async function joinPublicGame() {
+  if (window.track) window.track('find_public');
   // Validate session before joining
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user?.id) {

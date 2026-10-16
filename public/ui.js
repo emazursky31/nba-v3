@@ -4,6 +4,49 @@
 (function () {
   const $ = (id) => document.getElementById(id);
 
+  // ---- Analytics ------------------------------------------------------------
+  // Anonymous, first-party: a random id per browser, no cookies, never blocks the page.
+  function anonId() {
+    try {
+      let id = localStorage.getItem('anonId');
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now());
+        localStorage.setItem('anonId', id);
+      }
+      return id;
+    } catch (e) { return null; }
+  }
+  window.track = function track(name, props) {
+    try {
+      const body = JSON.stringify({
+        name, props: props || {},
+        anonId: anonId(),
+        userId: (typeof myUserId !== 'undefined' && myUserId) || null
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/event', new Blob([body], { type: 'application/json' }));
+      } else {
+        fetch('/api/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true });
+      }
+    } catch (e) {}
+  };
+
+  (function trackVisit() {
+    const q = new URLSearchParams(location.search);
+    let ref = '';
+    try { ref = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+    if (ref === location.hostname) ref = '';
+    window.track('page_view', {
+      path: location.pathname,
+      ref,
+      utm_source: q.get('utm_source') || undefined,
+      utm_medium: q.get('utm_medium') || undefined,
+      utm_campaign: q.get('utm_campaign') || undefined,
+      mobile: window.matchMedia('(max-width: 720px)').matches
+    });
+    if (q.has('room')) window.track('invite_opened');
+  })();
+
   // ---- Log in / sign up sheet -------------------------------------------
   function openAuth(tab) {
     document.body.classList.add('auth-open');
@@ -54,6 +97,7 @@
         });
         if (error) throw error;
         session = data.session;
+        window.track('guest_signin');
       }
 
       const user = session.user;
