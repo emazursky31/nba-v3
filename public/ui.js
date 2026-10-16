@@ -77,6 +77,27 @@
       localStorage.setItem('selectedTimeLimit', selectedTimeLimit);
       gameTypeSelected = 'public';
 
+      // Opened from a friend's invite link: join their room instead of the public queue
+      const invite = localStorage.getItem('pendingRoomInvite');
+      if (invite) {
+        localStorage.removeItem('pendingRoomInvite');
+        myRoomId = invite;
+        roomId = invite;
+        isPrivateGame = true;
+        isLeavingGame = false;
+        localStorage.setItem('privateRoomId', invite);
+        localStorage.removeItem('isLeavingGame');
+        socket.emit('joinGame', {
+          roomId: invite,
+          username: myUsername,
+          userId: myUserId,
+          era: selectedEra,
+          timeLimit: selectedTimeLimit
+        });
+        await navigateTo('/waiting');
+        return;
+      }
+
       window.allowBotFill = true; // guests get a bot if no rival shows up
       await joinPublicGame();
     } catch (err) {
@@ -89,6 +110,19 @@
       if (label) label.textContent = labelText;
     }
   }
+
+  // Show who invited you before you tap anything
+  function refreshInviteBanner() {
+    let invited = false;
+    try { invited = !!localStorage.getItem('pendingRoomInvite') || new URLSearchParams(location.search).has('room'); } catch (e) {}
+    const banner = $('inviteBanner');
+    const hint = $('playGuestHint');
+    if (banner) banner.hidden = !invited;
+    if (hint) hint.textContent = invited ? 'Join as a guest. No signup.' : 'Jump in as a guest. No signup.';
+  }
+  refreshInviteBanner();
+  setTimeout(refreshInviteBanner, 400);
+  setTimeout(refreshInviteBanner, 1500);
 
   $('playGuestBtn')?.addEventListener('click', playAsGuest);
 
