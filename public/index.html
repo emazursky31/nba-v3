@@ -76,6 +76,8 @@
     <span id="nav-title"><svg class="nav-mark" viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 3v26M3 16h26" stroke="currentColor" stroke-width="2.4"/></svg><span class="nav-word">Name a Teammate</span></span>
   </a>
   
+  <button class="nav-login" id="navLoginBtn" type="button" hidden>Log in</button>
+
   <div class="nav-dropdown" id="nav-dropdown" style="display: none;">
     <button class="nav-dropdown-btn" id="nav-dropdown-btn">
       <span id="nav-username">Menu</span>
@@ -3073,9 +3075,12 @@ async function updateNavUserState(session) {
   }
   
   const hasValidSession = session?.user && myUsername && myUserId;
+  // Guests get a plain "Log in" button; the name menu (Profile, Sign out) is for real accounts.
+  const isGuest = !!session?.user?.is_anonymous;
+  const loginBtn = document.getElementById('navLoginBtn');
+  if (loginBtn) loginBtn.hidden = !!(hasValidSession && !isGuest);
 
-  if (!hasValidSession) {
-    // Not logged in - hide dropdown
+  if (!hasValidSession || isGuest) {
     navTitle.style.display = 'inline-block';
     navDropdown.style.display = 'none';
   } else {
