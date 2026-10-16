@@ -22,7 +22,11 @@
   <meta property="og:url" content="https://nameateammate.com/" />
 
   <!-- Twitter -->
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image" content="https://nameateammate.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
   <meta name="twitter:description" content="Play Name a Teammate — the NBA chain reaction game. Connect players by naming their teammates before time runs out." />
 
   <!-- Favicon -->
@@ -3515,18 +3519,16 @@ function setupGameSharing() {
         // Disable button and show loading state
         const originalText = shareBtn.textContent;
         shareBtn.disabled = true;
-        shareBtn.textContent = '📤 Generating link...';
+        shareBtn.textContent = 'Making link…';
         shareBtn.style.opacity = '0.7';
         
         const shareUrl = await generateShareUrl();
         const gameData = window.lastGameData;
         
-        const shareText = `🏀 I just played the Name a Teammate Game!
+        const shareText = `${gameData.leadoffPlayer} to ${gameData.finalPlayer} in ${gameData.turnCount} turns on Name a Teammate (${eraNames[gameData.era]}). Think you can beat it?
 
-${gameData.leadoffPlayer} ➜ ${gameData.finalPlayer}
-(${eraNames[gameData.era]})
-
-See the full game: ${shareUrl}`;
+${shareUrl}`;
+        if (window.track) window.track('share_click', { turns: gameData.turnCount, era: gameData.era });
 
         // DISABLED: Native share removed to prevent iOS Notes app popup
         console.log('[Share] Native share disabled to prevent iOS Notes popup');
@@ -3536,7 +3538,7 @@ See the full game: ${shareUrl}`;
           await navigator.clipboard.writeText(shareText);
           
           // Show success feedback with visual button change
-          shareBtn.textContent = '✅ Copied to clipboard!';
+          shareBtn.textContent = 'Link copied';
           shareBtn.style.backgroundColor = '#22c55e';
           
           // Also show a toast notification
@@ -3560,18 +3562,18 @@ See the full game: ${shareUrl}`;
             document.body.removeChild(textArea);
             
             if (successful) {
-              shareBtn.textContent = '✅ Copied!';
+              shareBtn.textContent = 'Link copied';
               shareBtn.style.backgroundColor = '#22c55e';
               showShareToast('Share link copied!');
             } else {
-              shareBtn.textContent = '❌ Copy failed';
+              shareBtn.textContent = 'Copy failed';
               shareBtn.style.backgroundColor = '#ef4444';
               showShareToast('Could not copy to clipboard', 'error');
             }
           } catch (fallbackErr) {
             document.body.removeChild(textArea);
             console.error('Fallback copy failed:', fallbackErr);
-            shareBtn.textContent = '❌ Copy failed';
+            shareBtn.textContent = 'Copy failed';
             shareBtn.style.backgroundColor = '#ef4444';
             showShareToast('Copy failed. Please copy manually.', 'error');
           }
@@ -3589,7 +3591,7 @@ See the full game: ${shareUrl}`;
         console.error('Error generating share:', error);
         
         // Show error state
-        shareBtn.textContent = '❌ Error';
+        shareBtn.textContent = 'Something went wrong';
         shareBtn.style.backgroundColor = '#ef4444';
         showShareToast('Error creating share link', 'error');
         
