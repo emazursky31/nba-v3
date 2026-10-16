@@ -56,11 +56,14 @@
     if (first) setTimeout(() => first.focus({ preventScroll: true }), 50);
   }
 
+  window.openAuth = openAuth;
+
   function closeAuth() {
     document.body.classList.remove('auth-open');
   }
 
   $('openAuthBtn')?.addEventListener('click', () => openAuth('signin'));
+  $('navLoginBtn')?.addEventListener('click', () => openAuth('signin'));
   $('closeAuthBtn')?.addEventListener('click', closeAuth);
   $('authPanel')?.addEventListener('click', (e) => {
     if (e.target === $('authPanel')) closeAuth();

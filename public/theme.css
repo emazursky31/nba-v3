@@ -1710,3 +1710,17 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 .over-actions > .unified-share-btn { min-width: 118px; height: 100%; }
 .over-actions > .unified-share-btn.is-done { border-color: var(--ok); color: var(--ok); }
 .over-actions > .unified-share-btn.is-done:disabled { opacity: 1; border-color: var(--ok); color: var(--ok); }
+
+/* Guests see a plain Log in button instead of the account menu. */
+.nav-login {
+  min-height: 40px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font: 600 15px/1 var(--body);
+  cursor: pointer;
+}
+.nav-login:hover { border-color: var(--ink-3); }
+.nav-login[hidden] { display: none; }
