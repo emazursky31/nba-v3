@@ -763,12 +763,64 @@ async function getPlayerCareerDetails(playerName) {
 
 
 
+// ---- Server-side identity verification --------------------------------------
+// Clients claim a userId over the socket. To keep stats from being forged, the
+// client also sends its Supabase access token; we ask Supabase who it belongs to.
+// Games still run for unverified players, but only verified players record stats.
+const SUPABASE_AUTH_URL = process.env.SUPABASE_URL || 'https://rbjdlzgptvpfsnkakasj.supabase.co';
+const SUPABASE_AUTH_KEY = process.env.SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiamRsemdwdHZwZnNua2FrYXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODYxMzksImV4cCI6MjA2NDU2MjEzOX0.U0EhIpOaKrHQmAJHcCBVJLKDGEW-m91eNj2bWRejYpk' // public anon key, same one the browser ships;
+const verifiedUsers = new Map(); // userId -> Set of socket ids
+
+async function verifyAccessToken(token) {
+  if (!token || typeof token !== 'string' || token.length > 4096) return null;
+  try {
+    const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_AUTH_KEY }
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return u && u.id ? u.id : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function markVerified(userId, socketId) {
+  if (!verifiedUsers.has(userId)) verifiedUsers.set(userId, new Set());
+  verifiedUsers.get(userId).add(socketId);
+}
+
+function unmarkVerified(userId, socketId) {
+  const set = verifiedUsers.get(userId);
+  if (!set) return;
+  set.delete(socketId);
+  if (!set.size) verifiedUsers.delete(userId);
+}
+
+function statsAllowed(game, ...userIds) {
+  if (!game || game.vsBot) return false;
+  return userIds.every(id => id && verifiedUsers.has(id));
+}
+
 io.on('connection', (socket) => {
   bots.useTeammateLookup(getTeammates);
   console.log(`User connected: ${socket.id}`);
   
   // Enhanced session cleanup for mobile networks
   // Check for existing sessions from the same user that might be stale
+  socket.on('authenticate', async ({ accessToken } = {}) => {
+    const prev = socket.data.verifiedUserId;
+    const id = await verifyAccessToken(accessToken);
+    if (prev && prev !== id) unmarkVerified(prev, socket.id);
+    socket.data.verifiedUserId = id || null;
+    if (id) markVerified(id, socket.id);
+  });
+  socket.on('disconnect', () => {
+    const id = socket.data.verifiedUserId;
+    if (id) setTimeout(() => unmarkVerified(id, socket.id), 60000);
+  });
+
   socket.on('userIdentified', ({ userId, username }) => {
     username = cleanUsername(username);
     if (userId) {
@@ -1436,7 +1488,7 @@ socket.on('playerSignedOut', async ({ roomId, username, reason }) => {
       const disconnectedUserId = game.userIds[disconnectedSocketId] || 
                                 socket.data?.userId;
       
-      if (remainingUserId && disconnectedUserId && !game.vsBot) {
+      if (remainingUserId && disconnectedUserId && statsAllowed(game, remainingUserId, disconnectedUserId)) {
         try {
           await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
           await updateUserStats(disconnectedUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
@@ -1535,7 +1587,7 @@ socket.on('playerResign', ({ roomId }) => {
   const resigningUserId = game.userIds[resigningSocketId];
   const remainingUserId = game.userIds[remainingSocketId];
   
-  if (resigningUserId && remainingUserId && !game.statsUpdated && !game.vsBot) {
+  if (resigningUserId && remainingUserId && !game.statsUpdated && statsAllowed(game, resigningUserId, remainingUserId)) {
     updateUserStats(resigningUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
     updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
     game.statsUpdated = true;
@@ -2576,7 +2628,7 @@ async function handlePlayerDisconnectFinal(socket, roomId, username) {
       const remainingUserId = game.userIds[remainingSocketId];
       const leavingUserId = game.userIds[socket.id];
       
-      if (remainingUserId && leavingUserId && !game.statsUpdated && !game.vsBot) {
+      if (remainingUserId && leavingUserId && !game.statsUpdated && statsAllowed(game, remainingUserId, leavingUserId)) {
         await updateUserStats(remainingUserId, 'win', game.selectedEra || '2000-present', game.turnCount || 0);
         await updateUserStats(leavingUserId, 'loss', game.selectedEra || '2000-present', game.turnCount || 0);
         game.statsUpdated = true;
@@ -2785,7 +2837,7 @@ async function startTurnTimer(roomId) {
     currentGame.winnerName = winnerName;
     currentGame.loserName = loserName;
 
-    if (!currentGame.statsUpdated && !currentGame.vsBot && loserUserId && winnerUserId) {
+    if (!currentGame.statsUpdated && statsAllowed(currentGame, winnerUserId, loserUserId)) {
       await updateUserStats(winnerUserId, 'win', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
       await updateUserStats(loserUserId, 'loss', currentGame.selectedEra || '2000-present', currentGame.turnCount || 0);
       currentGame.statsUpdated = true;

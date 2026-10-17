@@ -5592,8 +5592,19 @@ if (resignGameBtn) {
     currentPlayerHeadshotEl.src = DEFAULT_PLAYER_IMAGE;
   }
 
+  // Prove to the server who we are (it re-checks the token with Supabase) so stats can be recorded
+  const sendAuthenticate = (session) => {
+    if (socket && socket.connected && session?.access_token) {
+      socket.emit('authenticate', { accessToken: session.access_token });
+    }
+  };
+  socket.on('connect', async () => {
+    const { data } = await supabase.auth.getSession();
+    sendAuthenticate(data?.session);
+  });
   supabase.auth.onAuthStateChange((_event, session) => {
     updateNavUserState(session);
+    sendAuthenticate(session);
   });
 
   const urlHash = window.location.hash;
