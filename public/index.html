@@ -1123,6 +1123,47 @@ async function signOut() {
   }
 }
 
+function renderUsernameEditor(el) {
+  el.textContent = '';
+  const name = document.createElement('span');
+  name.textContent = myUsername || 'Guest';
+  const edit = document.createElement('button');
+  edit.type = 'button';
+  edit.className = 'username-edit-btn';
+  edit.textContent = 'Edit';
+  edit.addEventListener('click', () => {
+    el.textContent = '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'username-edit-input';
+    input.maxLength = 24;
+    input.value = myUsername || '';
+    input.autocomplete = 'off';
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'username-edit-btn';
+    save.textContent = 'Save';
+    const msg = document.createElement('div');
+    msg.className = 'username-edit-msg';
+    save.addEventListener('click', async () => {
+      const next = input.value.replace(/[^\p{L}\p{N}_ .\-]/gu, '').trim().slice(0, 24);
+      if (next.length < 2) { msg.textContent = 'Use at least 2 characters.'; return; }
+      save.disabled = true;
+      const { data, error } = await supabase.auth.updateUser({ data: { username: next } });
+      if (error) { msg.textContent = 'Could not save. Try again.'; save.disabled = false; return; }
+      try { await supabase.from('profiles').update({ username: next }).eq('id', data.user.id); } catch (e) { console.warn('profile row not updated', e); }
+      myUsername = next;
+      localStorage.setItem('username', next);
+      const { data: sess } = await supabase.auth.getSession();
+      updateNavUserState(sess?.session || null);
+      renderUsernameEditor(el);
+    });
+    el.append(input, save, msg);
+    input.focus();
+  });
+  el.append(name, edit);
+}
+
 async function loadProfileData() {
   // Update profile information
   const profileUsername = document.getElementById('profile-username');
@@ -1130,7 +1171,7 @@ async function loadProfileData() {
   const profileMemberSince = document.getElementById('profile-member-since');
   
   if (profileUsername) {
-    profileUsername.textContent = myUsername || 'Guest';
+    renderUsernameEditor(profileUsername);
   }
   
   // Get user session for email

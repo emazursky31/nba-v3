@@ -1748,3 +1748,8 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 .daily-sub { color: var(--ink-3); font: 500 14px/1.2 var(--body); }
 .daily-go { flex: none; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; font: 700 15px/1 var(--body); }
 .home-links a[hidden] { display: none; }
+
+/* Profile username editing */
+.username-edit-btn { margin-left: 10px; background: none; border: 0; color: #7aa7ff; font: inherit; font-size: 0.9em; cursor: pointer; padding: 2px 4px; }
+.username-edit-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); color: inherit; border-radius: 8px; padding: 6px 10px; font: inherit; width: 160px; }
+.username-edit-msg { font-size: 0.85em; opacity: 0.8; margin-top: 4px; }

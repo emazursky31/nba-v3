@@ -866,7 +866,10 @@ socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = fal
   }
 
   if (waitingPlayers.length > 0) {
-    let opponentEntry = waitingPlayers.shift();
+    // A real person always gets paired with a real person first; a bot is only the fallback
+    let pickIdx = waitingPlayers.findIndex(w => w.socket.id !== socket.id && !bots.isBotUserId(w.socket.data.userId));
+    if (pickIdx < 0) pickIdx = 0;
+    let opponentEntry = waitingPlayers.splice(pickIdx, 1)[0];
 
     // Skip if opponent socket is the same as current socket
     while (opponentEntry && opponentEntry.socket.id === socket.id) {

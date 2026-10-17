@@ -498,5 +498,18 @@
     load();
   })();
   </script>
+<script>
+(function () {
+  try {
+    var id = localStorage.getItem('anonId');
+    if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()); localStorage.setItem('anonId', id); }
+    var q = new URLSearchParams(location.search), ref = '';
+    try { ref = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+    if (ref === location.hostname) ref = '';
+    var body = JSON.stringify({ name: 'page_view', anonId: id, props: { path: location.pathname, ref: ref, utm_source: q.get('utm_source') || undefined, utm_medium: q.get('utm_medium') || undefined, utm_campaign: q.get('utm_campaign') || undefined, mobile: window.matchMedia('(max-width: 720px)').matches } });
+    if (navigator.sendBeacon) navigator.sendBeacon('/api/event', new Blob([body], { type: 'application/json' }));
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
