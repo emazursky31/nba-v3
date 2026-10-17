@@ -1384,7 +1384,7 @@ async function toggleLeadoffCareer() {
         
       } catch (error) {
         console.error('Error loading career data:', error);
-        careerContent.innerHTML = `<div class="career-error">Failed to load career data: ${error.message}</div>`;
+        careerContent.innerHTML = `<div class="career-error">Failed to load career data: ${escapeText(error.message)}</div>`;
       }
     }
   }
@@ -1482,7 +1482,7 @@ function displayCareerData(careerData) {
     
     html += `
       <div class="team-stint">
-        <span class="team-name">${stint.team}</span>
+        <span class="team-name">${escapeText(stint.team)}</span>
         <span class="years">${years}</span>
       </div>
     `;
@@ -2435,7 +2435,7 @@ function renderSuccessfulGuesses() {
         return team;
       });
       
-      connectionEl.innerHTML = `<strong>Connected via:</strong><br>${teamStrings.join('<br>')}`;
+      connectionEl.innerHTML = `<strong>Connected via:</strong><br>${teamStrings.map(escapeText).join('<br>')}`;
     } else if (isLeadoff) {
       connectionEl.innerHTML = '<strong>Starting Player</strong><br>Begin the chain!';
     }
@@ -2448,7 +2448,7 @@ function renderSuccessfulGuesses() {
     } else if (guesser === myUsername) {
       footerEl.textContent = 'Guessed by You';
     } else {
-      footerEl.innerHTML = `Guessed by<br>${guesser}`;
+      footerEl.innerHTML = `Guessed by<br>${escapeText(guesser)}`;
     }
     card.appendChild(footerEl);
 
@@ -3685,6 +3685,13 @@ function generateShareUrl() {
 
 
 
+// Escape text before it goes into an HTML template (names come from other players).
+function escapeText(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function displayFullGameFlow(gameData) {
   const container = document.getElementById('fullGameFlow');
   if (!container) return;
@@ -3699,8 +3706,8 @@ function displayFullGameFlow(gameData) {
   let flowHtml = `
     <div class="game-flow-summary">
       <div class="flow-game-info">
-        <h3>${gameData.w} defeated ${gameData.l} in ${gameData.t} turns</h3>
-        <p class="flow-era">${eraNames[gameData.e]} • ${new Date(gameData.ts).toLocaleDateString()}</p>
+        <h3>${escapeText(gameData.w)} defeated ${escapeText(gameData.l)} in ${escapeText(gameData.t)} turns</h3>
+        <p class="flow-era">${escapeText(eraNames[gameData.e] || 'Modern Era')} • ${new Date(gameData.ts).toLocaleDateString()}</p>
       </div>
       
       <div class="flow-chain">
@@ -3720,16 +3727,16 @@ function displayFullGameFlow(gameData) {
           <div class="step-number">${index + 1}</div>
           <div class="step-content">
             <div class="step-player-info">
-              <img class="step-player-headshot" src="${headshotUrl}" alt="${player.name} headshot" />
+              <img class="step-player-headshot" src="${escapeText(headshotUrl)}" alt="${escapeText(player.name)} headshot" />
               <div class="step-player-details">
-                <div class="step-player">${player.name}</div>
+                <div class="step-player">${escapeText(player.name)}</div>
                 ${isLeadoff ? 
                   '<div class="step-info">Starting Player</div>' : 
-                  `<div class="step-info">Guessed by ${guesser}</div>`
+                  `<div class="step-info">Guessed by ${escapeText(guesser)}</div>`
                 }
                 ${!isLeadoff && sharedTeams.length > 0 ? 
                   `<div class="step-connection">Connected via: ${sharedTeams.map(team => 
-                    typeof team === 'object' ? `${team.team} (${team.years})` : team
+                    typeof team === 'object' ? `${escapeText(team.team)} (${escapeText(team.years)})` : escapeText(team)
                   ).join(', ')}</div>` : ''
                 }
               </div>
@@ -3798,9 +3805,9 @@ function displayGameResults(gameData) {
       stepDiv.innerHTML = `
         <div class="chain-step-number">${index + 1}</div>
         <div class="chain-step-content">
-          <div class="chain-step-player">${player.name}</div>
+          <div class="chain-step-player">${escapeText(player.name)}</div>
           <div class="chain-step-info">
-            ${player.isLeadoff ? 'Starting Player' : `Guessed by ${player.guesser}`}
+            ${player.isLeadoff ? 'Starting Player' : `Guessed by ${escapeText(player.guesser)}`}
           </div>
         </div>
       `;

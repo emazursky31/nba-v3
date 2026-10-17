@@ -59,7 +59,31 @@ client.connect()
     process.exit(1);
   });
 
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.set('trust proxy', 1); // behind Render's proxy, so req.ip is the real visitor
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// ---- Input hygiene ---------------------------------------------------------
+// Names reach other players' screens, so keep them to plain, short text.
+function cleanUsername(name) {
+  return String(name == null ? '' : name).replace(/[^\p{L}\p{N}_ .\-]/gu, '').trim().slice(0, 24);
+}
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+// JSON that is safe to place inside an inline <script>
+function safeJson(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
 
 // ---- Lightweight analytics -------------------------------------------------
 // One append-only table; the site posts events here and the server logs a few itself.
@@ -127,73 +151,88 @@ app.use((req, res, next) => {
 });
 
 
+// Share links are public and unauthenticated, so accept only a tightly shaped payload.
+const SHARE_ERAS = new Set(['2000-present', '1980-1999', '1960-1979', 'pre-1960']);
+const shareHits = new Map(); // ip -> { count, resetAt }
+const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+
+function sanitizeShare(body) {
+  if (!body || typeof body !== 'object') return null;
+  const turnCount = Number.parseInt(body.turnCount, 10);
+  if (!SHARE_ERAS.has(body.era) || !Number.isInteger(turnCount) || turnCount < 0 || turnCount > 500) return null;
+  if (!Array.isArray(body.fullChain) || body.fullChain.length > 300) return null;
+  const fullChain = body.fullChain.map((p) => ({
+    name: str(p && p.name, 80),
+    guesser: str(p && p.guesser, 24),
+    isLeadoff: !!(p && p.isLeadoff),
+    headshot_url: /^(https:\/\/|\/)/.test(p && p.headshot_url) ? str(p.headshot_url, 300) : null,
+    sharedTeams: (Array.isArray(p && p.sharedTeams) ? p.sharedTeams : []).slice(0, 6).map((t) => (
+      t && typeof t === 'object' ? { team: str(t.team, 30), years: str(t.years, 20) } : str(t, 30)
+    ))
+  }));
+  return {
+    winner: cleanUsername(body.winner),
+    loser: cleanUsername(body.loser),
+    turnCount,
+    leadoffPlayer: str(body.leadoffPlayer, 80),
+    finalPlayer: str(body.finalPlayer, 80),
+    era: body.era,
+    fullChain
+  };
+}
+
 app.post('/api/create-share', async (req, res) => {
+  const now = Date.now();
+  const hit = shareHits.get(req.ip);
+  if (!hit || hit.resetAt < now) shareHits.set(req.ip, { count: 1, resetAt: now + 60000 });
+  else if (++hit.count > 20) return res.status(429).json({ error: 'Too many share links, try again in a minute' });
+
+  const data = sanitizeShare(req.body);
+  if (!data) return res.status(400).json({ error: 'Invalid game data' });
+  const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = data;
+
   try {
-    const { winner, loser, turnCount, leadoffPlayer, finalPlayer, era, fullChain } = req.body;
-    
     // Create a deterministic hash based on game data
     const crypto = require('crypto');
     const gameDataString = `${winner}-${loser}-${turnCount}-${leadoffPlayer}-${finalPlayer}-${era}`;
     const gameHash = crypto.createHash('md5').update(gameDataString).digest('hex');
     const shareId = gameHash.substring(0, 6); // Use first 6 characters of hash
-    
+
     // Check if this exact game already has a share link
-    const existingQuery = 'SELECT share_id FROM game_results WHERE share_id = $1';
-    const existingResult = await client.query(existingQuery, [shareId]);
-    
+    const existingResult = await client.query('SELECT share_id FROM game_results WHERE share_id = $1', [shareId]);
     if (existingResult.rows.length > 0) {
-      // Return existing share ID
-      console.log(`[SHARE] Returning existing share ID: ${shareId}`);
       return res.json({ shareId: existingResult.rows[0].share_id });
     }
-    
-    // Create new share entry
+
     const insertQuery = `
       INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING share_id
     `;
-    
     const result = await client.query(insertQuery, [shareId, winner, loser, turnCount, leadoffPlayer, finalPlayer, era, JSON.stringify(fullChain)]);
-    
-    console.log(`[SHARE] Created new share ID: ${shareId}`);
     res.json({ shareId: result.rows[0].share_id });
-    
   } catch (error) {
     console.error('Error creating share:', error);
-    
-    // If there's a conflict (unlikely with MD5), generate a random fallback
-    if (error.code === '23505') { // Unique constraint violation
-      const fallbackId = Math.random().toString(36).substring(2, 8);
-      try {
-        const fallbackQuery = `
-          INSERT INTO game_results (share_id, winner, loser, turn_count, leadoff_player, final_player, era, full_chain)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          RETURNING share_id
-        `;
-        const fallbackResult = await client.query(fallbackQuery, [fallbackId, req.body.winner, req.body.loser, req.body.turnCount, req.body.leadoffPlayer, req.body.finalPlayer, req.body.era, JSON.stringify(req.body.fullChain)]);
-        return res.json({ shareId: fallbackResult.rows[0].share_id });
-      } catch (fallbackError) {
-        console.error('Fallback share creation failed:', fallbackError);
-      }
-    }
-    
     res.status(500).json({ error: 'Failed to create share link' });
   }
 });
 
-
-
-
-function normalizeForSearch(str) {
-  return str.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+// Autocomplete runs a database search per keystroke, so cap it per IP.
+const searchHits = new Map(); // ip -> { count, resetAt }
+function searchLimit(req, res, next) {
+  const now = Date.now();
+  const hit = searchHits.get(req.ip);
+  if (!hit || hit.resetAt < now) { searchHits.set(req.ip, { count: 1, resetAt: now + 60000 }); return next(); }
+  if (++hit.count > 240) return res.status(429).json({ error: 'Too many searches, slow down' });
+  next();
 }
+setInterval(() => {
+  const now = Date.now();
+  for (const m of [eventHits, shareHits, searchHits]) for (const [ip, h] of m) if (h.resetAt < now) m.delete(ip);
+}, 5 * 60 * 1000).unref();
 
-
-
-
-
-app.get('/players', async (req, res) => {
+app.get('/players', searchLimit, async (req, res) => {
+  if (typeof req.query.q !== 'string') return res.json([]);
   const input = (req.query.q || '').trim();
 
   if (!input) {
@@ -261,7 +300,7 @@ app.get('/players', async (req, res) => {
 });
 
 
-app.get('/player-career', async (req, res) => {
+app.get('/player-career', searchLimit, async (req, res) => {
   try {
     const playerName = req.query.name;
     
@@ -370,14 +409,14 @@ app.get('/share/:shareId', (req, res) => {
     // Rest of the route code remains the same...
     const metaTags = `
       <meta property="og:title" content="NBA Teammate Game Results" />
-      <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! Connected ${gameData.s} to ${gameData.f} (${eraNames[gameData.e]}). View the full game flow!" />
+      <meta property="og:description" content="${escapeHtml(gameData.w)} beat ${escapeHtml(gameData.l)} in ${escapeHtml(gameData.t)} turns! Connected ${escapeHtml(gameData.s)} to ${escapeHtml(gameData.f)} (${eraNames[gameData.e] || 'Modern Era'}). View the full game flow!" />
       <meta property="og:type" content="website" />
-      <meta property="og:url" content="${req.protocol}://${req.get('host')}/share/${shareId}" />
+      <meta property="og:url" content="https://nameateammate.com/share/${encodeURIComponent(shareId)}" />
       <meta property="og:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:title" content="NBA Teammate Game Results" />
-      <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns connecting ${gameData.s} to ${gameData.f}!" />
+      <meta name="twitter:description" content="${escapeHtml(gameData.w)} won in ${escapeHtml(gameData.t)} turns connecting ${escapeHtml(gameData.s)} to ${escapeHtml(gameData.f)}!" />
     `;
     
     const hideAllCSS = `
@@ -403,10 +442,10 @@ app.get('/share/:shareId', (req, res) => {
 
     html = html.replace('href="style.css"', 'href="/style.css"');
     
-    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
-    html = html.replace('</head>', `
+    html = html.replace('<head>', () => `<head>${metaTags}${hideAllCSS}`);
+    html = html.replace('</head>', () => `
       <script>
-        window.sharedGameData = ${JSON.stringify(gameData)};
+        window.sharedGameData = ${safeJson(gameData)};
       </script>
       </head>
     `);
@@ -440,14 +479,14 @@ app.get('/s/:shareId', (req, res) => {
     
     const metaTags = `
       <meta property="og:title" content="NBA Teammate Game Results" />
-      <meta property="og:description" content="${gameData.w} beat ${gameData.l} in ${gameData.t} turns! ${gameData.s} ➜ ${gameData.f} (${fullEraName})" />
+      <meta property="og:description" content="${escapeHtml(gameData.w)} beat ${escapeHtml(gameData.l)} in ${escapeHtml(gameData.t)} turns! ${escapeHtml(gameData.s)} ➜ ${escapeHtml(gameData.f)} (${fullEraName})" />
       <meta property="og:type" content="website" />
-      <meta property="og:url" content="${req.protocol}://${req.get('host')}/s/${shareId}" />
+      <meta property="og:url" content="https://nameateammate.com/s/${encodeURIComponent(shareId)}" />
       <meta property="og:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:title" content="NBA Teammate Game Results" />
-      <meta name="twitter:description" content="${gameData.w} won in ${gameData.t} turns!" />
+      <meta name="twitter:description" content="${escapeHtml(gameData.w)} won in ${escapeHtml(gameData.t)} turns!" />
     `;
     
     const hideAllCSS = `
@@ -473,10 +512,10 @@ app.get('/s/:shareId', (req, res) => {
 
     html = html.replace('href="style.css"', 'href="/style.css"');
     
-    html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
-    html = html.replace('</head>', `
+    html = html.replace('<head>', () => `<head>${metaTags}${hideAllCSS}`);
+    html = html.replace('</head>', () => `
       <script>
-        window.sharedGameData = ${JSON.stringify(gameData)};
+        window.sharedGameData = ${safeJson(gameData)};
       </script>
       </head>
     `);
@@ -518,16 +557,11 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
       'pre-1960': 'Pioneer Era'
     };
     
-    const escapeHtml = (str) => {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    };
-    
     const metaTags = `
       <meta property="og:title" content="NBA Teammate Game Results" />
-      <meta property="og:description" content="${escapeHtml(gameData.winner)} beat ${escapeHtml(gameData.loser)} in ${gameData.turn_count} turns! ${escapeHtml(gameData.leadoff_player)} ➜ ${escapeHtml(gameData.final_player)} (${eraNames[gameData.era] || 'Modern Era'})" />
+      <meta property="og:description" content="${escapeHtml(gameData.winner)} beat ${escapeHtml(gameData.loser)} in ${escapeHtml(gameData.turn_count)} turns! ${escapeHtml(gameData.leadoff_player)} ➜ ${escapeHtml(gameData.final_player)} (${eraNames[gameData.era] || 'Modern Era'})" />
       <meta property="og:type" content="website" />
-      <meta property="og:url" content="${req.protocol}://${req.get('host')}/g/${shareId}" />
+      <meta property="og:url" content="https://nameateammate.com/g/${shareId}" />
       <meta property="og:image" content="https://nameateammate.com/og-image.png" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:image" content="https://nameateammate.com/og-image.png" />
@@ -556,7 +590,7 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
     
      html = html.replace('href="style.css"', 'href="/style.css"');
      
-     html = html.replace('<head>', `<head>${metaTags}${hideAllCSS}`);
+     html = html.replace('<head>', () => `<head>${metaTags}${hideAllCSS}`);
     
     // Parse full_chain safely
     let fullChain = [];
@@ -567,25 +601,19 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
       fullChain = [];
     }
     
-    const escapeJs = (str) => {
-      if (!str) return '';
-      return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    const sharedPayload = {
+      w: gameData.winner || '',
+      l: gameData.loser || '',
+      t: Number(gameData.turn_count) || 0,
+      s: gameData.leadoff_player || '',
+      f: gameData.final_player || '',
+      e: gameData.era || '',
+      ts: Date.parse(gameData.created_at) || Date.now(),
+      chain: fullChain
     };
-    
-    html = html.replace('</head>', `
+    html = html.replace('</head>', () => `
       <script>
-        console.log('[SHARE] Injecting sharedGameData for shareId: ${shareId}');
-        window.sharedGameData = {
-          w: "${escapeJs(gameData.winner)}",
-          l: "${escapeJs(gameData.loser)}",
-          t: ${gameData.turn_count || 0},
-          s: "${escapeJs(gameData.leadoff_player)}",
-          f: "${escapeJs(gameData.final_player)}",
-          e: "${escapeJs(gameData.era)}",
-          ts: ${Date.parse(gameData.created_at) || Date.now()},
-          chain: ${JSON.stringify(fullChain)}
-        };
-        console.log('[SHARE] sharedGameData set:', window.sharedGameData);
+        window.sharedGameData = ${safeJson(sharedPayload)};
       </script>
       </head>
     `);
@@ -742,6 +770,7 @@ io.on('connection', (socket) => {
   // Enhanced session cleanup for mobile networks
   // Check for existing sessions from the same user that might be stale
   socket.on('userIdentified', ({ userId, username }) => {
+    username = cleanUsername(username);
     if (userId) {
       // Check if this user has any existing disconnected sessions
       if (disconnectedPlayers.has(userId)) {
@@ -768,6 +797,7 @@ io.on('connection', (socket) => {
 
 
 socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = false }) => {
+    username = cleanUsername(username);
   socket.data.username = username;
   socket.data.userId = userId;
 
@@ -909,6 +939,7 @@ socket.on('readyToStart', ({ roomId }) => {
 
 
 socket.on('userSignedIn', ({ userId, username }) => {
+    username = cleanUsername(username);
   console.log('[SIGNIN] Setting socket data for user:', { userId, username });
   socket.data.userId = userId;
   socket.data.username = username;
@@ -916,6 +947,7 @@ socket.on('userSignedIn', ({ userId, username }) => {
 
 
 socket.on('joinGame', async ({ roomId, username, userId, era, timeLimit }) => {
+    username = cleanUsername(username);
   await handleJoinGame(socket, roomId, username, userId, era, timeLimit);
 });
 
