@@ -208,6 +208,46 @@
 
   $('playGuestBtn')?.addEventListener('click', playAsGuest);
 
+  // ---- Daily Blitz card ------------------------------------------------------
+  // Shows today's puzzle and how this browser is doing on it (state lives in localStorage
+  // under daily:<date>, written by the /daily page).
+  async function loadDailyCard() {
+    const card = $('dailyCard');
+    if (!card) return;
+    try {
+      const res = await fetch('/api/daily');
+      if (!res.ok) return;
+      const puzzle = await res.json();
+      let state = null;
+      try { state = JSON.parse(localStorage.getItem('daily:' + puzzle.date) || 'null'); } catch (e) {}
+
+      $('dailyEyebrow').textContent = 'Daily Blitz #' + puzzle.number;
+      const img = $('dailyImg');
+      img.src = puzzle.headshotUrl || '';
+      img.onerror = () => { img.removeAttribute('src'); img.classList.add('is-empty'); };
+      if (!puzzle.headshotUrl) img.classList.add('is-empty');
+
+      if (state && state.done) {
+        const n = (state.found || []).length;
+        $('dailyTitle').textContent = 'You named ' + n + ' of ' + puzzle.totalTeammates;
+        $('dailySub').textContent = 'New player tomorrow.';
+        $('dailyGo').textContent = 'Results';
+      } else if (state && state.startedAt) {
+        $('dailyTitle').textContent = puzzle.playerName;
+        $('dailySub').textContent = 'Pick up where you left off.';
+        $('dailyGo').textContent = 'Continue';
+      } else {
+        $('dailyTitle').textContent = puzzle.playerName;
+        $('dailySub').textContent = 'Name their teammates in 60 seconds.';
+        $('dailyGo').textContent = 'Play';
+      }
+      card.hidden = false;
+      const textLink = $('dailyTextLink');
+      if (textLink) textLink.hidden = true;
+    } catch (e) { /* card stays hidden; the text link still works */ }
+  }
+  loadDailyCard();
+
   // ---- Keep the game screen inside the visible area ----------------------
   // On phones the on-screen keyboard covers the bottom of the page. Track the
   // visible height so the guess box stays on screen and nothing needs scrolling.

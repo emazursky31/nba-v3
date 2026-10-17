@@ -1724,3 +1724,27 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 }
 .nav-login:hover { border-color: var(--ink-3); }
 .nav-login[hidden] { display: none; }
+
+/* ---------- Daily Blitz card on home ---------- */
+.daily-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink);
+  text-decoration: none;
+}
+.daily-card[hidden] { display: none; }
+.daily-card:hover { border-color: var(--accent); }
+.daily-img { width: 56px; height: 56px; flex: none; border-radius: 50%; object-fit: cover; object-position: top; background: var(--bg-sunk); border: 1px solid var(--line); }
+.daily-img.is-empty { display: none; }
+.daily-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.daily-eyebrow { color: var(--accent); font: 600 13px/1 var(--body); }
+.daily-title { font: 700 20px/1.1 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.daily-sub { color: var(--ink-3); font: 500 14px/1.2 var(--body); }
+.daily-go { flex: none; padding: 9px 16px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; font: 700 15px/1 var(--body); }
+.home-links a[hidden] { display: none; }
