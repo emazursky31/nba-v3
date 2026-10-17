@@ -43,6 +43,9 @@
     .player { display: flex; align-items: center; gap: 16px; }
     .player img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); flex-shrink: 0; }
     .player-name { font: 800 clamp(30px, 9vw, 40px)/0.95 var(--display); text-transform: none; letter-spacing: 0.01em; }
+    .stints { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .stint { padding: 4px 9px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text-2); font-size: 0.82rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .stint b { color: var(--text); font-weight: 700; }
     .player-sub { color: var(--muted); margin-top: 2px; }
     p.lead { color: var(--text-2); line-height: 1.5; }
     button.primary {
@@ -116,6 +119,7 @@
             <div class="player-name" id="intro-name"></div>
           </div>
         </div>
+        <div class="stints" id="intro-stints"></div>
         <p class="lead">Name as many of their regular season teammates as you can in <strong>60 seconds</strong>. They had <strong id="intro-total"></strong> teammates. How many do you know?</p>
         <button class="primary" id="start-btn">Start</button>
       </div>
@@ -132,6 +136,7 @@
             <div class="player-name" id="play-name"></div>
           </div>
         </div>
+        <div class="stints" id="play-stints"></div>
         <div class="hud">
           <div class="timer" id="clock">60</div>
           <div class="score" id="score">0 / 0</div>
@@ -155,6 +160,7 @@
             <div class="player-name" id="res-name"></div>
           </div>
         </div>
+        <div class="stints" id="res-stints"></div>
         <div style="text-align:center; margin-top:16px;">
           <div class="big" id="res-score"></div>
           <div class="player-sub" id="res-sub"></div>
@@ -211,6 +217,16 @@
       const img = $(prefix + '-img');
       img.src = puzzle.headshotUrl || DEFAULT_IMG;
       img.onerror = () => { img.onerror = null; img.src = DEFAULT_IMG; };
+      const box = $(prefix + '-stints');
+      box.textContent = '';
+      (puzzle.stints || []).forEach(st => {
+        const el = document.createElement('span');
+        el.className = 'stint';
+        const team = document.createElement('b');
+        team.textContent = st.team;
+        el.append(team, ' ' + (st.start === st.end ? st.start : st.start + '\u2013' + st.end));
+        box.appendChild(el);
+      });
     }
 
     async function load() {

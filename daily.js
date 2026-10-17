@@ -101,7 +101,24 @@ function createDaily(client) {
       teammates.set(normalizeName(player_name), player_name);
     }
 
-    const puzzle = { date: dateStr, number: puzzleNumber(dateStr), player, teammates };
+    // Team history shown under the player's name; back-to-back stints with one team become one entry
+    const { rows: stintRows } = await client.query(`
+      SELECT team_abbr, CAST(start_season AS INT) AS start_season, CAST(end_season AS INT) AS end_season
+      FROM player_team_stints
+      WHERE player_id = $1
+      ORDER BY CAST(start_season AS INT), CAST(end_season AS INT)
+    `, [playerId]);
+    const stints = [];
+    for (const r of stintRows) {
+      const last = stints[stints.length - 1];
+      if (last && last.team === r.team_abbr && r.start_season <= last.end + 1) {
+        last.end = Math.max(last.end, r.end_season);
+      } else {
+        stints.push({ team: r.team_abbr, start: r.start_season, end: r.end_season });
+      }
+    }
+
+    const puzzle = { date: dateStr, number: puzzleNumber(dateStr), player, teammates, stints };
     puzzles.set(dateStr, puzzle);
     // Keep only a few days around
     if (puzzles.size > 3) puzzles.delete(puzzles.keys().next().value);
@@ -126,7 +143,8 @@ function createDaily(client) {
           number: puzzle.number,
           playerName: puzzle.player.player_name,
           headshotUrl: puzzle.player.headshot_url || null,
-          totalTeammates: puzzle.teammates.size
+          totalTeammates: puzzle.teammates.size,
+          stints: puzzle.stints
         });
       } catch (err) {
         console.error('[daily] Error loading puzzle:', err);
