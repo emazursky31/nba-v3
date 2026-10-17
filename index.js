@@ -231,6 +231,10 @@ setInterval(() => {
   for (const m of [eventHits, shareHits, searchHits]) for (const [ip, h] of m) if (h.resetAt < now) m.delete(ip);
 }, 5 * 60 * 1000).unref();
 
+function normalizeForSearch(str) {
+  return str.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
 app.get('/players', searchLimit, async (req, res) => {
   if (typeof req.query.q !== 'string') return res.json([]);
   const input = (req.query.q || '').trim();
