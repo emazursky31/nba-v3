@@ -632,6 +632,8 @@ app.get('/g/:shareId([a-zA-Z0-9]+)', async (req, res) => {
 
 // Daily Teammate Blitz (solo, no account needed)
 createDaily(client).register(app);
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
 app.get('/daily', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'daily.html'));
 });
