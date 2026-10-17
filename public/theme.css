@@ -1753,3 +1753,6 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 .username-edit-btn { margin-left: 10px; background: none; border: 0; color: #7aa7ff; font: inherit; font-size: 0.9em; cursor: pointer; padding: 2px 4px; }
 .username-edit-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); color: inherit; border-radius: 8px; padding: 6px 10px; font: inherit; width: 160px; }
 .username-edit-msg { font-size: 0.85em; opacity: 0.8; margin-top: 4px; }
+
+.footer-legal { font-size: 14px; color: var(--ink-3); }
+.footer-legal a { color: var(--ink-2); }
