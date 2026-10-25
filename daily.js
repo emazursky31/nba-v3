@@ -103,7 +103,7 @@ function createDaily(client) {
 
     // Team history shown under the player's name; back-to-back stints with one team become one entry
     const { rows: stintRows } = await client.query(`
-      SELECT team_abbr, CAST(start_season AS INT) AS start_season, CAST(end_season AS INT) AS end_season
+      SELECT team_abbr, CAST(start_season AS INT) AS start_season, CAST(end_season AS INT) AS end_season, end_date::text AS end_date
       FROM player_team_stints
       WHERE player_id = $1
       ORDER BY CAST(start_season AS INT), CAST(end_season AS INT)
@@ -118,7 +118,11 @@ function createDaily(client) {
       }
     }
 
-    const puzzle = { date: dateStr, number: puzzleNumber(dateStr), player, teammates, stints };
+    // Still active if his last game was within the past ~8 months (covers the offseason gap)
+    const lastGame = stintRows.reduce((m, r) => (r.end_date > m ? r.end_date : m), '');
+    const active = !!lastGame && (Date.now() - Date.parse(`${lastGame.slice(0, 10)}T00:00:00Z`)) < 250 * 86400000;
+
+    const puzzle = { date: dateStr, number: puzzleNumber(dateStr), player, teammates, stints, active };
     puzzles.set(dateStr, puzzle);
     // Keep only a few days around
     if (puzzles.size > 3) puzzles.delete(puzzles.keys().next().value);
@@ -144,7 +148,8 @@ function createDaily(client) {
           playerName: puzzle.player.player_name,
           headshotUrl: puzzle.player.headshot_url || null,
           totalTeammates: puzzle.teammates.size,
-          stints: puzzle.stints
+          stints: puzzle.stints,
+          active: puzzle.active
         });
       } catch (err) {
         console.error('[daily] Error loading puzzle:', err);
