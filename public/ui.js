@@ -216,8 +216,8 @@
   // Shows today's puzzle and how this browser is doing on it (state lives in localStorage
   // under daily:<date>, written by the /daily page).
   async function loadDailyCard() {
-    const card = $('dailyCard');
-    if (!card) return;
+    const cards = ['daily', 'memberDaily']; // guest home and signed-in home
+    if (!$('dailyCard') && !$('memberDailyCard')) return;
     try {
       const res = await fetch('/api/daily');
       if (!res.ok) return;
@@ -225,30 +225,34 @@
       let state = null;
       try { state = JSON.parse(localStorage.getItem('daily:' + puzzle.date) || 'null'); } catch (e) {}
 
-      $('dailyEyebrow').textContent = 'Daily Blitz #' + puzzle.number;
-      const img = $('dailyImg');
-      img.src = puzzle.headshotUrl || '';
-      img.onerror = () => { img.removeAttribute('src'); img.classList.add('is-empty'); };
-      if (!puzzle.headshotUrl) img.classList.add('is-empty');
+      for (const p of cards) {
+        const card = $(p + 'Card');
+        if (!card) continue;
+        $(p + 'Eyebrow').textContent = 'Daily Blitz #' + puzzle.number;
+        const img = $(p + 'Img');
+        img.src = puzzle.headshotUrl || '';
+        img.onerror = () => { img.removeAttribute('src'); img.classList.add('is-empty'); };
+        if (!puzzle.headshotUrl) img.classList.add('is-empty');
 
-      if (state && state.done) {
-        const n = (state.found || []).length;
-        $('dailyTitle').textContent = 'You named ' + n + ' of ' + puzzle.totalTeammates;
-        $('dailySub').textContent = 'New player tomorrow.';
-        $('dailyGo').textContent = 'Results';
-      } else if (state && state.startedAt) {
-        $('dailyTitle').textContent = puzzle.playerName;
-        $('dailySub').textContent = 'Pick up where you left off.';
-        $('dailyGo').textContent = 'Continue';
-      } else {
-        $('dailyTitle').textContent = puzzle.playerName;
-        $('dailySub').textContent = 'Name their teammates in 60 seconds.';
-        $('dailyGo').textContent = 'Play';
+        if (state && state.done) {
+          const n = (state.found || []).length;
+          $(p + 'Title').textContent = 'You named ' + n + ' of ' + puzzle.totalTeammates;
+          $(p + 'Sub').textContent = 'New player tomorrow.';
+          $(p + 'Go').textContent = 'Results';
+        } else if (state && state.startedAt) {
+          $(p + 'Title').textContent = puzzle.playerName;
+          $(p + 'Sub').textContent = 'Pick up where you left off.';
+          $(p + 'Go').textContent = 'Continue';
+        } else {
+          $(p + 'Title').textContent = puzzle.playerName;
+          $(p + 'Sub').textContent = 'Name their teammates in 60 seconds.';
+          $(p + 'Go').textContent = 'Play';
+        }
+        card.hidden = false;
       }
-      card.hidden = false;
       const textLink = $('dailyTextLink');
       if (textLink) textLink.hidden = true;
-    } catch (e) { /* card stays hidden; the text link still works */ }
+    } catch (e) { /* cards stay hidden; the text link still works */ }
   }
   loadDailyCard();
 
