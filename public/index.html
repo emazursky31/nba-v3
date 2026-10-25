@@ -84,6 +84,7 @@
       <span class="dropdown-arrow">▼</span>
     </button>
    <div class="nav-dropdown-content" id="nav-dropdown-content">
+  <a href="/daily" id="nav-dropdown-daily">Daily Blitz</a>
   <a href="#" id="nav-dropdown-profile">Profile</a>
   <a href="#" id="nav-dropdown-signout">Sign Out</a>
 </div>
@@ -267,6 +268,16 @@
 <section id="homeSelection" data-route="/home" class="hidden">
   
   <h3 id="home-welcome"></h3>
+
+  <a class="daily-card" id="memberDailyCard" href="/daily" hidden>
+    <img class="daily-img" id="memberDailyImg" alt="" width="56" height="56" />
+    <span class="daily-body">
+      <span class="daily-eyebrow" id="memberDailyEyebrow">Daily Blitz</span>
+      <span class="daily-title" id="memberDailyTitle">One player. Name their teammates.</span>
+      <span class="daily-sub" id="memberDailySub">Solo, 60 seconds.</span>
+    </span>
+    <span class="daily-go" id="memberDailyGo">Play</span>
+  </a>
 
   <div id="gameSetup" class="game-setup-container">
     <!-- Game type selection -->
