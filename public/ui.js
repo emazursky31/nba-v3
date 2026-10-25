@@ -50,6 +50,10 @@
   // ---- Log in / sign up sheet -------------------------------------------
   function openAuth(tab) {
     document.body.classList.add('auth-open');
+    window.supabase?.auth.getSession().then(({ data }) => {
+      const hint = $('guestSaveHint');
+      if (hint) hint.hidden = !data?.session?.user?.is_anonymous;
+    });
     const tabBtn = $(tab === 'signin' ? 'tab-signin' : 'tab-signup');
     if (tabBtn) tabBtn.click();
     const first = document.querySelector('#authPanel .auth-form.active input');

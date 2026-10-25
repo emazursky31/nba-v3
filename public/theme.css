@@ -1756,3 +1756,6 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 
 .footer-legal { font-size: 14px; color: var(--ink-3); }
 .footer-legal a { color: var(--ink-2); }
+
+.auth-hint { margin: 0 0 4px; color: var(--ink-2); font-size: 15px; }
+.auth-hint[hidden] { display: none; }
