@@ -178,14 +178,18 @@ async function main() {
 
     const extended = stintChanges.filter(c => c.change.type === 'extend');
     const created = stintChanges.filter(c => c.change.type === 'new');
-    console.log(`\nNew players: ${newPlayers.length}`);
+    const moves = created.filter(c => latestByPlayer.has(c.id));   // existing players on a new stint
+    const firstStints = created.length - moves.length;             // stints of brand new players
+    console.log(`\nNew players: ${newPlayers.length} (${firstStints} first stints)`);
     newPlayers.slice(0, 40).forEach(p => console.log(`  + ${p.name} (${p.id})`));
+    if (newPlayers.length > 40) console.log(`  ...and ${newPlayers.length - 40} more`);
     console.log(`Stints extended (same team, more games): ${extended.length}`);
-    console.log(`New stints (changed team or returning after a gap): ${created.length}`);
-    created.filter(c => latestByPlayer.has(c.id)).slice(0, 60).forEach(c => {
+    console.log(`Team changes (existing players on a new team or returning after a gap): ${moves.length}`);
+    moves.slice(0, 100).forEach(c => {
       const prev = latestByPlayer.get(c.id);
-      console.log(`  ${c.name}: new stint with ${c.change.team} from ${c.change.start_date} (latest on file: ${prev.team_abbr})`);
+      console.log(`  ${c.name}: ${prev.team_abbr} -> ${c.change.team} from ${c.change.start_date}`);
     });
+    if (moves.length > 100) console.log(`  ...and ${moves.length - 100} more`);
 
     if (!args.apply) {
       console.log('\nDry run only. Re-run with --apply to write these changes.');
