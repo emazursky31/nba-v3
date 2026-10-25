@@ -200,6 +200,7 @@
       </div>
       <div class="auth-forms-row">
         <form id="signupForm" class="auth-form active" autocomplete="off">
+          <p id="guestSaveHint" class="auth-hint" hidden>Your guest games and stats come with you.</p>
           <input type="email" id="signup-email" placeholder="Email" required>
           <input type="password" id="signup-password" placeholder="Password" required>
           <input id="signup-username" placeholder="Username" required>
@@ -905,13 +906,18 @@ async function signUp(e) {
     console.log('[DEBUG] SignUp data =>', email, username);
 
     try {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { username }
-            }
-        });
+        // A guest already has an account (and stats). Attach the email to it instead of making a second one.
+        const { data: { session: current } } = await supabase.auth.getSession();
+        const upgrading = !!current?.user?.is_anonymous;
+        const { data, error } = upgrading
+            ? await supabase.auth.updateUser({ email, password, data: { username } })
+            : await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { username }
+                }
+            });
 
         if (error) {
             console.error('SignUp error:', error.message);
@@ -919,12 +925,14 @@ async function signUp(e) {
             // Handle specific error types with user-friendly messages
             if (error.message.includes('rate limit') || error.message.includes('Too Many Requests')) {
                 alert('Too many sign-up attempts. Please wait a minute before trying again.');
-            } else if (error.message.includes('confirmation email') || error.message.includes('email')) {
-                alert('Email service temporarily unavailable. Please try again later or contact support.');
             } else if (error.message.includes('already registered') || error.message.includes('already exists')) {
-                alert('This email is already registered. Try signing in instead.');
+                alert(upgrading
+                    ? 'That email already has an account. Log in to it instead (your guest games will stay on this guest account).'
+                    : 'This email is already registered. Try signing in instead.');
             } else if (error.message.includes('invalid email')) {
                 alert('Please enter a valid email address.');
+            } else if (error.message.includes('confirmation email')) {
+                alert('Email service temporarily unavailable. Please try again later or contact support.');
             } else {
                 alert(`Sign-up failed: ${error.message}`);
             }
@@ -4542,8 +4550,7 @@ socket.on('gameOver', (data) => {
     if (session?.user?.is_anonymous) {
       document.getElementById('overSave').hidden = false;
       document.getElementById('overSaveBtn').addEventListener('click', () => {
-        document.body.classList.add('auth-open');
-        document.getElementById('tab-signup')?.click();
+        window.openAuth('signup');
       });
     }
   });
