@@ -1,0 +1,35 @@
+name: Update players and team stints
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # 5am Eastern (4am in winter), after the previous night's games are final
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (show changes without writing)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: update-season
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - name: Update the database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            node scripts/update-season.js
+          else
+            node scripts/update-season.js --apply
+          fi

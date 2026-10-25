@@ -41,10 +41,12 @@ function hashString(str) {
 
 function createDaily(client) {
   let eligibleIds = null;
+  let eligibleLoadedAt = 0;
   const puzzles = new Map(); // dateStr -> puzzle
 
   async function getEligiblePlayerIds() {
-    if (eligibleIds) return eligibleIds;
+    // Reload twice a day so players added by the season update script join the pool without a restart
+    if (eligibleIds && Date.now() - eligibleLoadedAt < 12 * 3600 * 1000) return eligibleIds;
     const { rows } = await client.query(`
       WITH seasons AS (
         SELECT player_id,
@@ -69,6 +71,7 @@ function createDaily(client) {
       ORDER BY lc.player_id
     `, [MIN_SEASONS, MIN_TEAMMATES]);
     eligibleIds = rows.map(r => r.player_id);
+    eligibleLoadedAt = Date.now();
     return eligibleIds;
   }
 
