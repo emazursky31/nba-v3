@@ -120,7 +120,7 @@
           </div>
         </div>
         <div class="stints" id="intro-stints"></div>
-        <p class="lead">Name as many of their regular season teammates as you can in <strong>60 seconds</strong>. They had <strong id="intro-total"></strong> teammates. How many do you know?</p>
+        <p class="lead">Name as many of his regular season teammates as you can in <strong>60 seconds</strong>. <span id="intro-had">He had</span> <strong id="intro-total"></strong> teammates. How many do you know?</p>
         <button class="primary" id="start-btn">Start</button>
       </div>
       <p class="note">Same player for everyone. New one every day at midnight Eastern.</p>
@@ -249,6 +249,7 @@
       }
       setPlayer('intro');
       $('intro-total').textContent = puzzle.totalTeammates;
+      $('intro-had').textContent = puzzle.active ? 'He has had' : 'He had';
       show('intro');
     }
 
