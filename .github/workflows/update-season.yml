@@ -1,8 +1,6 @@
 name: Update players and team stints
 
 on:
-  schedule:
-    - cron: '0 9 * * *' # 5am Eastern (4am in winter), after the previous night's games are final
   workflow_dispatch:
     inputs:
       dry_run:
