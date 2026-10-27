@@ -75,12 +75,46 @@ function createDaily(client) {
     return eligibleIds;
   }
 
-  async function getPuzzle(dateStr) {
-    if (puzzles.has(dateStr)) return puzzles.get(dateStr);
+  // Each date's player is saved the first time it is picked, so adding players to the pool never changes a day's puzzle
+  let pinsReady = null;
+  function ensurePinsTable() {
+    if (!pinsReady) {
+      pinsReady = client.query(
+        'CREATE TABLE IF NOT EXISTS daily_puzzles (puzzle_date TEXT PRIMARY KEY, player_id BIGINT NOT NULL)'
+      ).then(() => true, err => {
+        console.error('[daily] Could not create daily_puzzles; picks will not be pinned:', err.message);
+        return false;
+      });
+    }
+    return pinsReady;
+  }
+
+  async function pickPlayerId(dateStr) {
+    const pinned = await ensurePinsTable();
+    if (pinned) {
+      const { rows: [row] } = await client.query('SELECT player_id FROM daily_puzzles WHERE puzzle_date = $1', [dateStr]);
+      if (row) return row.player_id;
+    }
 
     const ids = await getEligiblePlayerIds();
     if (ids.length === 0) throw new Error('No eligible players for the daily puzzle');
     const playerId = ids[hashString(`daily:${dateStr}`) % ids.length];
+    if (!pinned) return playerId;
+
+    // If another instance saved a pick first, use theirs
+    const { rows: [saved] } = await client.query(
+      `INSERT INTO daily_puzzles (puzzle_date, player_id) VALUES ($1, $2)
+       ON CONFLICT (puzzle_date) DO UPDATE SET puzzle_date = EXCLUDED.puzzle_date
+       RETURNING player_id`,
+      [dateStr, playerId]
+    );
+    return saved.player_id;
+  }
+
+  async function getPuzzle(dateStr) {
+    if (puzzles.has(dateStr)) return puzzles.get(dateStr);
+
+    const playerId = await pickPlayerId(dateStr);
 
     const { rows: [player] } = await client.query(
       'SELECT player_id, player_name, headshot_url FROM players WHERE player_id = $1',
