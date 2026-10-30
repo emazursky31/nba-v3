@@ -805,8 +805,17 @@ function unmarkVerified(userId, socketId) {
 }
 
 function statsAllowed(game, ...userIds) {
-  if (!game || game.vsBot) return false;
-  return userIds.every(id => id && verifiedUsers.has(id));
+  if (!game) return false;
+  if (game.vsBot) {
+    console.log('[STATS] not recorded: game was against a bot');
+    return false;
+  }
+  const unverified = userIds.filter(id => !id || !verifiedUsers.has(id));
+  if (unverified.length) {
+    console.log(`[STATS] not recorded: no verified session for ${unverified.map(id => id || 'missing id').join(', ')}`);
+    return false;
+  }
+  return true;
 }
 
 io.on('connection', (socket) => {
