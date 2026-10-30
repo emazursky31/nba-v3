@@ -969,8 +969,9 @@ socket.on('findMatch', ({ username, userId, era = '2000-present', allowBot = fal
     playersInGame.add(opponentSocket.id);
 
     // ✅ SEND MATCHED EVENT (triggers countdown) - NO GAME START YET
-    socket.emit('matched', { roomId, opponent: opponentUsername });
-    opponentSocket.emit('matched', { roomId, opponent: username });
+    const vsBot = !!games[roomId].vsBot;
+    socket.emit('matched', { roomId, opponent: opponentUsername, vsBot });
+    opponentSocket.emit('matched', { roomId, opponent: username, vsBot });
     
     console.log(`📱 Matched screen sent to both players in room ${roomId}`);
 

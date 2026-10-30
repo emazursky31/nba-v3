@@ -1771,3 +1771,25 @@ body:has(#waitingRoom:not(.hidden)) .site-footer { display: none; }
 
 .auth-hint { margin: 0 0 4px; color: var(--ink-2); font-size: 15px; }
 .auth-hint[hidden] { display: none; }
+
+
+/* ---------- Practice games and the in-game chain ---------- */
+body.vs-bot .side-opp::before { content: 'Opponent · AI'; }
+body.vs-bot .side-opp.active-turn::before { content: 'Their turn · AI'; }
+body.vs-bot #matchedOpponentName::after {
+  content: 'AI';
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: var(--ink-2);
+  font: 700 11px/1 var(--body);
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+.over-practice { margin: 8px 0 0; font: 500 14px/1.35 var(--body); color: var(--ink-2); }
+
+#chainList { list-style: none; padding: 0; }
+#chainList .over-link { padding: 9px 14px; }
+#chainList .over-name { font-size: 18px; }
+#chainList .chain-hint { padding: 14px; color: var(--ink-2); font: 500 15px/1.4 var(--body); }

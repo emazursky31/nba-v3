@@ -201,7 +201,7 @@
       </div>
       <div class="auth-forms-row">
         <form id="signupForm" class="auth-form active" autocomplete="off">
-          <p id="guestSaveHint" class="auth-hint" hidden>Your guest games and stats come with you.</p>
+          <p id="guestSaveHint" class="auth-hint" hidden>Your guest account and its record come with you. Practice games against a bot don't count.</p>
           <input type="email" id="signup-email" placeholder="Email" required>
           <input type="password" id="signup-password" placeholder="Password" required>
           <input id="signup-username" placeholder="Username" required>
@@ -2783,6 +2783,7 @@ function showOpponentIncorrectGuess(guesserName, incorrectGuess, currentPlayer) 
 
 function handleGoHome() {
   console.debug('[CLIENT] handleGoHome called');
+  document.body.classList.remove('vs-bot');
 
   if (socket && socket.connected && (gameStarted || myRoomId) && !isLeavingGame) {
     console.log('[DEBUG] Emitting leaveGame from handleGoHome');
@@ -4234,7 +4235,7 @@ socket.on('playersUpdate', (count) => {
 
 
 
-socket.on('matched', ({ roomId, opponent }) => {
+socket.on('matched', ({ roomId, opponent, vsBot }) => {
   if (isLeavingGame || localStorage.getItem('isLeavingGame') === 'true') {
     console.log('[DEBUG] Ignoring matched event because isLeavingGame is true');
     return;
@@ -4248,6 +4249,7 @@ socket.on('matched', ({ roomId, opponent }) => {
 
   myRoomId = roomId;
   opponentName = opponent;
+  document.body.classList.toggle('vs-bot', !!vsBot); // adds the AI tag next to the opponent's name
 
   // Show matched screen with countdown
   showMatchedScreen(opponent);
@@ -4516,6 +4518,7 @@ socket.on('gameOver', (data) => {
     </li>`).join('');
   const turns = data.turnCount > 0 ? `${data.turnCount} ${data.turnCount === 1 ? 'turn' : 'turns'}` : '';
   const meta = [turns, eraNames[selectedEra] || 'Modern era'].filter(Boolean).join(' · ');
+  const vsBotGame = document.body.classList.contains('vs-bot');
   const rematchOff = data.canRematch === false || data.reason === 'opponent_left' || data.reason === 'opponent_signed_out';
 
   container.className = `over over-${outcome}`;
@@ -4524,6 +4527,7 @@ socket.on('gameOver', (data) => {
       <h2 class="over-title">${esc(headline)}</h2>
       <p class="over-sub">${esc(sub)}</p>
       <p class="over-meta">${esc(meta)}</p>
+      ${vsBotGame ? '<p class="over-practice">Practice game against a bot. It doesn\'t count toward your record.</p>' : ''}
     </div>
     <ol class="over-chain" aria-label="The chain">${chain}</ol>
     <div class="over-actions">
@@ -4531,7 +4535,7 @@ socket.on('gameOver', (data) => {
       <button id="gameOverUnifiedShareBtn" class="unified-share-btn" type="button">Share</button>
     </div>
     <div id="gameOverShareToast" class="share-toast hidden">Copied to clipboard!</div>
-    <p id="overSave" class="over-save" hidden>Want to keep your record? <button id="overSaveBtn" class="link-btn over-save-link" type="button">Sign up</button></p>
+    <p id="overSave" class="over-save" hidden>${vsBotGame ? 'Want real games to count?' : 'Want to keep your record?'} <button id="overSaveBtn" class="link-btn over-save-link" type="button">Sign up</button></p>
     <button id="overHomeBtn" class="link-btn over-home" type="button">Back to home</button>
   `;
 
@@ -4770,19 +4774,30 @@ function renderChain(guesses) {
   const list = document.getElementById('chainList');
   const summary = document.getElementById('chainSummary');
   if (!box || !list || !summary) return;
-  const names = Array.isArray(guesses) ? guesses.map(g => g.name).filter(Boolean) : [];
-  if (names.length === 0) {
-    box.hidden = true;
-    list.hidden = true;
-    list.textContent = '';
+  const items = Array.isArray(guesses) ? guesses.filter(g => g && g.name) : [];
+  box.hidden = false;
+  list.textContent = '';
+  if (items.length === 0) {
+    summary.textContent = 'The chain';
+    const hint = document.createElement('li');
+    hint.className = 'chain-hint';
+    hint.textContent = 'Answers show up here. Any player who shared a roster with the current player for even one regular season game counts.';
+    list.appendChild(hint);
     return;
   }
-  box.hidden = false;
-  summary.textContent = `${names.length} named so far`;
-  list.textContent = '';
-  names.forEach((n) => {
+  const answers = items.filter(g => !g.isLeadoff).length;
+  summary.textContent = answers === 0 ? 'The chain' : `${answers} named so far`;
+  // newest first, numbered in the order they were named
+  items.map((g, i) => ({ g, n: i })).reverse().forEach(({ g, n }) => {
     const li = document.createElement('li');
-    li.textContent = n;
+    li.className = 'over-link' + (g.isLeadoff ? ' is-start' : '');
+    const num = document.createElement('span'); num.className = 'over-n'; num.textContent = g.isLeadoff ? 'Start' : String(n);
+    const name = document.createElement('span'); name.className = 'over-name'; name.textContent = g.name;
+    li.append(num, name);
+    if (!g.isLeadoff && g.guesser) {
+      const by = document.createElement('span'); by.className = 'over-by'; by.textContent = g.guesser;
+      li.appendChild(by);
+    }
     list.appendChild(li);
   });
 }
