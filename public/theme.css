@@ -159,7 +159,7 @@ nav {
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   position: relative;
-  z-index: 10;
+  z-index: 30; /* above route sections (z-index 10), so the profile menu isn't covered on the game over page */
 }
 
 #nav-title-link { text-decoration: none; color: var(--ink); }
