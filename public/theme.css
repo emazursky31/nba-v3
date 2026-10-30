@@ -1269,7 +1269,19 @@ body:has(.over-page:not(.hidden)) #rematchBtn { display: none !important; }
   box-shadow: none !important;
   transform: none !important;
 }
-#homeSelection #publicCard { border-color: var(--accent) !important; }
+#homeSelection #publicCard { border-color: var(--accent) !important; padding-bottom: 0 !important; overflow: hidden; }
+#homeSelection .home-play-card h3 { font-size: 30px; }
+#homeSelection .home-play-card .selection-btn { width: 100%; }
+#homeSelection .home-alt-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  width: calc(100% + 36px); margin: 18px -18px 0; padding: 16px 18px;
+  background: transparent !important; border: 0 !important; border-top: 1px solid var(--line) !important; border-radius: 0 !important; box-shadow: none !important;
+  color: var(--ink) !important; font: 600 16px/1.2 var(--body); text-align: left; cursor: pointer;
+}
+#homeSelection .home-alt-row:hover { background: var(--bg-sunk) !important; }
+#homeSelection .home-alt-hint { color: var(--ink-3) !important; font-weight: 500; }
+#homeSelection #memberDailyCard { margin-top: 12px; }
+#homeSelection:has(#gameSettings:not(.hidden)) #memberDailyCard { display: none; }
 #homeSelection .selection-card h3 { margin: 0 0 6px; font: 800 28px/1 var(--display); letter-spacing: 0.02em; text-transform: none; text-align: left; }
 #homeSelection .selection-description { margin: 0 0 16px; font: 400 16px/1.35 var(--body); color: var(--ink-2); text-align: left; }
 #homeSelection .selection-btn { width: auto; min-width: 150px; padding: 0 22px; }
