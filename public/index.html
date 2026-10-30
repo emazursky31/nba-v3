@@ -269,35 +269,19 @@
   
   <h3 id="home-welcome"></h3>
 
-  <a class="daily-card" id="memberDailyCard" href="/daily" hidden>
-    <img class="daily-img" id="memberDailyImg" alt="" width="56" height="56" />
-    <span class="daily-body">
-      <span class="daily-eyebrow" id="memberDailyEyebrow">Daily Blitz</span>
-      <span class="daily-title" id="memberDailyTitle">One player. Name their teammates.</span>
-      <span class="daily-sub" id="memberDailySub">Solo, 60 seconds.</span>
-    </span>
-    <span class="daily-go" id="memberDailyGo">Play</span>
-  </a>
-
   <div id="gameSetup" class="game-setup-container">
     <!-- Game type selection -->
     <div id="gameModeSelection" class="selection-grid">
-      <div class="selection-card" data-mode="public" id="publicCard">
-        <!-- <div class="selection-icon">🌐</div> -->
-        <h3>Public Game</h3>
+      <div class="selection-card home-play-card" data-mode="public" id="publicCard">
+        <h3>Play now</h3>
         <p class="selection-description">
           Get paired with another player right now.
         </p>
         <button class="selection-btn" id="findGameBtn">Find a game</button>
-      </div>
-
-      <div class="selection-card" data-mode="private">
-        <!-- <div class="selection-icon">🔒</div> -->
-        <h3>Private Game</h3>
-        <p class="selection-description">
-          Pick the era and clock, then send a friend the link.
-        </p>
-        <button class="selection-btn selection-btn-quiet" id="privateGameBtn">Set up a room</button>
+        <button class="home-alt-row" id="privateGameBtn" type="button">
+          <span>Play a friend instead</span>
+          <span class="home-alt-hint">Set up a room &rsaquo;</span>
+        </button>
       </div>
     </div>
 
@@ -381,6 +365,15 @@
   </div>
 </div>
   </div>
+  <a class="daily-card" id="memberDailyCard" href="/daily" hidden>
+    <img class="daily-img" id="memberDailyImg" alt="" width="56" height="56" />
+    <span class="daily-body">
+      <span class="daily-eyebrow" id="memberDailyEyebrow">Daily Blitz</span>
+      <span class="daily-title" id="memberDailyTitle">One player. Name their teammates.</span>
+      <span class="daily-sub" id="memberDailySub">Solo, 60 seconds.</span>
+    </span>
+    <span class="daily-go" id="memberDailyGo">Play</span>
+  </a>
 </section>
 
 
