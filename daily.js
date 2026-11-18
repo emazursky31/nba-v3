@@ -234,7 +234,7 @@ function createDaily(client) {
     });
   }
 
-  return { register };
+  return { register, getPuzzle };
 }
 
 module.exports = { createDaily, normalizeName, todayInTimeZone, puzzleNumber, hashString };
