@@ -1,0 +1,41 @@
+name: Daily Blitz post cards
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'How many days of cards to make, starting today (US Eastern)'
+        default: '7'
+      start:
+        description: 'Optional start date, like 2026-11-20 (default: today)'
+        default: ''
+
+jobs:
+  cards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - name: Install a browser to draw the images
+        run: |
+          npm install --no-save --ignore-scripts playwright
+          npx playwright install --with-deps chromium
+      - name: Make the cards
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DAYS: ${{ inputs.days }}
+          START: ${{ inputs.start }}
+        run: |
+          if [ -n "$START" ]; then
+            node scripts/daily-cards.js --days "$DAYS" --start "$START" --out daily-cards
+          else
+            node scripts/daily-cards.js --days "$DAYS" --out daily-cards
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-cards
+          path: daily-cards/
